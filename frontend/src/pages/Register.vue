@@ -6,8 +6,8 @@
 
 <v-card width="420" class="login-card pa-8">
 
-<h1 class="login-title">Login</h1>
-<p class="login-subtitle">to start learning</p>
+<h1 class="login-title">Register</h1>
+<p class="login-subtitle">create your account</p>
 
 <v-text-field
 label="Email"
@@ -20,18 +20,24 @@ type="password"
 variant="outlined"
 />
 
+<v-text-field
+label="Confirm Password"
+type="password"
+variant="outlined"
+/>
+
 <v-btn
 color="primary"
 size="large"
 block
 class="login-btn"
 >
-Log in →
+Create account →
 </v-btn>
 
 <div class="signup">
-Don’t have an account?
-<router-link to="/register">Sign up now!</router-link>
+Already have an account?
+<router-link to="/login">Login</router-link>
 </div>
 
 </v-card>
@@ -42,9 +48,7 @@ Don’t have an account?
 
 </template>
 
-
 <style scoped>
-
 
 .login-bg{
 height:100vh;
@@ -53,6 +57,7 @@ position:relative;
 overflow:hidden;
 background:#020617;
 }
+
 
 .login-bg::before,
 .login-bg::after{
@@ -91,7 +96,7 @@ transform:translate(120px,80px) scale(1.2);
 
 .login-card{
 border-radius:18px;
-background:rgba(120, 120, 120, 0.75);
+background:rgba(120,120,120,0.75);
 backdrop-filter:blur(20px);
 box-shadow:0 30px 60px rgba(0,0,0,0.2);
 }
@@ -119,7 +124,7 @@ transition:all .25s;
 
 .login-btn:hover{
 transform:translateY(-2px);
-box-shadow:0 12px 25px rgba(0, 0, 0, 0.15);
+box-shadow:0 12px 25px rgba(0,0,0,0.15);
 }
 
 .signup{
