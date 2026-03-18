@@ -4,6 +4,7 @@ import Login from '../pages/Login.vue'
 import Dashboard from '../pages/Dashboard.vue'
 import Register from '../pages/Register.vue'
 import Groups from '../pages/Groups.vue'
+import Schedule from '../pages/Schedule.vue'
 
 const routes = [
   {
@@ -25,6 +26,10 @@ const routes = [
     {
     path: '/groups',
     component: Groups
+  },
+      {
+    path: '/schedule',
+    component: Schedule
   }
 ]
 
