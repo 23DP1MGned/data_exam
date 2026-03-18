@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../pages/Login.vue'
 import Dashboard from '../pages/Dashboard.vue'
 import Register from '../pages/Register.vue'
+import Groups from '../pages/Groups.vue'
 
 const routes = [
   {
@@ -20,6 +21,10 @@ const routes = [
   {
     path: '/register',
     component: Register
+  },
+    {
+    path: '/groups',
+    component: Groups
   }
 ]
 
@@ -27,5 +32,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes
 })
+
+
 
 export default router

@@ -48,6 +48,7 @@
     <v-app-bar app flat color="white">
 
       <v-text-field
+        v-model="search"
         prepend-inner-icon="mdi-magnify"
         label="Search"
         variant="outlined"
@@ -109,7 +110,7 @@
 
         <!-- CARDS -->
         <v-card
-          v-for="training in trainings"
+          v-for="training in filteredTrainings"
           :key="training.id"
           class="pa-4 mb-4"
           elevation="2"
@@ -194,9 +195,10 @@
 
 
 <script setup>
-import { ref } from "vue"
+import { ref, computed } from "vue"
 
 const tab = ref("upcoming")
+const search = ref("")
 
 const dialog = ref(false)
 const isEditing = ref(false)
@@ -228,6 +230,12 @@ start:"15:00",
 end:"16:00"
 }
 ])
+
+const filteredTrainings = computed(() => {
+return trainings.value.filter(training =>
+training.title.toLowerCase().includes(search.value.toLowerCase())
+)
+})
 
 const newTraining = ref({
 title:"",
