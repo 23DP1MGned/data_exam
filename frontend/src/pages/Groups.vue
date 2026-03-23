@@ -87,7 +87,7 @@
                   <div class="groups-subtitle">Groups you manage and their key training details</div>
                 </div>
 
-                <v-btn color="primary" class="create-btn" prepend-icon="mdi-plus">
+                <v-btn color="primary" class="create-btn" prepend-icon="mdi-plus" @click="openCreateDialog">
                   Create group
                 </v-btn>
               </div>
@@ -157,6 +157,40 @@
           </section>
         </div>
 
+        <v-dialog v-model="createDialog" max-width="560">
+          <v-card class="dialog-card create-dialog-card">
+            <div class="create-dialog-header">
+              <div>
+                <div class="create-dialog-title">Create Group</div>
+                <div class="create-dialog-subtitle">
+                  Add a new sports group using the same clean system style.
+                </div>
+              </div>
+
+              <v-btn icon variant="text" @click="createDialog = false">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </div>
+
+            <v-card-text class="create-dialog-content">
+              <div class="create-fields-grid">
+                <v-text-field v-model="newGroup.section" label="Group name" variant="outlined" class="create-field" />
+                <v-text-field v-model="newGroup.trainer" label="Trainer" variant="outlined" class="create-field" />
+                <v-text-field v-model="newGroup.days" label="Days" placeholder="Mon / Wed" variant="outlined" class="create-field" />
+                <v-text-field v-model="newGroup.time" label="Time" placeholder="17:00" variant="outlined" class="create-field" />
+                <v-text-field v-model="newGroup.students" label="Students" type="number" min="0" variant="outlined" class="create-field create-field-no-spin" />
+                <v-text-field v-model="newGroup.price" label="Price" type="number" min="0" variant="outlined" class="create-field create-field-no-spin" />
+              </div>
+            </v-card-text>
+
+            <v-card-actions class="create-dialog-actions">
+              <v-spacer></v-spacer>
+              <v-btn variant="outlined" class="reset-filter-btn" @click="createDialog = false">Cancel</v-btn>
+              <v-btn color="primary" class="apply-filter-btn" @click="saveGroup">Save</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
         <v-dialog v-model="filterDialog" max-width="520">
           <v-card class="dialog-card filter-dialog-card">
             <div class="filter-dialog-header">
@@ -225,6 +259,7 @@ import { computed, ref } from 'vue'
 const search = ref('')
 const darkMode = ref(false)
 const filterDialog = ref(false)
+const createDialog = ref(false)
 const selectedSort = ref('az')
 
 const navItems = [
@@ -244,6 +279,15 @@ const groups = ref([
   { id: 6, trainer: 'Olga Ivanova', section: 'Yoga', days: 'Tue / Sat', time: '10:00', students: 11, price: 35, attendance: 95, avatar: 'https://i.pravatar.cc/100?img=6' }
 ])
 
+const newGroup = ref({
+  section: '',
+  trainer: '',
+  days: '',
+  time: '',
+  students: 0,
+  price: 0
+})
+
 const filteredGroups = computed(() =>
   groups.value.filter((group) =>
     [group.section, group.trainer, group.days].some((value) =>
@@ -258,6 +302,44 @@ function sortAZ() {
 
 function sortZA() {
   groups.value.sort((a, b) => b.section.localeCompare(a.section))
+}
+
+function openCreateDialog() {
+  newGroup.value = {
+    section: '',
+    trainer: '',
+    days: '',
+    time: '',
+    students: 0,
+    price: 0
+  }
+  createDialog.value = true
+}
+
+function saveGroup() {
+  groups.value.unshift({
+    id: Date.now(),
+    section: newGroup.value.section || 'New Group',
+    trainer: newGroup.value.trainer || 'New Trainer',
+    days: newGroup.value.days || 'Mon / Wed',
+    time: newGroup.value.time || '17:00',
+    students: Number(newGroup.value.students) || 0,
+    price: Number(newGroup.value.price) || 0,
+    attendance: calculateAttendance(Number(newGroup.value.students) || 0),
+    avatar: `https://i.pravatar.cc/100?u=${Date.now()}`
+  })
+
+  if (selectedSort.value === 'az') sortAZ()
+  if (selectedSort.value === 'za') sortZA()
+
+  createDialog.value = false
+}
+
+function calculateAttendance(studentsCount) {
+  if (studentsCount <= 0) return 0
+  if (studentsCount <= 8) return 92
+  if (studentsCount <= 12) return 85
+  return 78
 }
 
 function applySelectedSort() {
@@ -587,6 +669,81 @@ function resetSort() {
   box-shadow: 0 18px 36px rgba(110, 136, 173, 0.12);
 }
 
+.dialog-card {
+  border-radius: 24px;
+}
+
+.create-dialog-card {
+  padding: 26px;
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(238, 245, 255, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 20px 45px rgba(76, 104, 148, 0.18);
+}
+
+.create-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.create-dialog-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #172033;
+}
+
+.create-dialog-subtitle {
+  margin-top: 8px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.create-dialog-content {
+  padding: 0 !important;
+}
+
+.create-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.create-field-full {
+  grid-column: 1 / -1;
+}
+
+.create-dialog-actions {
+  padding: 22px 0 0 !important;
+}
+
+.create-field :deep(.v-field) {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+  backdrop-filter: blur(10px);
+}
+
+.create-field :deep(.v-field__outline) {
+  color: rgba(190, 202, 222, 0.95);
+}
+
+.create-field :deep(.v-label),
+.create-field :deep(input) {
+  color: #172033;
+}
+
+.create-field-no-spin :deep(input[type='number']) {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.create-field-no-spin :deep(input[type='number']::-webkit-outer-spin-button),
+.create-field-no-spin :deep(input[type='number']::-webkit-inner-spin-button) {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
 .group-card-top {
   display: flex;
   align-items: center;
@@ -897,8 +1054,22 @@ function resetSort() {
     padding: 18px;
   }
 
+  .create-dialog-card {
+    padding: 18px;
+  }
+
+  .create-fields-grid {
+    grid-template-columns: 1fr;
+  }
+
   .filter-dialog-header,
   .filter-dialog-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .create-dialog-header,
+  .create-dialog-actions {
     align-items: stretch;
     flex-direction: column;
   }

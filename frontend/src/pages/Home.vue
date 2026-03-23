@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-main class="dashboard-page">
-      <div class="dashboard-shell">
+      <div class="dashboard-shell" :class="{ 'dashboard-shell-dark': darkMode }">
         <div class="dashboard-panel">
           <aside class="sidebar-card">
             <div class="brand-block">
@@ -39,7 +39,7 @@
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
                   <v-text-field
                     v-model="search"
-                    label="Search overview"
+                    placeholder="Search overview"
                     variant="plain"
                     hide-details
                     density="comfortable"
@@ -258,7 +258,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 const search = ref('')
 const dialog = ref(false)
@@ -423,6 +423,14 @@ const overviewStats = computed(() => [
   { label: 'Attendance rate', value: attendanceRate.value }
 ])
 
+onMounted(() => {
+  darkMode.value = localStorage.getItem('home-dark-mode') === 'true'
+})
+
+watch(darkMode, (value) => {
+  localStorage.setItem('home-dark-mode', String(value))
+})
+
 function openCreate() {
   isEditing.value = false
   editingId.value = null
@@ -545,6 +553,12 @@ function resetSort() {
   backdrop-filter: blur(18px);
 }
 
+.dashboard-shell-dark {
+  border-color: rgba(91, 109, 145, 0.4);
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(28, 36, 54, 0.94));
+  box-shadow: 0 28px 80px rgba(4, 10, 24, 0.45);
+}
+
 .dashboard-panel {
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);
@@ -560,6 +574,11 @@ function resetSort() {
   border-radius: 28px;
   background: rgba(245, 250, 255, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.dashboard-shell-dark .sidebar-card {
+  background: rgba(18, 27, 43, 0.88);
+  border-color: rgba(74, 92, 126, 0.42);
 }
 
 .brand-block {
@@ -594,10 +613,18 @@ function resetSort() {
   line-height: 1.1;
 }
 
+.dashboard-shell-dark .brand-name {
+  color: #f3f7ff;
+}
+
 .brand-caption {
   margin-top: 2px;
   font-size: 0.82rem;
   color: #7b8798;
+}
+
+.dashboard-shell-dark .brand-caption {
+  color: #94a6c4;
 }
 
 .nav-list {
@@ -615,6 +642,10 @@ function resetSort() {
   letter-spacing: 0;
   font-size: 1rem;
   font-weight: 500;
+}
+
+.dashboard-shell-dark .nav-item {
+  color: #d8e2f2;
 }
 
 :deep(.nav-item .v-btn__content) {
@@ -648,6 +679,11 @@ function resetSort() {
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
+.dashboard-shell-dark .topbar-card {
+  background: rgba(22, 31, 48, 0.82);
+  border-color: rgba(74, 92, 126, 0.42);
+}
+
 .search-wrap {
   flex: 1;
   min-width: 0;
@@ -665,9 +701,18 @@ function resetSort() {
   border: 1px solid rgba(223, 231, 243, 0.92);
 }
 
+.dashboard-shell-dark .search-shell {
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
 .search-shell-icon {
   color: #6b7280;
   flex-shrink: 0;
+}
+
+.dashboard-shell-dark .search-shell-icon {
+  color: #8ea3c7;
 }
 
 .search-field {
@@ -694,6 +739,16 @@ function resetSort() {
   color: #172033;
 }
 
+.search-field :deep(input::placeholder) {
+  color: #111827;
+  opacity: 1;
+}
+
+.dashboard-shell-dark .search-field :deep(input),
+.dashboard-shell-dark .search-field :deep(input::placeholder) {
+  color: #e7eefb;
+}
+
 .topbar-tools {
   display: flex;
   align-items: center;
@@ -708,10 +763,22 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.75);
 }
 
+.dashboard-shell-dark .top-icon-btn {
+  color: #dce6f7;
+  background: rgba(18, 27, 43, 0.92);
+  border-color: rgba(74, 92, 126, 0.46);
+}
+
 .top-icon-btn-active {
   color: #1677ff;
   background: rgba(232, 242, 255, 0.96);
   border-color: rgba(22, 119, 255, 0.28);
+}
+
+.dashboard-shell-dark .top-icon-btn-active {
+  color: #7fbcff;
+  background: rgba(22, 43, 76, 0.96);
+  border-color: rgba(82, 156, 255, 0.44);
 }
 
 .icon-badge-wrap {
@@ -745,10 +812,19 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.82);
 }
 
+.dashboard-shell-dark .profile-pill {
+  background: rgba(18, 27, 43, 0.92);
+  border: 1px solid rgba(74, 92, 126, 0.42);
+}
+
 .profile-name {
   font-size: 0.98rem;
   font-weight: 600;
   color: #172033;
+}
+
+.dashboard-shell-dark .profile-name {
+  color: #f2f7ff;
 }
 
 .profile-email {
@@ -757,12 +833,21 @@ function resetSort() {
   word-break: break-word;
 }
 
+.dashboard-shell-dark .profile-email {
+  color: #93a5c3;
+}
+
 .schedule-card {
   min-width: 0;
   padding: 26px;
   border-radius: 28px;
   background: rgba(249, 251, 255, 0.58);
   border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.dashboard-shell-dark .schedule-card {
+  background: rgba(22, 31, 48, 0.72);
+  border-color: rgba(74, 92, 126, 0.42);
 }
 
 .schedule-header {
@@ -781,10 +866,18 @@ function resetSort() {
   color: #121826;
 }
 
+.dashboard-shell-dark .schedule-title {
+  color: #f3f7ff;
+}
+
 .schedule-subtitle {
   margin-top: 10px;
   font-size: 1rem;
   color: #66748a;
+}
+
+.dashboard-shell-dark .schedule-subtitle {
+  color: #8fa3c1;
 }
 
 .create-btn {
@@ -812,6 +905,13 @@ function resetSort() {
   box-shadow: 0 12px 28px rgba(110, 136, 173, 0.08);
 }
 
+.dashboard-shell-dark .overview-stat-card,
+.dashboard-shell-dark .overview-card {
+  background: rgba(18, 27, 43, 0.9);
+  border-color: rgba(74, 92, 126, 0.42);
+  box-shadow: 0 18px 38px rgba(4, 10, 24, 0.26);
+}
+
 .overview-stat-card {
   padding: 22px;
 }
@@ -821,12 +921,20 @@ function resetSort() {
   color: #6f7d90;
 }
 
+.dashboard-shell-dark .summary-label {
+  color: #8fa3c1;
+}
+
 .summary-value {
   margin-top: 10px;
   font-size: 2rem;
   font-weight: 700;
   color: #111827;
   line-height: 1;
+}
+
+.dashboard-shell-dark .summary-value {
+  color: #f4f8ff;
 }
 
 .overview-grid {
@@ -854,6 +962,10 @@ function resetSort() {
   color: #111827;
 }
 
+.dashboard-shell-dark .list-title {
+  color: #f2f7ff;
+}
+
 .list-wrap {
   display: flex;
   flex-direction: column;
@@ -871,16 +983,30 @@ function resetSort() {
   border: 1px solid rgba(224, 232, 243, 0.92);
 }
 
+.dashboard-shell-dark .overview-item {
+  background: rgba(12, 19, 32, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
 .payment-name {
   font-size: 1rem;
   font-weight: 600;
   color: #172033;
 }
 
+.dashboard-shell-dark .payment-name,
+.dashboard-shell-dark .payment-amount {
+  color: #eef4ff;
+}
+
 .payment-meta {
   margin-top: 4px;
   font-size: 0.92rem;
   color: #718096;
+}
+
+.dashboard-shell-dark .payment-meta {
+  color: #8ea3c7;
 }
 
 .payment-side {
@@ -901,8 +1027,20 @@ function resetSort() {
   border: 1px dashed rgba(188, 199, 218, 0.9);
 }
 
+.dashboard-shell-dark .empty-state {
+  color: #99acc8;
+  background: rgba(12, 19, 32, 0.76);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
 .dialog-card {
   border-radius: 24px;
+}
+
+.dashboard-shell-dark :deep(.v-overlay__content .dialog-card) {
+  background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
+  color: #eff5ff;
+  border: 1px solid rgba(74, 92, 126, 0.42);
 }
 
 .filter-dialog-card {
@@ -910,6 +1048,11 @@ function resetSort() {
   background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(238, 245, 255, 0.92));
   border: 1px solid rgba(255, 255, 255, 0.72);
   box-shadow: 0 20px 45px rgba(76, 104, 148, 0.18);
+}
+
+.dashboard-shell-dark :deep(.v-overlay__content .filter-dialog-card) {
+  background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
+  box-shadow: 0 24px 48px rgba(4, 10, 24, 0.42);
 }
 
 .filter-dialog-header {
@@ -926,10 +1069,18 @@ function resetSort() {
   color: #172033;
 }
 
+.dashboard-shell-dark .filter-dialog-title {
+  color: #f3f7ff;
+}
+
 .filter-dialog-subtitle {
   margin-top: 8px;
   color: #64748b;
   line-height: 1.5;
+}
+
+.dashboard-shell-dark .filter-dialog-subtitle {
+  color: #8fa3c1;
 }
 
 .filter-options {
@@ -950,6 +1101,11 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.84);
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.dashboard-shell-dark .filter-option {
+  background: rgba(12, 19, 32, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
 }
 
 .filter-option:hover {
@@ -981,11 +1137,19 @@ function resetSort() {
   color: #172033;
 }
 
+.dashboard-shell-dark .filter-option-title {
+  color: #eef4ff;
+}
+
 .filter-option-text {
   display: block;
   margin-top: 4px;
   color: #6b7280;
   line-height: 1.45;
+}
+
+.dashboard-shell-dark .filter-option-text {
+  color: #8ea3c7;
 }
 
 .filter-dialog-actions {
@@ -1006,6 +1170,12 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.82);
   border-color: rgba(22, 119, 255, 0.28);
   font-weight: 600;
+}
+
+.dashboard-shell-dark .reset-filter-btn {
+  background: rgba(18, 27, 43, 0.92);
+  color: #7fbcff;
+  border-color: rgba(82, 156, 255, 0.32);
 }
 
 .apply-filter-btn {

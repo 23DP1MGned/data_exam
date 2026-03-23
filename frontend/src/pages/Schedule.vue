@@ -84,7 +84,7 @@
               <div class="schedule-header">
                 <div>
                   <h1 class="schedule-title">Schedule</h1>
-                  <div class="schedule-subtitle">Upcoming trainings and practice sessions</div>
+                  <div class="schedule-subtitle">Here you can view the training schedule for the upcoming month</div>
                 </div>
 
                 <v-btn
@@ -120,12 +120,12 @@
               </div>
 
               <div
-                v-for="group in groupedTrainings"
+                v-for="group in pagedGroupedTrainings"
                 :key="group.label"
                 class="day-group"
               >
                 <div class="day-label">
-                  <span class="day-primary">{{ group.title }}</span>
+                  <span v-if="group.title" class="day-primary">{{ group.title }}</span>
                   <span class="day-secondary">{{ group.label }}</span>
                 </div>
 
@@ -221,6 +221,39 @@
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div v-if="totalPages > 1" class="pagination-row">
+                <v-btn
+                  variant="text"
+                  class="pagination-nav-btn"
+                  :disabled="currentPage === 1"
+                  @click="currentPage = Math.max(1, currentPage - 1)"
+                >
+                  Prev
+                </v-btn>
+
+                <div class="pagination-pages">
+                  <button
+                    v-for="page in totalPages"
+                    :key="page"
+                    type="button"
+                    class="pagination-page-btn"
+                    :class="{ 'pagination-page-btn-active': currentPage === page }"
+                    @click="currentPage = page"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+
+                <v-btn
+                  variant="text"
+                  class="pagination-nav-btn"
+                  :disabled="currentPage === totalPages"
+                  @click="currentPage = Math.min(totalPages, currentPage + 1)"
+                >
+                  Next
+                </v-btn>
               </div>
             </div>
           </section>
@@ -329,7 +362,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const search = ref('')
 const tab = ref('upcoming')
@@ -340,6 +373,8 @@ const editingId = ref(null)
 const expandedId = ref(1)
 const selectedSort = ref('time')
 const darkMode = ref(false)
+const currentPage = ref(1)
+const pageSize = 6
 
 const tabs = [
   { value: 'upcoming', label: 'Upcoming' },
@@ -362,8 +397,7 @@ const trainings = ref([
     trainer: 'Jānis Ozols',
     start: '17:00',
     end: '18:30',
-    date: '2026-03-20',
-    status: 'upcoming',
+    date: '2026-03-23',
     group: 'Football U14',
     avatar: 'https://i.pravatar.cc/100?img=32',
     students: [
@@ -380,8 +414,7 @@ const trainings = ref([
     trainer: 'Alex Johnson',
     start: '19:00',
     end: '20:00',
-    date: '2026-03-18',
-    status: 'upcoming',
+    date: '2026-03-24',
     group: 'Basketball Juniors',
     avatar: 'https://i.pravatar.cc/100?img=44',
     students: [
@@ -396,8 +429,7 @@ const trainings = ref([
     trainer: 'Mike Smith',
     start: '15:00',
     end: '16:00',
-    date: '2026-03-19',
-    status: 'upcoming',
+    date: '2026-03-25',
     group: 'Running Club',
     avatar: 'https://i.pravatar.cc/100?img=47',
     students: [
@@ -412,13 +444,167 @@ const trainings = ref([
     trainer: 'Anna Petrova',
     start: '09:20',
     end: '11:00',
-    date: '2026-03-24',
-    status: 'past',
+    date: '2026-03-21',
     group: 'Swimming Beginners',
     avatar: 'https://i.pravatar.cc/100?img=53',
     students: [
       { id: 9, name: 'Oliver', avatar: 'https://i.pravatar.cc/80?img=13' },
       { id: 10, name: 'Isabella', avatar: 'https://i.pravatar.cc/80?img=14' }
+    ]
+  },
+  {
+    id: 5,
+    title: 'Boxing Fundamentals',
+    description: 'Footwork, guard control and basic combinations',
+    trainer: 'David Brown',
+    start: '18:15',
+    end: '19:20',
+    date: '2026-03-26',
+    group: 'Boxing Teens',
+    avatar: 'https://i.pravatar.cc/100?img=15',
+    students: [
+      { id: 11, name: 'Marta', avatar: 'https://i.pravatar.cc/80?img=15' },
+      { id: 12, name: 'Artem', avatar: 'https://i.pravatar.cc/80?img=16' },
+      { id: 13, name: 'Leo', avatar: 'https://i.pravatar.cc/80?img=17' }
+    ]
+  },
+  {
+    id: 6,
+    title: 'Yoga Recovery',
+    description: 'Mobility work and post-training recovery session',
+    trainer: 'Olga Ivanova',
+    start: '10:00',
+    end: '11:00',
+    date: '2026-03-27',
+    group: 'Yoga Beginners',
+    avatar: 'https://i.pravatar.cc/100?img=18',
+    students: [
+      { id: 14, name: 'Nora', avatar: 'https://i.pravatar.cc/80?img=18' },
+      { id: 15, name: 'Elina', avatar: 'https://i.pravatar.cc/80?img=19' }
+    ]
+  },
+  {
+    id: 7,
+    title: 'Dance Cardio',
+    description: 'Rhythm drills, coordination and cardio endurance',
+    trainer: 'Anna Petrova',
+    start: '16:30',
+    end: '17:40',
+    date: '2026-03-28',
+    group: 'Dance Kids',
+    avatar: 'https://i.pravatar.cc/100?img=19',
+    students: [
+      { id: 16, name: 'Ella', avatar: 'https://i.pravatar.cc/80?img=20' },
+      { id: 17, name: 'Toms', avatar: 'https://i.pravatar.cc/80?img=21' },
+      { id: 18, name: 'Sasha', avatar: 'https://i.pravatar.cc/80?img=22' }
+    ]
+  },
+  {
+    id: 8,
+    title: 'Volleyball Practice',
+    description: 'Serve accuracy and team positioning routines',
+    trainer: 'Kristaps Bērziņš',
+    start: '12:00',
+    end: '13:30',
+    date: '2026-03-29',
+    group: 'Volleyball Juniors',
+    avatar: 'https://i.pravatar.cc/100?img=20',
+    students: [
+      { id: 19, name: 'Kate', avatar: 'https://i.pravatar.cc/80?img=23' },
+      { id: 20, name: 'Rihards', avatar: 'https://i.pravatar.cc/80?img=24' }
+    ]
+  },
+  {
+    id: 9,
+    title: 'Tennis Match Prep',
+    description: 'Reaction drills and serve-return combinations',
+    trainer: 'Laura Miller',
+    start: '14:00',
+    end: '15:10',
+    date: '2026-03-30',
+    group: 'Tennis Academy',
+    avatar: 'https://i.pravatar.cc/100?img=21',
+    students: [
+      { id: 21, name: 'Daniel', avatar: 'https://i.pravatar.cc/80?img=25' },
+      { id: 22, name: 'Alise', avatar: 'https://i.pravatar.cc/80?img=26' },
+      { id: 23, name: 'Mark', avatar: 'https://i.pravatar.cc/80?img=27' }
+    ]
+  },
+  {
+    id: 10,
+    title: 'Athletics Sprint Lab',
+    description: 'Explosive starts and acceleration mechanics',
+    trainer: 'Andrejs Kalniņš',
+    start: '08:30',
+    end: '09:45',
+    date: '2026-03-17',
+    group: 'Athletics U16',
+    avatar: 'https://i.pravatar.cc/100?img=22',
+    students: [
+      { id: 24, name: 'Ieva', avatar: 'https://i.pravatar.cc/80?img=28' },
+      { id: 25, name: 'Edgars', avatar: 'https://i.pravatar.cc/80?img=29' }
+    ]
+  },
+  {
+    id: 11,
+    title: 'Gymnastics Basics',
+    description: 'Balance, flexibility and mat technique session',
+    trainer: 'Signe Ozola',
+    start: '11:15',
+    end: '12:20',
+    date: '2026-03-16',
+    group: 'Gymnastics Starters',
+    avatar: 'https://i.pravatar.cc/100?img=23',
+    students: [
+      { id: 26, name: 'Paula', avatar: 'https://i.pravatar.cc/80?img=30' },
+      { id: 27, name: 'Lote', avatar: 'https://i.pravatar.cc/80?img=31' },
+      { id: 28, name: 'Maks', avatar: 'https://i.pravatar.cc/80?img=32' }
+    ]
+  },
+  {
+    id: 12,
+    title: 'Cycling Endurance Ride',
+    description: 'Steady pace intervals and endurance control',
+    trainer: 'Roberts Veiss',
+    start: '09:00',
+    end: '10:40',
+    date: '2026-03-15',
+    group: 'Cycling Team',
+    avatar: 'https://i.pravatar.cc/100?img=24',
+    students: [
+      { id: 29, name: 'Oskars', avatar: 'https://i.pravatar.cc/80?img=33' },
+      { id: 30, name: 'Linda', avatar: 'https://i.pravatar.cc/80?img=34' }
+    ]
+  },
+  {
+    id: 13,
+    title: 'Karate Technique',
+    description: 'Kata repetitions and defensive movement drills',
+    trainer: 'Kenji Sato',
+    start: '17:20',
+    end: '18:25',
+    date: '2026-03-14',
+    group: 'Karate Intermediate',
+    avatar: 'https://i.pravatar.cc/100?img=25',
+    students: [
+      { id: 31, name: 'Renars', avatar: 'https://i.pravatar.cc/80?img=35' },
+      { id: 32, name: 'Mia', avatar: 'https://i.pravatar.cc/80?img=36' },
+      { id: 33, name: 'Eva', avatar: 'https://i.pravatar.cc/80?img=37' }
+    ]
+  },
+  {
+    id: 14,
+    title: 'Ice Hockey Skills',
+    description: 'Stickhandling and transition play under pressure',
+    trainer: 'Mārtiņš Pētersons',
+    start: '19:30',
+    end: '21:00',
+    date: '2026-03-13',
+    group: 'Ice Hockey U18',
+    avatar: 'https://i.pravatar.cc/100?img=26',
+    students: [
+      { id: 34, name: 'Filips', avatar: 'https://i.pravatar.cc/80?img=38' },
+      { id: 35, name: 'Artis', avatar: 'https://i.pravatar.cc/80?img=39' }
     ]
   }
 ])
@@ -432,13 +618,19 @@ const newTraining = ref({
   description: ''
 })
 
+const today = computed(() => {
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  return now
+})
+
 const filteredTrainings = computed(() => {
   const query = search.value.trim().toLowerCase()
 
   return trainings.value.filter((training) => {
     const matchesTab = tab.value === 'upcoming'
-      ? training.status !== 'past'
-      : training.status === tab.value
+      ? !isPastTraining(training)
+      : isPastTraining(training)
 
     if (!matchesTab) return false
     if (!query) return true
@@ -452,16 +644,24 @@ const filteredTrainings = computed(() => {
   })
 })
 
+const sortedFilteredTrainings = computed(() =>
+  [...filteredTrainings.value].sort((a, b) => {
+    const first = parseTrainingDateTime(a.date, a.start).getTime()
+    const second = parseTrainingDateTime(b.date, b.start).getTime()
+    return tab.value === 'upcoming' ? first - second : second - first
+  })
+)
+
 const groupedTrainings = computed(() => {
   const groups = new Map()
 
-  filteredTrainings.value.forEach((training) => {
+  sortedFilteredTrainings.value.forEach((training) => {
     if (!groups.has(training.date)) groups.set(training.date, [])
     groups.get(training.date).push(training)
   })
 
-  return Array.from(groups.entries()).map(([date, items], index) => ({
-    title: index === 0 ? 'Today' : 'Tomorrow',
+  return Array.from(groups.entries()).map(([date, items]) => ({
+    title: getRelativeDayLabel(date),
     label: new Date(date).toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
@@ -469,6 +669,40 @@ const groupedTrainings = computed(() => {
     }),
     items
   }))
+})
+
+const paginatedTrainings = computed(() => {
+  const startIndex = (currentPage.value - 1) * pageSize
+  return sortedFilteredTrainings.value.slice(startIndex, startIndex + pageSize)
+})
+
+const pagedGroupedTrainings = computed(() => {
+  const groups = new Map()
+
+  paginatedTrainings.value.forEach((training) => {
+    if (!groups.has(training.date)) groups.set(training.date, [])
+    groups.get(training.date).push(training)
+  })
+
+  return Array.from(groups.entries()).map(([date, items]) => ({
+    title: getRelativeDayLabel(date),
+    label: new Date(date).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    }),
+    items
+  }))
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(sortedFilteredTrainings.value.length / pageSize)))
+
+watch([tab, search, selectedSort], () => {
+  currentPage.value = 1
+})
+
+watch(totalPages, (value) => {
+  if (currentPage.value > value) currentPage.value = value
 })
 
 function toggleExpanded(id) {
@@ -484,7 +718,8 @@ function openCreate() {
     start: '',
     end: '',
     trainer: '',
-    description: ''
+    description: '',
+    group: ''
   }
   dialog.value = true
 }
@@ -498,7 +733,8 @@ function openEdit(training) {
     start: training.start,
     end: training.end,
     trainer: training.trainer,
-    description: training.description
+    description: training.description,
+    group: training.group
   }
   dialog.value = true
 }
@@ -517,8 +753,7 @@ function saveTraining() {
     trainings.value.push({
       id: Date.now(),
       ...newTraining.value,
-      status: 'upcoming',
-      group: 'New Group',
+      group: newTraining.value.group || 'New Group',
       avatar: 'https://i.pravatar.cc/100?img=25',
       students: []
     })
@@ -529,6 +764,23 @@ function saveTraining() {
 
 function parseTime(value) {
   return new Date(`1970-01-01 ${value}`).getTime()
+}
+
+function parseTrainingDateTime(date, time) {
+  return new Date(`${date}T${time}:00`)
+}
+
+function isPastTraining(training) {
+  return parseTrainingDateTime(training.date, training.end).getTime() < Date.now()
+}
+
+function getRelativeDayLabel(date) {
+  const target = new Date(`${date}T00:00:00`)
+  const diffDays = Math.round((target.getTime() - today.value.getTime()) / 86400000)
+
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Tomorrow'
+  return ''
 }
 
 function formatCardDate(value) {
@@ -876,6 +1128,52 @@ function resetSort() {
   letter-spacing: 0;
   color: #162033;
   background: rgba(255, 255, 255, 0.8);
+}
+
+.pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 28px;
+  padding-top: 8px;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pagination-page-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(191, 203, 224, 0.84);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #6b7280;
+  font-size: 0.98rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-page-btn-active {
+  border-color: transparent;
+  color: white;
+  background: linear-gradient(180deg, #1677ff 0%, #0f5fe3 100%);
+  box-shadow: 0 14px 26px rgba(22, 119, 255, 0.24);
+}
+
+.pagination-nav-btn {
+  min-height: 44px;
+  padding: 0 8px;
+  border-radius: 14px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  color: #111827;
 }
 
 .day-group + .day-group {
@@ -1242,6 +1540,10 @@ function resetSort() {
 
   .topbar-tools {
     gap: 10px;
+  }
+
+  .pagination-row {
+    flex-direction: column;
   }
 
   .icon-badge-wrap {
