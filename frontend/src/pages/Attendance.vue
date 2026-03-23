@@ -42,7 +42,7 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
               </v-avatar>
               <div>
                 <div class="profile-name">Maksims Richards</div>
@@ -122,7 +122,7 @@
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
                   </v-avatar>
                   <div>
                     <div class="profile-name">Maksims Richards</div>
@@ -169,7 +169,7 @@
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
                   </v-avatar>
                   <div>
                     <div class="profile-name">Maksims Richards</div>
@@ -192,7 +192,7 @@
               <div class="attendance-overview">
                 <div class="coach-card">
                   <v-avatar size="76" class="coach-avatar">
-                    <img src="https://i.pravatar.cc/100?img=12" alt="User avatar">
+                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="User avatar">
                   </v-avatar>
                   <div class="coach-name">Maksims Richards</div>
                   <div class="coach-groups">
@@ -337,6 +337,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { createAvatarDataUri } from '../utils/avatar'
 
 const search = ref('')
 const darkMode = ref(false)
@@ -344,6 +345,7 @@ const currentMonth = ref(new Date('2026-07-01'))
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const darkModeStorageKey = 'app-dark-mode'
+const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
 
 const navItems = [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },

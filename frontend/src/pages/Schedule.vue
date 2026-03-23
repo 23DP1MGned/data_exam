@@ -42,7 +42,7 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
               </v-avatar>
               <div>
                 <div class="profile-name">Maksims Richards</div>
@@ -122,7 +122,7 @@
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
                   </v-avatar>
                   <div>
                     <div class="profile-name">Maksims Richards</div>
@@ -178,7 +178,7 @@
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
                   </v-avatar>
                   <div>
                     <div class="profile-name">Maksims Richards</div>
@@ -471,6 +471,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { createAvatarDataUri } from '../utils/avatar'
 
 const search = ref('')
 const tab = ref('upcoming')
@@ -499,6 +500,8 @@ const navItems = [
   { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
   { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
 ]
+
+const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
 
 const trainings = ref([
   {
@@ -720,6 +723,8 @@ const trainings = ref([
   }
 ])
 
+trainings.value = trainings.value.map(withTrainingAvatars)
+
 const newTraining = ref({
   title: '',
   date: '',
@@ -879,13 +884,12 @@ function saveTraining() {
       }
     }
   } else {
-    trainings.value.push({
+    trainings.value.push(withTrainingAvatars({
       id: Date.now(),
       ...newTraining.value,
       group: newTraining.value.group || 'New Group',
-      avatar: 'https://i.pravatar.cc/100?img=25',
       students: []
-    })
+    }))
   }
 
   dialog.value = false
@@ -947,6 +951,17 @@ function resetSort() {
 
 function updateViewportState() {
   isCompactNav.value = window.innerWidth <= 1024
+}
+
+function withTrainingAvatars(training) {
+  return {
+    ...training,
+    avatar: avatarFor(`trainer-${training.trainer}`, training.trainer),
+    students: (training.students || []).map((student) => ({
+      ...student,
+      avatar: avatarFor(`student-${student.name}`, student.name)
+    }))
+  }
 }
 </script>
 

@@ -42,7 +42,7 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
               </v-avatar>
               <div>
                 <div class="profile-name">Maksims Richards</div>
@@ -122,7 +122,7 @@
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
                   </v-avatar>
                   <div>
                     <div class="profile-name">Maksims Richards</div>
@@ -169,7 +169,7 @@
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
                   </v-avatar>
                   <div>
                     <div class="profile-name">Maksims Richards</div>
@@ -183,7 +183,7 @@
               <div class="payments-header">
                 <div>
                   <h1 class="payments-title">Payments</h1>
-                  <div class="payments-subtitle">Overview of balances, transactions and recent activity</div>
+                  <div class="payments-subtitle">Overview of balances, recent activity and spending breakdown</div>
                 </div>
               </div>
 
@@ -292,7 +292,7 @@
               <div class="lists-grid">
                 <section class="list-card">
                   <div class="list-header">
-                    <div class="list-title">Transactions</div>
+                    <div class="list-title">Recent Activity</div>
                     <button type="button" class="show-all-btn" @click="transactionsDialog = true">
                       Show all
                     </button>
@@ -300,17 +300,21 @@
 
                   <div class="list-wrap">
                     <article
-                      v-for="item in previewTransactions"
+                      v-for="item in previewRecentActivity"
                       :key="item.id"
                       class="payment-item"
                     >
-                      <div>
+                      <div class="payment-main">
                         <div class="payment-name">{{ item.name }}</div>
-                        <div class="payment-meta">{{ item.date }}</div>
+                        <div class="payment-meta">
+                          {{ item.date }}
+                          <span v-if="item.method"> · {{ item.method }}</span>
+                        </div>
+                        <div v-if="item.detail" class="payment-secondary">{{ item.detail }}</div>
                       </div>
 
                       <div class="payment-side">
-                        <div class="payment-amount">€{{ item.amount }}</div>
+                        <div class="payment-amount">{{ formatCurrency(item.amount) }}</div>
                         <v-chip size="small" :color="getStatusColor(item.status)" class="payment-chip" dark>
                           {{ item.status }}
                         </v-chip>
@@ -321,28 +325,25 @@
 
                 <section class="list-card">
                   <div class="list-header">
-                    <div class="list-title">Recent Payments</div>
-                    <button type="button" class="show-all-btn" @click="paymentsDialog = true">
+                    <div class="list-title">Spending Breakdown</div>
+                    <button type="button" class="show-all-btn" @click="breakdownDialog = true">
                       Show all
                     </button>
                   </div>
 
                   <div class="list-wrap">
                     <article
-                      v-for="item in previewPayments"
-                      :key="item.id"
-                      class="payment-item"
+                      v-for="item in spendingBreakdown"
+                      :key="item.category"
+                      class="payment-item breakdown-item"
                     >
-                      <div>
-                        <div class="payment-name">{{ item.name }}</div>
-                        <div class="payment-meta">{{ item.method }}</div>
+                      <div class="payment-main">
+                        <div class="payment-name">{{ item.category }}</div>
+                        <div class="payment-meta">{{ item.percentage }} of total spending</div>
                       </div>
 
                       <div class="payment-side">
-                        <div class="payment-amount">€{{ item.amount }}</div>
-                        <v-chip size="small" :color="getStatusColor(item.status)" class="payment-chip" dark>
-                          {{ item.status }}
-                        </v-chip>
+                        <div class="payment-amount">{{ formatCurrency(item.amount) }}</div>
                       </div>
                     </article>
                   </div>
@@ -356,8 +357,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Transactions</div>
-                <div class="list-dialog-subtitle">Complete list of payment transactions for your trainings.</div>
+                <div class="list-dialog-title">All Recent Activity</div>
+                <div class="list-dialog-subtitle">Unified timeline of completed trainings and payment actions.</div>
               </div>
 
               <v-btn icon variant="text" @click="transactionsDialog = false">
@@ -367,17 +368,21 @@
 
             <div class="dialog-list-wrap">
               <article
-                v-for="item in transactions"
-                :key="`dialog-transaction-${item.id}`"
+                v-for="item in recentActivity"
+                :key="`dialog-activity-${item.id}`"
                 class="payment-item"
               >
-                <div>
+                <div class="payment-main">
                   <div class="payment-name">{{ item.name }}</div>
-                  <div class="payment-meta">{{ item.date }}</div>
+                  <div class="payment-meta">
+                    {{ item.date }}
+                    <span v-if="item.method"> · {{ item.method }}</span>
+                  </div>
+                  <div v-if="item.detail" class="payment-secondary">{{ item.detail }}</div>
                 </div>
 
                 <div class="payment-side">
-                  <div class="payment-amount">€{{ item.amount }}</div>
+                  <div class="payment-amount">{{ formatCurrency(item.amount) }}</div>
                   <v-chip size="small" :color="getStatusColor(item.status)" class="payment-chip" dark>
                     {{ item.status }}
                   </v-chip>
@@ -423,6 +428,38 @@
                   <v-btn color="primary" class="pay-btn" icon @click="openPayDialog(item)">
                     <v-icon>mdi-credit-card-outline</v-icon>
                   </v-btn>
+                </div>
+              </article>
+            </div>
+          </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="breakdownDialog" max-width="720">
+          <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
+            <div class="list-dialog-header">
+              <div>
+                <div class="list-dialog-title">All Spending Breakdown</div>
+                <div class="list-dialog-subtitle">Grouped paid spending by category with total amount and share.</div>
+              </div>
+
+              <v-btn icon variant="text" @click="breakdownDialog = false">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </div>
+
+            <div class="dialog-list-wrap">
+              <article
+                v-for="item in spendingBreakdown"
+                :key="`dialog-breakdown-${item.category}`"
+                class="payment-item breakdown-item"
+              >
+                <div class="payment-main">
+                  <div class="payment-name">{{ item.category }}</div>
+                  <div class="payment-meta">{{ item.percentage }} of total spending</div>
+                </div>
+
+                <div class="payment-side">
+                  <div class="payment-amount">{{ formatCurrency(item.amount) }}</div>
                 </div>
               </article>
             </div>
@@ -490,40 +527,6 @@
           </v-card>
         </v-dialog>
 
-        <v-dialog v-model="paymentsDialog" max-width="720">
-          <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
-            <div class="list-dialog-header">
-              <div>
-                <div class="list-dialog-title">All Recent Payments</div>
-                <div class="list-dialog-subtitle">Full list of recent payment methods, amounts and statuses.</div>
-              </div>
-
-              <v-btn icon variant="text" @click="paymentsDialog = false">
-                <v-icon>mdi-close</v-icon>
-              </v-btn>
-            </div>
-
-            <div class="dialog-list-wrap">
-              <article
-                v-for="item in payments"
-                :key="`dialog-payment-${item.id}`"
-                class="payment-item"
-              >
-                <div>
-                  <div class="payment-name">{{ item.name }}</div>
-                  <div class="payment-meta">{{ item.method }}</div>
-                </div>
-
-                <div class="payment-side">
-                  <div class="payment-amount">€{{ item.amount }}</div>
-                  <v-chip size="small" :color="getStatusColor(item.status)" class="payment-chip" dark>
-                    {{ item.status }}
-                  </v-chip>
-                </div>
-              </article>
-            </div>
-          </v-card>
-        </v-dialog>
       </div>
     </v-main>
   </v-app>
@@ -531,11 +534,12 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { createAvatarDataUri } from '../utils/avatar'
 
 const search = ref('')
 const darkMode = ref(false)
 const transactionsDialog = ref(false)
-const paymentsDialog = ref(false)
+const breakdownDialog = ref(false)
 const dueTrainingsDialog = ref(false)
 const payDialog = ref(false)
 const mobileMenuOpen = ref(false)
@@ -544,6 +548,7 @@ const selectedDueTrainingId = ref(null)
 const selectedPaymentMethod = ref('Card')
 const accountBalance = ref(1560)
 const darkModeStorageKey = 'app-dark-mode'
+const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
 
 const navItems = [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
@@ -559,6 +564,7 @@ const dueTrainings = ref([
     name: 'Football Training',
     date: '26 Mar',
     deadline: '25 Mar',
+    category: 'Football',
     group: 'Football U14',
     trainer: 'Kristaps Bērziņš',
     amount: 40,
@@ -569,6 +575,7 @@ const dueTrainings = ref([
     name: 'Swimming Session',
     date: '28 Mar',
     deadline: '27 Mar',
+    category: 'Swimming',
     group: 'Swimming Beginners',
     trainer: 'Laura Ozola',
     amount: 35,
@@ -579,6 +586,7 @@ const dueTrainings = ref([
     name: 'Boxing Practice',
     date: '29 Mar',
     deadline: '28 Mar',
+    category: 'Boxing',
     group: 'Junior Boxing',
     trainer: 'Mārtiņš Liepa',
     amount: 50,
@@ -589,6 +597,7 @@ const dueTrainings = ref([
     name: 'Running Club',
     date: '31 Mar',
     deadline: '30 Mar',
+    category: 'Running',
     group: 'Running Club',
     trainer: 'Elīna Kalniņa',
     amount: 30,
@@ -599,6 +608,7 @@ const dueTrainings = ref([
     name: 'Basketball Practice',
     date: '2 Apr',
     deadline: '1 Apr',
+    category: 'Basketball',
     group: 'Basketball Teens',
     trainer: 'Artūrs Jansons',
     amount: 45,
@@ -631,30 +641,28 @@ const chartAreaPath = computed(() => {
 })
 
 const transactions = ref([
-  { id: 1, name: 'Football Training', date: '12 Mar', amount: 40, status: 'Paid' },
-  { id: 2, name: 'Basketball', date: '10 Mar', amount: 35, status: 'Pending' },
-  { id: 3, name: 'Swimming', date: '8 Mar', amount: 50, status: 'Overdue' },
-  { id: 4, name: 'Boxing Session', date: '6 Mar', amount: 45, status: 'Paid' },
-  { id: 5, name: 'Yoga Class', date: '4 Mar', amount: 30, status: 'Paid' },
-  { id: 6, name: 'Tennis Practice', date: '2 Mar', amount: 55, status: 'Pending' },
-  { id: 7, name: 'Dance Training', date: '28 Feb', amount: 40, status: 'Paid' },
-  { id: 8, name: 'Athletics Session', date: '26 Feb', amount: 35, status: 'Overdue' }
+  { id: 1, name: 'Football Training', date: '12 Mar', amount: 40, status: 'Paid', category: 'Football', detail: 'Completed training event' },
+  { id: 2, name: 'Basketball Practice', date: '10 Mar', amount: 35, status: 'Missed', category: 'Basketball', detail: 'Completed training event' },
+  { id: 3, name: 'Swimming Session', date: '8 Mar', amount: 50, status: 'Paid', category: 'Swimming', detail: 'Completed training event' },
+  { id: 4, name: 'Boxing Session', date: '6 Mar', amount: 45, status: 'Paid', category: 'Boxing', detail: 'Completed training event' },
+  { id: 5, name: 'Yoga Class', date: '4 Mar', amount: 30, status: 'Missed', category: 'Yoga', detail: 'Completed training event' },
+  { id: 6, name: 'Tennis Practice', date: '2 Mar', amount: 55, status: 'Paid', category: 'Tennis', detail: 'Completed training event' },
+  { id: 7, name: 'Dance Training', date: '28 Feb', amount: 40, status: 'Paid', category: 'Dance', detail: 'Completed training event' },
+  { id: 8, name: 'Athletics Session', date: '26 Feb', amount: 35, status: 'Missed', category: 'Athletics', detail: 'Completed training event' }
 ])
 
 const payments = ref([
-  { id: 1, name: 'John Doe', method: 'Card', amount: 40, status: 'Paid' },
-  { id: 2, name: 'Anna Smith', method: 'Account balance', amount: 35, status: 'Returned' },
-  { id: 3, name: 'Mark Lee', method: 'Card', amount: 50, status: 'Paid' },
-  { id: 4, name: 'Sophie Turner', method: 'Account balance', amount: 25, status: 'Returned' },
-  { id: 5, name: 'Daniel Young', method: 'Card', amount: 60, status: 'Paid' },
-  { id: 6, name: 'Emily Carter', method: 'Card', amount: 45, status: 'Paid' },
-  { id: 7, name: 'Oliver Grant', method: 'Account balance', amount: 30, status: 'Returned' },
-  { id: 8, name: 'Mia Johnson', method: 'Card', amount: 55, status: 'Paid' }
+  { id: 1, name: 'Football Training', date: '12 Mar', method: 'Card', amount: 40, status: 'Paid', category: 'Football', detail: 'Payment action' },
+  { id: 2, name: 'Swimming Session', date: '11 Mar', method: 'Account balance', amount: 35, status: 'Returned', category: 'Swimming', detail: 'Payment action' },
+  { id: 3, name: 'Boxing Session', date: '8 Mar', method: 'Card', amount: 50, status: 'Paid', category: 'Boxing', detail: 'Payment action' },
+  { id: 4, name: 'Running Club', date: '5 Mar', method: 'Account balance', amount: 25, status: 'Returned', category: 'Running', detail: 'Payment action' },
+  { id: 5, name: 'Basketball Practice', date: '3 Mar', method: 'Card', amount: 60, status: 'Paid', category: 'Basketball', detail: 'Payment action' },
+  { id: 6, name: 'Tennis Practice', date: '1 Mar', method: 'Card', amount: 45, status: 'Paid', category: 'Tennis', detail: 'Payment action' }
 ])
 
 const normalizedSearch = computed(() => search.value.trim().toLowerCase())
 const totalPaid = computed(() =>
-  transactions.value
+  payments.value
     .filter((item) => item.status === 'Paid')
     .reduce((sum, item) => sum + item.amount, 0)
 )
@@ -677,13 +685,28 @@ const summaryCards = computed(() => [
   { label: 'Overdue', value: formatCurrency(overdueTotal.value) }
 ])
 
-const filteredTransactions = computed(() => {
-  if (!normalizedSearch.value) return transactions.value
+const recentActivity = computed(() =>
+  [...transactions.value, ...payments.value]
+    .map((item) => ({
+      id: `${item.method ? 'payment' : 'training'}-${item.id}`,
+      name: item.name,
+      date: item.date,
+      amount: item.amount,
+      method: item.method ?? '',
+      status: item.status,
+      detail: item.detail ?? '',
+      sortValue: parseShortDate(item.date).getTime()
+    }))
+    .sort((a, b) => b.sortValue - a.sortValue)
+)
 
-  return transactions.value.filter((item) =>
-    [item.name, item.date, item.status].some((value) =>
-      value.toLowerCase().includes(normalizedSearch.value)
-    )
+const filteredRecentActivity = computed(() => {
+  if (!normalizedSearch.value) return recentActivity.value
+
+  return recentActivity.value.filter((item) =>
+    [item.name, item.date, item.method, item.status, item.detail]
+      .filter(Boolean)
+      .some((value) => value.toLowerCase().includes(normalizedSearch.value))
   )
 })
 
@@ -697,26 +720,32 @@ const filteredDueTrainings = computed(() => {
   )
 })
 
-const filteredPayments = computed(() => {
-  if (!normalizedSearch.value) return payments.value
-
-  return payments.value.filter((item) =>
-    [item.name, item.method, item.status].some((value) =>
-      value.toLowerCase().includes(normalizedSearch.value)
-    )
-  )
-})
-
 const selectedDueTraining = computed(() =>
   dueTrainings.value.find((item) => item.id === selectedDueTrainingId.value) ?? null
 )
 
 const previewDueTrainings = computed(() => filteredDueTrainings.value.slice(0, 3))
-const previewTransactions = computed(() => filteredTransactions.value.slice(0, 3))
-const previewPayments = computed(() => filteredPayments.value.slice(0, 3))
+const previewRecentActivity = computed(() => filteredRecentActivity.value.slice(0, 3))
+const spendingBreakdown = computed(() => {
+  const paidPayments = payments.value.filter((item) => item.status === 'Paid')
+  const total = paidPayments.reduce((sum, item) => sum + item.amount, 0)
+  const grouped = paidPayments.reduce((acc, item) => {
+    acc[item.category] = (acc[item.category] || 0) + item.amount
+    return acc
+  }, {})
+
+  return Object.entries(grouped)
+    .map(([category, amount]) => ({
+      category,
+      amount,
+      percentage: total ? `${Math.round((amount / total) * 100)}%` : '0%'
+    }))
+    .sort((a, b) => b.amount - a.amount)
+})
 
 const getStatusColor = (status) => {
   if (status === 'Paid') return 'green'
+  if (status === 'Missed') return 'red'
   if (status === 'Returned') return 'blue-grey'
   if (status === 'Pending') return 'orange'
   if (status === 'Overdue') return 'red'
@@ -778,13 +807,25 @@ function confirmPayment() {
   payments.value.unshift({
     id: nextId + 1,
     name: training.name,
+    date: formatToday(),
     method: selectedPaymentMethod.value,
     amount: training.amount,
-    status: 'Paid'
+    status: 'Paid',
+    category: training.category,
+    detail: 'Payment action'
   })
 
   dueTrainings.value = dueTrainings.value.filter((item) => item.id !== training.id)
+  selectedDueTrainingId.value = null
   payDialog.value = false
+}
+
+function parseShortDate(value) {
+  return new Date(`${value} 2026`)
+}
+
+function formatToday() {
+  return new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }).replace(',', '')
 }
 </script>
 

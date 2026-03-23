@@ -42,7 +42,7 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
               </v-avatar>
               <div>
                 <div class="profile-name">Maksims Richards</div>
@@ -122,7 +122,7 @@
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
                   </v-avatar>
                   <div>
                     <div class="profile-name">Maksims Richards</div>
@@ -173,7 +173,7 @@
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
                   </v-avatar>
                   <div>
                     <div class="profile-name">Maksims Richards</div>
@@ -358,6 +358,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { createAvatarDataUri } from '../utils/avatar'
 
 const search = ref('')
 const darkMode = ref(false)
@@ -376,6 +377,8 @@ const navItems = [
   { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
 ]
 
+const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
+
 const groups = ref([
   { id: 1, trainer: 'Jānis Ozols', section: 'Football U14', days: 'Mon / Wed', time: '17:00', students: 12, price: 50, attendance: 85, avatar: 'https://i.pravatar.cc/100?img=1' },
   { id: 2, trainer: 'Alex Johnson', section: 'Basketball', days: 'Tue / Thu', time: '19:00', students: 10, price: 60, attendance: 78, avatar: 'https://i.pravatar.cc/100?img=2' },
@@ -384,6 +387,8 @@ const groups = ref([
   { id: 5, trainer: 'David Brown', section: 'Boxing', days: 'Mon / Thu', time: '18:00', students: 9, price: 55, attendance: 80, avatar: 'https://i.pravatar.cc/100?img=5' },
   { id: 6, trainer: 'Olga Ivanova', section: 'Yoga', days: 'Tue / Sat', time: '10:00', students: 11, price: 35, attendance: 95, avatar: 'https://i.pravatar.cc/100?img=6' }
 ])
+
+groups.value = groups.value.map(withGroupAvatar)
 
 const newGroup = ref({
   section: '',
@@ -442,15 +447,16 @@ function openCreateDialog() {
 
 function saveGroup() {
   groups.value.unshift({
-    id: Date.now(),
-    section: newGroup.value.section || 'New Group',
-    trainer: newGroup.value.trainer || 'New Trainer',
-    days: newGroup.value.days || 'Mon / Wed',
-    time: newGroup.value.time || '17:00',
-    students: Number(newGroup.value.students) || 0,
-    price: Number(newGroup.value.price) || 0,
-    attendance: calculateAttendance(Number(newGroup.value.students) || 0),
-    avatar: `https://i.pravatar.cc/100?u=${Date.now()}`
+    ...withGroupAvatar({
+      id: Date.now(),
+      section: newGroup.value.section || 'New Group',
+      trainer: newGroup.value.trainer || 'New Trainer',
+      days: newGroup.value.days || 'Mon / Wed',
+      time: newGroup.value.time || '17:00',
+      students: Number(newGroup.value.students) || 0,
+      price: Number(newGroup.value.price) || 0,
+      attendance: calculateAttendance(Number(newGroup.value.students) || 0)
+    })
   })
 
   if (selectedSort.value === 'az') sortAZ()
@@ -481,6 +487,13 @@ function resetSort() {
 
 function updateViewportState() {
   isCompactNav.value = window.innerWidth <= 1024
+}
+
+function withGroupAvatar(group) {
+  return {
+    ...group,
+    avatar: avatarFor(`group-${group.section}-${group.trainer}`, group.section)
+  }
 }
 </script>
 
