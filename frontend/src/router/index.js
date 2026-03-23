@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import Login from '../pages/Login.vue'
-import Dashboard from '../pages/Dashboard.vue'
+import Home from '../pages/Dashboard.vue'
 import Register from '../pages/Register.vue'
 import Groups from '../pages/Groups.vue'
 import Schedule from '../pages/Schedule.vue'
@@ -19,7 +19,11 @@ const routes = [
   },
   {
     path: '/dashboard',
-    component: Dashboard
+    redirect: '/home'
+  },
+  {
+    path: '/home',
+    component: Home
   },
   {
     path: '/register',

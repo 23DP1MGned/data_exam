@@ -21,7 +21,7 @@
                 :to="item.to || undefined"
                 variant="text"
                 class="nav-item"
-                :class="{ 'nav-item-active': item.to === '/dashboard' }"
+                :class="{ 'nav-item-active': item.to === '/home' }"
                 block
               >
                 <template #prepend>
@@ -39,7 +39,7 @@
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
                   <v-text-field
                     v-model="search"
-                    label="Search schedule"
+                    label="Search overview"
                     variant="plain"
                     hide-details
                     density="comfortable"
@@ -83,144 +83,73 @@
             <div class="schedule-card">
               <div class="schedule-header">
                 <div>
-                  <h1 class="schedule-title">Schedule</h1>
-                  <div class="schedule-subtitle">Today {{ todayLabel }}</div>
+                  <h1 class="schedule-title">Home Overview</h1>
+                  <div class="schedule-subtitle">Quick summary of trainings, groups, notifications and attendance</div>
                 </div>
 
                 <v-btn
                   color="primary"
                   class="create-btn"
-                  prepend-icon="mdi-plus"
-                  @click="openCreate"
+                  prepend-icon="mdi-calendar-month-outline"
+                  to="/schedule"
                 >
-                  Create training
+                  View full schedule
                 </v-btn>
               </div>
 
-              <div class="toolbar-row">
-                <div class="pill-tabs">
-                  <button
-                    v-for="item in tabs"
-                    :key="item.value"
-                    type="button"
-                    class="pill-tab"
-                    :class="{ 'pill-tab-active': tab === item.value }"
-                    @click="tab = item.value"
-                  >
-                    {{ item.label }}
-                  </button>
-                </div>
-
-                <div class="toolbar-actions">
-                  <v-btn variant="outlined" class="toolbar-btn" @click="filterDialog = true">
-                    <v-icon start size="18">mdi-tune-variant</v-icon>
-                    Filters
-                  </v-btn>
-                </div>
+              <div class="overview-stats-grid">
+                <article v-for="item in overviewStats" :key="item.label" class="overview-stat-card">
+                  <div class="summary-label">{{ item.label }}</div>
+                  <div class="summary-value">{{ item.value }}</div>
+                </article>
               </div>
 
-              <div
-                v-for="group in groupedTrainings"
-                :key="group.label"
-                class="day-group"
-              >
-                <div class="day-label">
-                  <span class="day-primary">{{ group.title }}</span>
-                  <span class="day-secondary">{{ group.label }}</span>
-                </div>
-
-                <div
-                  v-for="training in group.items"
-                  :key="training.id"
-                  class="schedule-item"
-                  :class="{ 'schedule-item-expanded': expandedId === training.id }"
-                >
-                  <div class="schedule-grid">
-                    <div class="slot-block">
-                      <div class="meta-label">Date</div>
-                      <div class="slot-value">{{ formatCardDate(training.date) }}</div>
-                    </div>
-
-                    <div class="slot-block">
-                      <div class="meta-label">From</div>
-                      <div class="slot-value">{{ training.start }}</div>
-                    </div>
-
-                    <div class="slot-block">
-                      <div class="meta-label">To</div>
-                      <div class="slot-value">{{ training.end }}</div>
-                    </div>
-
-                    <div class="course-block">
-                      <div class="meta-label">Training</div>
-                      <div class="course-title">{{ training.title }}</div>
-
-                      <template v-if="expandedId === training.id">
-                        <div class="meta-label section-gap">Description</div>
-                        <div class="course-subtitle">{{ training.description }}</div>
-
-                        <div class="meta-label section-gap">Group</div>
-                        <div class="meeting-link">{{ training.group }}</div>
-                      </template>
-                    </div>
-
-                    <div class="teacher-block">
-                      <div class="teacher-summary">
-                        <v-avatar size="46" class="teacher-avatar">
-                          <img :src="training.avatar" :alt="training.trainer">
-                        </v-avatar>
-                        <div>
-                          <div class="meta-label">Trainer</div>
-                          <div class="teacher-name">{{ training.trainer }}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="expand-block">
-                      <button
-                        type="button"
-                        class="expand-link"
-                        @click="toggleExpanded(training.id)"
-                      >
-                        {{ expandedId === training.id ? 'Show less' : 'Show more' }}
-                      </button>
-                    </div>
+              <div class="overview-grid">
+                <section class="overview-card">
+                  <div class="overview-card-header">
+                    <div class="list-title">Next 3 Days Trainings</div>
+                    <v-btn variant="text" color="primary" to="/schedule">View full schedule</v-btn>
                   </div>
 
-                  <div v-if="expandedId === training.id" class="schedule-footer">
-                    <div class="students-block">
-                      <div class="meta-label">Students</div>
-                      <div class="students-row">
-                        <v-avatar
-                          v-for="student in training.students.slice(0, 4)"
-                          :key="student.id"
-                          size="44"
-                          class="student-avatar"
-                        >
-                          <img :src="student.avatar" :alt="student.name">
-                        </v-avatar>
-                        <div class="student-more">+{{ training.students.length }}</div>
+                  <div class="list-wrap">
+                    <article
+                      v-for="training in nextThreeDaysTrainings.slice(0, 5)"
+                      :key="training.id"
+                      class="overview-item"
+                    >
+                      <div>
+                        <div class="payment-name">{{ training.title }}</div>
+                        <div class="payment-meta">{{ training.trainer }} • {{ formatOverviewDate(training.date) }}</div>
                       </div>
-                    </div>
+                      <div class="payment-side">
+                        <div class="payment-amount">{{ training.start }} - {{ training.end }}</div>
+                      </div>
+                    </article>
 
-                    <div class="action-row">
-                      <v-btn variant="outlined" color="error" class="action-btn">
-                        Cancel
-                      </v-btn>
-                      <v-btn
-                        variant="outlined"
-                        color="primary"
-                        class="action-btn"
-                        @click="openEdit(training)"
-                      >
-                        Edit
-                      </v-btn>
-                      <v-btn color="primary" class="action-btn">
-                        Attendance
-                      </v-btn>
+                    <div v-if="!nextThreeDaysTrainings.length" class="empty-state">
+                      No trainings scheduled for the next three days.
                     </div>
                   </div>
-                </div>
+                </section>
+
+                <section class="overview-card">
+                  <div class="overview-card-header">
+                    <div class="list-title">Notifications</div>
+                  </div>
+
+                  <div class="list-wrap">
+                    <article
+                      v-for="item in notifications"
+                      :key="item.id"
+                      class="overview-item"
+                    >
+                      <div>
+                        <div class="payment-name">{{ item.title }}</div>
+                        <div class="payment-meta">{{ item.time }}</div>
+                      </div>
+                    </article>
+                  </div>
+                </section>
               </div>
             </div>
           </section>
@@ -257,7 +186,7 @@
               <div>
                 <div class="filter-dialog-title">Filters</div>
                 <div class="filter-dialog-subtitle">
-                  Sort trainings by time or title without leaving the dashboard view.
+                  Sort trainings by time or title without leaving the home overview.
                 </div>
               </div>
 
@@ -332,25 +261,18 @@
 import { computed, ref } from 'vue'
 
 const search = ref('')
-const tab = ref('upcoming')
 const dialog = ref(false)
 const filterDialog = ref(false)
 const isEditing = ref(false)
 const editingId = ref(null)
-const expandedId = ref(1)
 const selectedSort = ref('time')
 const darkMode = ref(false)
 
-const tabs = [
-  { value: 'upcoming', label: 'Upcoming' },
-  { value: 'past', label: 'Past' }
-]
-
 const navItems = [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/dashboard' },
+  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
   { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-  { label: 'Attendance', icon: 'mdi-check-circle-outline' },
+  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
   { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
 ]
 
@@ -423,6 +345,12 @@ const trainings = ref([
   }
 ])
 
+const notifications = ref([
+  { id: 1, title: 'Training canceled for Football U14', time: '10 minutes ago' },
+  { id: 2, title: 'New payment received from Basketball Juniors', time: '1 hour ago' },
+  { id: 3, title: 'Attendance report for Running Club is ready', time: 'Today, 08:20 AM' }
+])
+
 const newTraining = ref({
   title: '',
   date: '',
@@ -432,56 +360,68 @@ const newTraining = ref({
   description: ''
 })
 
-const todayLabel = computed(() =>
-  new Date('2026-03-23').toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  })
-)
+const overviewQuery = computed(() => search.value.trim().toLowerCase())
+const todayKey = computed(() => new Date().toISOString().slice(0, 10))
+const threeDaysAheadKey = computed(() => {
+  const date = new Date()
+  date.setDate(date.getDate() + 2)
+  return date.toISOString().slice(0, 10)
+})
 
-const filteredTrainings = computed(() => {
+const nextThreeDaysTrainings = computed(() => {
   const query = search.value.trim().toLowerCase()
 
   return trainings.value.filter((training) => {
-    const matchesTab = tab.value === 'upcoming'
-      ? training.status !== 'past'
-      : training.status === tab.value
-
-    if (!matchesTab) return false
+    const isWithinNextThreeDays = training.date >= todayKey.value && training.date <= threeDaysAheadKey.value
+    if (!isWithinNextThreeDays) return false
     if (!query) return true
 
     return [
       training.title,
-      training.description,
       training.trainer,
       training.group
     ].some((value) => value.toLowerCase().includes(query))
   })
 })
 
-const groupedTrainings = computed(() => {
-  const groups = new Map()
-
-  filteredTrainings.value.forEach((training) => {
-    if (!groups.has(training.date)) groups.set(training.date, [])
-    groups.get(training.date).push(training)
-  })
-
-  return Array.from(groups.entries()).map(([date, items], index) => ({
-    title: index === 0 ? 'Today' : 'Tomorrow',
-    label: new Date(date).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    }),
-    items
-  }))
+const pendingPayments = computed(() => 4)
+const attendanceRate = computed(() => {
+  const attendedSessions = 18
+  const totalSessions = 22
+  return `${Math.round((attendedSessions / totalSessions) * 100)}%`
 })
 
-function toggleExpanded(id) {
-  expandedId.value = expandedId.value === id ? null : id
-}
+const nextTrainingCountdown = computed(() => {
+  const now = new Date()
+
+  const upcomingTrainings = trainings.value
+    .map((training) => ({
+      ...training,
+      startAt: parseTrainingDateTime(training.date, training.start)
+    }))
+    .filter((training) => training.startAt.getTime() > now.getTime())
+    .sort((a, b) => a.startAt.getTime() - b.startAt.getTime())
+
+  const nextTraining = upcomingTrainings[0]
+  if (!nextTraining) return 'No upcoming'
+
+  const diffMs = nextTraining.startAt.getTime() - now.getTime()
+  const totalMinutes = Math.max(0, Math.floor(diffMs / 60000))
+  const days = Math.floor(totalMinutes / (60 * 24))
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60)
+  const minutes = totalMinutes % 60
+
+  if (days > 0) return `${days}d ${hours}h`
+  if (hours > 0) return `${hours}h ${minutes}m`
+  return `${minutes}m`
+})
+
+const overviewStats = computed(() => [
+  { label: 'Trainings in 3 days', value: nextThreeDaysTrainings.value.length },
+  { label: 'Next training countdown', value: nextTrainingCountdown.value },
+  { label: 'Pending payments', value: pendingPayments.value },
+  { label: 'Attendance rate', value: attendanceRate.value }
+])
 
 function openCreate() {
   isEditing.value = false
@@ -539,7 +479,22 @@ function parseTime(value) {
   return new Date(`1970-01-01 ${value}`).getTime()
 }
 
-function formatCardDate(value) {
+function parseTrainingDateTime(date, time) {
+  return new Date(`${date}T${convertTo24Hour(time)}:00`)
+}
+
+function convertTo24Hour(value) {
+  const [time, modifier] = value.split(' ')
+  let [hours, minutes] = time.split(':')
+  let parsedHours = Number(hours)
+
+  if (modifier === 'PM' && parsedHours !== 12) parsedHours += 12
+  if (modifier === 'AM' && parsedHours === 12) parsedHours = 0
+
+  return `${String(parsedHours).padStart(2, '0')}:${minutes}`
+}
+
+function formatOverviewDate(value) {
   return new Date(value).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric'
@@ -842,197 +797,108 @@ function resetSort() {
   box-shadow: 0 18px 34px rgba(22, 119, 255, 0.28);
 }
 
-.toolbar-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 28px;
+.overview-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.pill-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.pill-tab {
-  min-height: 48px;
-  padding: 0 18px;
-  border: 1px solid rgba(191, 203, 224, 0.84);
-  border-radius: 999px;
-  color: #6b7280;
-  background: rgba(255, 255, 255, 0.9);
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.pill-tab-active {
-  border-color: transparent;
-  color: white;
-  background: linear-gradient(180deg, #1677ff 0%, #0f5fe3 100%);
-  box-shadow: 0 14px 26px rgba(22, 119, 255, 0.24);
-}
-
-.toolbar-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.toolbar-btn {
-  min-height: 48px;
-  padding: 0 18px;
-  border-radius: 18px;
-  text-transform: none;
-  letter-spacing: 0;
-  color: #162033;
-  background: rgba(255, 255, 255, 0.8);
-}
-
-.day-group + .day-group {
-  margin-top: 34px;
-}
-
-.day-label {
-  margin-bottom: 16px;
-  font-size: 1.22rem;
-}
-
-.day-primary {
-  margin-right: 10px;
-  font-weight: 700;
-  color: #111827;
-}
-
-.day-secondary {
-  color: #6b7280;
-}
-
-.schedule-item {
-  margin-bottom: 16px;
-  padding: 24px 26px;
+.overview-stat-card,
+.overview-card {
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.84);
   box-shadow: 0 12px 28px rgba(110, 136, 173, 0.08);
 }
 
-.schedule-item-expanded {
-  border-color: rgba(22, 119, 255, 0.7);
-  box-shadow: 0 18px 36px rgba(22, 119, 255, 0.1);
+.overview-stat-card {
+  padding: 22px;
 }
 
-.schedule-grid {
+.summary-label {
+  font-size: 0.94rem;
+  color: #6f7d90;
+}
+
+.summary-value {
+  margin-top: 10px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+.overview-grid {
   display: grid;
-  grid-template-columns: 90px 90px minmax(220px, 1fr) minmax(180px, 220px) 100px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
   gap: 18px;
-  align-items: start;
+  margin-bottom: 18px;
 }
 
-.meta-label {
-  margin-bottom: 6px;
-  font-size: 0.95rem;
-  color: #7d8899;
+.overview-card {
+  padding: 22px;
 }
 
-.slot-value,
-.course-title,
-.teacher-name {
-  font-size: 1.05rem;
-  font-weight: 600;
+.overview-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.list-title {
+  font-size: 1.1rem;
+  font-weight: 700;
   color: #111827;
 }
 
-.course-title {
-  font-size: 1.1rem;
-}
-
-.course-subtitle,
-.meeting-link {
-  color: #172033;
-  font-size: 0.96rem;
-}
-
-.meeting-link {
-  word-break: break-word;
-}
-
-.section-gap {
-  margin-top: 22px;
-}
-
-.teacher-summary {
+.list-wrap {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
 }
 
-.teacher-avatar {
-  border: 2px solid rgba(255, 255, 255, 0.82);
-  box-shadow: 0 10px 20px rgba(110, 136, 173, 0.18);
-}
-
-.expand-block {
+.overview-item {
   display: flex;
-  justify-content: flex-end;
-}
-
-.expand-link {
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: #1677ff;
-  font-size: 1.02rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.schedule-footer {
-  display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  margin-top: 26px;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(244, 248, 255, 0.9);
+  border: 1px solid rgba(224, 232, 243, 0.92);
 }
 
-.students-row {
-  display: flex;
-  align-items: center;
-  margin-top: 10px;
+.payment-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #172033;
 }
 
-.student-avatar {
-  margin-right: -10px;
-  border: 3px solid white;
+.payment-meta {
+  margin-top: 4px;
+  font-size: 0.92rem;
+  color: #718096;
 }
 
-.student-more {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-left: 8px;
-  border-radius: 999px;
-  font-weight: 700;
-  color: white;
-  background: #1677ff;
-  border: 3px solid white;
+.payment-side {
+  text-align: right;
 }
 
-.action-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 12px;
+.payment-amount {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #172033;
 }
 
-.action-btn {
-  min-height: 50px;
-  padding: 0 20px;
-  border-radius: 16px;
-  text-transform: none;
-  letter-spacing: 0;
+.empty-state {
+  padding: 18px;
+  border-radius: 18px;
+  color: #708196;
+  background: rgba(244, 248, 255, 0.8);
+  border: 1px dashed rgba(188, 199, 218, 0.9);
 }
 
 .dialog-card {
@@ -1163,30 +1029,12 @@ function resetSort() {
     font-size: 0.76rem;
   }
 
-  .schedule-grid {
-    grid-template-columns: repeat(2, minmax(90px, 110px)) minmax(220px, 1fr);
+  .overview-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .teacher-block,
-  .expand-block {
-    grid-column: span 3;
-  }
-
-  .teacher-block {
-    margin-top: 6px;
-  }
-
-  .expand-block {
-    justify-content: flex-start;
-  }
-
-  .schedule-footer {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .action-row {
-    justify-content: flex-start;
+  .quick-groups-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1218,28 +1066,17 @@ function resetSort() {
   }
 
   .topbar-tools,
-  .schedule-header,
-  .toolbar-row {
+  .schedule-header {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .toolbar-actions {
-    flex-wrap: wrap;
   }
 
   .profile-pill {
     width: 100%;
   }
 
-  .schedule-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .course-block,
-  .teacher-block,
-  .expand-block {
-    grid-column: 1 / -1;
+  .overview-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1256,6 +1093,11 @@ function resetSort() {
     font-size: 1.9rem;
   }
 
+  .overview-stats-grid,
+  .quick-groups-grid {
+    grid-template-columns: 1fr;
+  }
+
   .nav-list {
     grid-template-columns: 1fr;
   }
@@ -1270,26 +1112,6 @@ function resetSort() {
 
   .top-icon-btn {
     width: 100%;
-  }
-
-  .schedule-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .expand-block {
-    justify-content: flex-start;
-  }
-
-  .schedule-item {
-    padding: 18px;
-  }
-
-  .action-row {
-    width: 100%;
-  }
-
-  .action-btn {
-    flex: 1 1 100%;
   }
 }
 
@@ -1323,10 +1145,6 @@ function resetSort() {
 
   .schedule-header {
     margin-bottom: 18px;
-  }
-
-  .toolbar-row {
-    margin-bottom: 20px;
   }
 
   .filter-dialog-card {

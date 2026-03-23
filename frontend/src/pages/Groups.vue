@@ -228,7 +228,7 @@ const filterDialog = ref(false)
 const selectedSort = ref('az')
 
 const navItems = [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/dashboard' },
+  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
   { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
   { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },

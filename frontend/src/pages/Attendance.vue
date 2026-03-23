@@ -244,7 +244,7 @@ const darkMode = ref(false)
 const currentMonth = ref(new Date('2026-07-01'))
 
 const navItems = [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/dashboard' },
+  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
   { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
   { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
