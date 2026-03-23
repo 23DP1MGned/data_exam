@@ -2,6 +2,56 @@
   <v-app>
     <v-main class="dashboard-page">
       <div class="dashboard-shell" :class="{ 'dashboard-shell-dark': darkMode }">
+        <v-navigation-drawer
+          v-if="isCompactNav && mobileMenuOpen"
+          v-model="mobileMenuOpen"
+          temporary
+          location="left"
+          width="286"
+          class="mobile-drawer"
+          :class="{ 'mobile-drawer-dark': darkMode }"
+        >
+          <div class="mobile-drawer-inner">
+            <div class="brand-block mobile-drawer-brand">
+              <div class="brand-icon">
+                <v-icon color="white">mdi-school-outline</v-icon>
+              </div>
+              <div class="brand-text">
+                <div class="brand-name">SportSystem</div>
+                <div class="brand-caption">Coach workspace</div>
+              </div>
+            </div>
+
+            <nav class="mobile-nav-list">
+              <v-btn
+                v-for="item in navItems"
+                :key="`mobile-${item.label}`"
+                :to="item.to || undefined"
+                variant="text"
+                class="nav-item"
+                :class="{ 'nav-item-active': item.to === '/home' }"
+                block
+                @click="mobileMenuOpen = false"
+              >
+                <template #prepend>
+                  <v-icon>{{ item.icon }}</v-icon>
+                </template>
+                {{ item.label }}
+              </v-btn>
+            </nav>
+
+            <div class="mobile-drawer-profile">
+              <v-avatar size="44">
+                <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+              </v-avatar>
+              <div>
+                <div class="profile-name">Maksims Richards</div>
+                <div class="profile-email">maksims@sportsystem.app</div>
+              </div>
+            </div>
+          </div>
+        </v-navigation-drawer>
+
         <div class="dashboard-panel">
           <aside class="sidebar-card">
             <div class="brand-block">
@@ -33,6 +83,64 @@
           </aside>
 
           <section class="content-shell">
+            <div class="mobile-header-card">
+              <button type="button" class="mobile-menu-btn" @click="mobileMenuOpen = true">
+                <v-icon size="24">mdi-menu</v-icon>
+              </button>
+
+              <div class="mobile-brand-inline">
+                <div class="brand-icon mobile-brand-icon">
+                  <v-icon color="white">mdi-school-outline</v-icon>
+                </div>
+                <div class="mobile-brand-copy">
+                  <div class="brand-name">SportSystem</div>
+                  <div class="brand-caption">Home</div>
+                </div>
+              </div>
+
+              <div class="mobile-header-actions">
+                <v-btn
+                  icon
+                  variant="text"
+                  class="top-icon-btn mobile-theme-btn"
+                  :class="{ 'top-icon-btn-active': darkMode }"
+                  @click="darkMode = !darkMode"
+                >
+                  <v-icon>{{ darkMode ? 'mdi-weather-night' : 'mdi-white-balance-sunny' }}</v-icon>
+                </v-btn>
+
+                <div class="icon-badge-wrap">
+                  <v-btn icon variant="text" class="top-icon-btn">
+                    <v-icon>mdi-bell-outline</v-icon>
+                  </v-btn>
+                  <span class="icon-badge">6</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mobile-search-card">
+              <div class="mobile-profile-row">
+                <div class="profile-pill mobile-profile-pill">
+                  <v-avatar size="42">
+                    <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                  </v-avatar>
+                  <div>
+                    <div class="profile-name">Maksims Richards</div>
+                    <div class="profile-email">maksims@sportsystem.app</div>
+                  </div>
+                </div>
+
+                <v-btn
+                  color="primary"
+                  class="mobile-schedule-btn"
+                  prepend-icon="mdi-calendar-month-outline"
+                  to="/schedule"
+                >
+                  Schedule
+                </v-btn>
+              </div>
+            </div>
+
             <div class="topbar-card">
               <div class="search-wrap">
                 <div class="search-shell">
@@ -89,7 +197,7 @@
 
                 <v-btn
                   color="primary"
-                  class="create-btn"
+                  class="create-btn desktop-only-btn"
                   prepend-icon="mdi-calendar-month-outline"
                   to="/schedule"
                 >
@@ -108,7 +216,7 @@
                 <section class="overview-card">
                   <div class="overview-card-header">
                     <div class="list-title">Next 3 Days Trainings</div>
-                    <v-btn variant="text" color="primary" to="/schedule">View full schedule</v-btn>
+                    <v-btn variant="text" color="primary" class="desktop-only-btn" to="/schedule">View full schedule</v-btn>
                   </div>
 
                   <div class="list-wrap">
@@ -258,7 +366,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const search = ref('')
 const dialog = ref(false)
@@ -267,6 +375,9 @@ const isEditing = ref(false)
 const editingId = ref(null)
 const selectedSort = ref('time')
 const darkMode = ref(false)
+const mobileMenuOpen = ref(false)
+const isCompactNav = ref(false)
+const darkModeStorageKey = 'app-dark-mode'
 
 const navItems = [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
@@ -424,11 +535,21 @@ const overviewStats = computed(() => [
 ])
 
 onMounted(() => {
-  darkMode.value = localStorage.getItem('home-dark-mode') === 'true'
+  darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
+  updateViewportState()
+  window.addEventListener('resize', updateViewportState)
 })
 
 watch(darkMode, (value) => {
-  localStorage.setItem('home-dark-mode', String(value))
+  localStorage.setItem(darkModeStorageKey, String(value))
+})
+
+watch(isCompactNav, (value) => {
+  if (!value) mobileMenuOpen.value = false
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateViewportState)
 })
 
 function openCreate() {
@@ -534,6 +655,10 @@ function resetSort() {
   sortTime()
   filterDialog.value = false
 }
+
+function updateViewportState() {
+  isCompactNav.value = window.innerWidth <= 1024
+}
 </script>
 
 <style scoped>
@@ -564,6 +689,64 @@ function resetSort() {
   grid-template-columns: 232px minmax(0, 1fr);
   gap: 22px;
   padding: 22px;
+}
+
+.mobile-header-card,
+.mobile-search-card {
+  display: none;
+}
+
+.mobile-drawer-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(238, 245, 255, 0.96));
+}
+
+.mobile-drawer :deep(.v-navigation-drawer__scrim),
+.mobile-drawer :deep(.v-navigation-drawer__content),
+.mobile-drawer :deep(.v-navigation-drawer__prepend),
+.mobile-drawer :deep(.v-navigation-drawer__append) {
+  background: transparent;
+}
+
+.mobile-drawer-dark {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.98)) !important;
+  color: #eef4ff;
+}
+
+.mobile-drawer-dark :deep(.v-navigation-drawer__content) {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.98));
+}
+
+.mobile-drawer-dark .mobile-drawer-inner {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.98));
+}
+
+.mobile-drawer-brand {
+  margin-bottom: 20px;
+}
+
+.mobile-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-drawer-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.dashboard-shell-dark .mobile-drawer-profile {
+  background: rgba(18, 27, 43, 0.92);
+  border: 1px solid rgba(74, 92, 126, 0.42);
 }
 
 .sidebar-card {
@@ -666,6 +849,113 @@ function resetSort() {
   display: flex;
   flex-direction: column;
   gap: 22px;
+}
+
+.mobile-header-card {
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.dashboard-shell-dark .mobile-header-card {
+  background: rgba(22, 31, 48, 0.82);
+  border-color: rgba(74, 92, 126, 0.42);
+}
+
+.mobile-menu-btn {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid rgba(223, 231, 243, 0.92);
+  border-radius: 14px;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.dashboard-shell-dark .mobile-menu-btn {
+  color: #eef4ff;
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
+.mobile-brand-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mobile-brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+}
+
+.mobile-brand-copy {
+  min-width: 0;
+}
+
+.mobile-brand-copy .brand-name,
+.mobile-brand-copy .brand-caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.mobile-theme-btn {
+  color: #111827;
+}
+
+.mobile-search-card {
+  flex-direction: column;
+  gap: 0;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.dashboard-shell-dark .mobile-search-card {
+  background: rgba(22, 31, 48, 0.82);
+  border-color: rgba(74, 92, 126, 0.42);
+}
+
+.mobile-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-profile-pill {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  padding: 10px 12px;
+}
+
+.mobile-schedule-btn {
+  min-height: 56px;
+  padding: 0 18px;
+  border-radius: 18px;
+  text-transform: none;
+  letter-spacing: 0;
+  box-shadow: 0 18px 34px rgba(22, 119, 255, 0.22);
 }
 
 .topbar-card {
@@ -812,6 +1102,10 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.82);
 }
 
+.profile-pill > div {
+  min-width: 0;
+}
+
 .dashboard-shell-dark .profile-pill {
   background: rgba(18, 27, 43, 0.92);
   border: 1px solid rgba(74, 92, 126, 0.42);
@@ -888,6 +1182,10 @@ function resetSort() {
   letter-spacing: 0;
   font-size: 1rem;
   box-shadow: 0 18px 34px rgba(22, 119, 255, 0.28);
+}
+
+.desktop-only-btn {
+  display: inline-flex;
 }
 
 .overview-stats-grid {
@@ -983,6 +1281,11 @@ function resetSort() {
   border: 1px solid rgba(224, 232, 243, 0.92);
 }
 
+.overview-item > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+
 .dashboard-shell-dark .overview-item {
   background: rgba(12, 19, 32, 0.88);
   border-color: rgba(63, 80, 114, 0.58);
@@ -992,6 +1295,7 @@ function resetSort() {
   font-size: 1rem;
   font-weight: 600;
   color: #172033;
+  overflow-wrap: anywhere;
 }
 
 .dashboard-shell-dark .payment-name,
@@ -1003,6 +1307,7 @@ function resetSort() {
   margin-top: 4px;
   font-size: 0.92rem;
   color: #718096;
+  overflow-wrap: anywhere;
 }
 
 .dashboard-shell-dark .payment-meta {
@@ -1202,97 +1507,189 @@ function resetSort() {
   .overview-stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .quick-groups-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 1024px) {
+  .desktop-only-btn {
+    display: none !important;
+  }
+
+  .mobile-schedule-btn {
+    min-width: 168px;
+    padding: 0 22px;
+  }
+
   .dashboard-panel {
     grid-template-columns: 1fr;
+    padding: 18px;
+    gap: 18px;
   }
 
   .sidebar-card {
-    min-height: auto;
+    display: none;
   }
 
-  .nav-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .mobile-header-card {
+    display: flex;
   }
 
-  .nav-item-settings {
-    margin-top: 12px;
+  .mobile-search-card {
+    display: flex;
   }
 
   .topbar-card {
-    flex-direction: column;
-    align-items: stretch;
+    display: none;
   }
 
-  .search-wrap {
-    max-width: none;
+  .schedule-card {
+    padding: 22px;
   }
 
-  .topbar-tools,
   .schedule-header {
-    flex-direction: column;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 16px;
   }
 
-  .profile-pill {
-    width: 100%;
+  .create-btn {
+    min-width: 220px;
+  }
+
+  .overview-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .overview-grid {
     grid-template-columns: 1fr;
   }
+
+  .overview-card {
+    padding: 20px;
+  }
+
+  .overview-card-header {
+    align-items: center;
+  }
+
+  .overview-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
 }
 
 @media (max-width: 768px) {
+  .dashboard-shell {
+    width: 100%;
+    max-width: none;
+    overflow: hidden;
+  }
+
   .dashboard-page {
+    padding: 10px;
+  }
+
+  .dashboard-panel {
     padding: 12px;
-  }
-
-  .schedule-card {
-    padding: 18px;
-  }
-
-  .schedule-title {
-    font-size: 1.9rem;
-  }
-
-  .overview-stats-grid,
-  .quick-groups-grid {
+    gap: 12px;
     grid-template-columns: 1fr;
   }
 
-  .nav-list {
+  .mobile-header-card,
+  .mobile-search-card {
+    display: flex;
+  }
+
+  .overview-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .topbar-card {
+    display: none;
+  }
+
+  .schedule-header {
+    margin-bottom: 20px;
+    gap: 14px;
+  }
+
+  .create-btn {
+    width: 100%;
+  }
+
+  .schedule-title {
+    font-size: 2rem;
+  }
+
+  .schedule-subtitle {
+    max-width: 34ch;
+  }
+
+  .overview-card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .overview-card-header :deep(.v-btn) {
+    justify-content: flex-start;
+    align-self: flex-start;
+    padding-left: 0;
+  }
+
+  .overview-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .payment-side {
+    text-align: left;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 900px) {
+  .dashboard-panel {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .nav-item {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+  }
+
+  .topbar-card {
     grid-template-columns: 1fr;
   }
 
   .topbar-tools {
-    gap: 10px;
+    grid-template-columns: 54px 54px minmax(0, 1fr);
   }
 
-  .icon-badge-wrap {
-    flex: 1;
+  .schedule-header {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 
-  .top-icon-btn {
+  .create-btn {
     width: 100%;
+    min-width: 0;
   }
 }
 
 @media (max-width: 560px) {
   .dashboard-shell {
     border-radius: 24px;
+    width: 100%;
+    max-width: none;
+    overflow: hidden;
   }
 
   .dashboard-panel {
-    padding: 14px;
-    gap: 14px;
+    padding: 10px;
+    gap: 10px;
   }
 
   .sidebar-card,
@@ -1302,7 +1699,8 @@ function resetSort() {
   }
 
   .brand-block {
-    align-items: flex-start;
+    margin-bottom: 14px;
+    padding: 6px 4px;
   }
 
   .brand-name {
@@ -1317,6 +1715,110 @@ function resetSort() {
     margin-bottom: 18px;
   }
 
+  .schedule-title {
+    font-size: 1.65rem;
+  }
+
+  .schedule-subtitle {
+    font-size: 0.92rem;
+  }
+
+  .schedule-card,
+  .topbar-card,
+  .sidebar-card {
+    padding: 14px;
+  }
+
+  .search-shell {
+    min-height: 52px;
+    padding: 0 14px;
+  }
+
+  .search-field :deep(.v-field__input) {
+    min-height: 52px;
+  }
+
+  .overview-stat-card,
+  .overview-card {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .summary-value {
+    font-size: 1.65rem;
+  }
+
+  .overview-item,
+  .empty-state {
+    padding: 14px;
+  }
+
+  .topbar-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-header-card {
+    padding: 12px 14px;
+    border-radius: 20px;
+  }
+
+  .mobile-search-card {
+    padding: 12px;
+    border-radius: 20px;
+  }
+
+  .mobile-menu-btn,
+  .mobile-header-actions .top-icon-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .mobile-brand-inline {
+    gap: 10px;
+  }
+
+  .mobile-brand-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .mobile-header-actions {
+    gap: 8px;
+  }
+
+  .mobile-profile-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .overview-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-header {
+    gap: 14px;
+  }
+
+  .overview-card-header :deep(.v-btn) {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .mobile-schedule-btn {
+    width: 100%;
+    min-height: 50px;
+  }
+
+  .profile-pill {
+    width: 100%;
+    gap: 10px;
+    border-radius: 18px;
+  }
+
+  .mobile-drawer-inner {
+    padding: 14px;
+  }
+
   .filter-dialog-card {
     padding: 18px;
   }
@@ -1325,6 +1827,182 @@ function resetSort() {
   .filter-dialog-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 380px) {
+  .dashboard-page {
+    padding: 8px;
+  }
+
+  .dashboard-shell {
+    border-radius: 20px;
+  }
+
+  .dashboard-panel {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .mobile-header-card,
+  .mobile-search-card,
+  .schedule-card,
+  .sidebar-card {
+    padding: 10px;
+    border-radius: 18px;
+  }
+
+  .mobile-header-card {
+    gap: 8px;
+  }
+
+  .mobile-brand-inline {
+    gap: 8px;
+  }
+
+  .mobile-brand-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+  }
+
+  .mobile-brand-copy .brand-name {
+    font-size: 0.92rem;
+  }
+
+  .mobile-brand-copy .brand-caption {
+    font-size: 0.68rem;
+  }
+
+  .mobile-menu-btn,
+  .mobile-header-actions .top-icon-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+
+  .icon-badge {
+    top: -1px;
+    right: -1px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    font-size: 0.64rem;
+  }
+
+  .schedule-title {
+    font-size: 1.45rem;
+  }
+
+  .schedule-subtitle {
+    font-size: 0.88rem;
+  }
+
+  .create-btn,
+  .mobile-schedule-btn {
+    min-height: 46px;
+    padding: 0 14px;
+    font-size: 0.92rem;
+  }
+
+  .overview-stat-card,
+  .overview-card,
+  .overview-item,
+  .empty-state {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .summary-label,
+  .payment-meta {
+    font-size: 0.84rem;
+  }
+
+  .summary-value {
+    font-size: 1.45rem;
+  }
+
+  .list-title,
+  .payment-name,
+  .payment-amount {
+    font-size: 0.92rem;
+  }
+
+  .profile-pill,
+  .mobile-profile-pill {
+    padding: 8px 10px;
+  }
+
+  .profile-name {
+    font-size: 0.88rem;
+  }
+
+  .profile-email {
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .dashboard-page {
+    padding: 6px;
+  }
+
+  .dashboard-panel {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .mobile-header-card,
+  .mobile-search-card,
+  .schedule-card {
+    padding: 8px;
+    border-radius: 16px;
+  }
+
+  .mobile-brand-inline {
+    min-width: 0;
+  }
+
+  .mobile-brand-copy .brand-name {
+    font-size: 0.86rem;
+  }
+
+  .mobile-brand-copy .brand-caption {
+    font-size: 0.64rem;
+  }
+
+  .mobile-header-actions {
+    gap: 6px;
+  }
+
+  .mobile-menu-btn,
+  .mobile-header-actions .top-icon-btn {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+  }
+
+  .overview-stats-grid,
+  .overview-grid,
+  .list-wrap {
+    gap: 10px;
+  }
+
+  .schedule-header,
+  .overview-card-header {
+    gap: 8px;
+  }
+
+  .schedule-title {
+    font-size: 1.34rem;
+  }
+
+  .schedule-subtitle {
+    font-size: 0.82rem;
+  }
+
+  .summary-value {
+    font-size: 1.28rem;
   }
 }
 </style>

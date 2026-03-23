@@ -1,7 +1,57 @@
 <template>
   <v-app>
     <v-main class="groups-page">
-      <div class="groups-shell">
+      <div class="groups-shell" :class="{ 'groups-shell-dark': darkMode }">
+        <v-navigation-drawer
+          v-if="isCompactNav && mobileMenuOpen"
+          v-model="mobileMenuOpen"
+          temporary
+          location="left"
+          width="286"
+          class="mobile-drawer"
+          :class="{ 'mobile-drawer-dark': darkMode }"
+        >
+          <div class="mobile-drawer-inner">
+            <div class="brand-block mobile-drawer-brand">
+              <div class="brand-icon">
+                <v-icon color="white">mdi-school-outline</v-icon>
+              </div>
+              <div class="brand-text">
+                <div class="brand-name">SportSystem</div>
+                <div class="brand-caption">Coach workspace</div>
+              </div>
+            </div>
+
+            <nav class="mobile-nav-list">
+              <v-btn
+                v-for="item in navItems"
+                :key="`mobile-${item.label}`"
+                :to="item.to || undefined"
+                variant="text"
+                class="nav-item"
+                :class="{ 'nav-item-active': item.to === '/groups' }"
+                block
+                @click="mobileMenuOpen = false"
+              >
+                <template #prepend>
+                  <v-icon>{{ item.icon }}</v-icon>
+                </template>
+                {{ item.label }}
+              </v-btn>
+            </nav>
+
+            <div class="mobile-drawer-profile">
+              <v-avatar size="44">
+                <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+              </v-avatar>
+              <div>
+                <div class="profile-name">Maksims Richards</div>
+                <div class="profile-email">maksims@sportsystem.app</div>
+              </div>
+            </div>
+          </div>
+        </v-navigation-drawer>
+
         <div class="groups-panel">
           <aside class="sidebar-card">
             <div class="brand-block">
@@ -33,13 +83,66 @@
           </aside>
 
           <section class="content-shell">
+            <div class="mobile-header-card">
+              <button type="button" class="mobile-menu-btn" @click="mobileMenuOpen = true">
+                <v-icon size="24">mdi-menu</v-icon>
+              </button>
+
+              <div class="mobile-brand-inline">
+                <div class="brand-icon mobile-brand-icon">
+                  <v-icon color="white">mdi-school-outline</v-icon>
+                </div>
+                <div class="mobile-brand-copy">
+                  <div class="brand-name">SportSystem</div>
+                  <div class="brand-caption">Groups</div>
+                </div>
+              </div>
+
+              <div class="mobile-header-actions">
+                <v-btn
+                  icon
+                  variant="text"
+                  class="top-icon-btn mobile-theme-btn"
+                  :class="{ 'top-icon-btn-active': darkMode }"
+                  @click="darkMode = !darkMode"
+                >
+                  <v-icon>{{ darkMode ? 'mdi-weather-night' : 'mdi-white-balance-sunny' }}</v-icon>
+                </v-btn>
+
+                <div class="icon-badge-wrap">
+                  <v-btn icon variant="text" class="top-icon-btn">
+                    <v-icon>mdi-bell-outline</v-icon>
+                  </v-btn>
+                  <span class="icon-badge">6</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mobile-utility-card">
+              <div class="mobile-profile-row">
+                <div class="profile-pill mobile-profile-pill">
+                  <v-avatar size="42">
+                    <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                  </v-avatar>
+                  <div>
+                    <div class="profile-name">Maksims Richards</div>
+                    <div class="profile-email">maksims@sportsystem.app</div>
+                  </div>
+                </div>
+
+                <v-btn color="primary" class="mobile-create-btn" prepend-icon="mdi-plus" @click="openCreateDialog">
+                  Create group
+                </v-btn>
+              </div>
+            </div>
+
             <div class="topbar-card">
               <div class="search-wrap">
                 <div class="search-shell">
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
                   <v-text-field
                     v-model="search"
-                    label="Search groups"
+                    placeholder="Search groups"
                     variant="plain"
                     hide-details
                     density="comfortable"
@@ -87,7 +190,7 @@
                   <div class="groups-subtitle">Groups you manage and their key training details</div>
                 </div>
 
-                <v-btn color="primary" class="create-btn" prepend-icon="mdi-plus" @click="openCreateDialog">
+                <v-btn color="primary" class="create-btn desktop-only-btn" prepend-icon="mdi-plus" @click="openCreateDialog">
                   Create group
                 </v-btn>
               </div>
@@ -254,13 +357,16 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const search = ref('')
 const darkMode = ref(false)
 const filterDialog = ref(false)
 const createDialog = ref(false)
 const selectedSort = ref('az')
+const mobileMenuOpen = ref(false)
+const isCompactNav = ref(false)
+const darkModeStorageKey = 'app-dark-mode'
 
 const navItems = [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
@@ -295,6 +401,24 @@ const filteredGroups = computed(() =>
     )
   )
 )
+
+onMounted(() => {
+  darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
+  updateViewportState()
+  window.addEventListener('resize', updateViewportState)
+})
+
+watch(darkMode, (value) => {
+  localStorage.setItem(darkModeStorageKey, String(value))
+})
+
+watch(isCompactNav, (value) => {
+  if (!value) mobileMenuOpen.value = false
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateViewportState)
+})
 
 function sortAZ() {
   groups.value.sort((a, b) => a.section.localeCompare(b.section))
@@ -354,6 +478,10 @@ function resetSort() {
   sortAZ()
   filterDialog.value = false
 }
+
+function updateViewportState() {
+  isCompactNav.value = window.innerWidth <= 1024
+}
 </script>
 
 <style scoped>
@@ -373,11 +501,72 @@ function resetSort() {
   backdrop-filter: blur(18px);
 }
 
+.groups-shell-dark {
+  border-color: rgba(91, 109, 145, 0.4);
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(28, 36, 54, 0.94));
+  box-shadow: 0 28px 80px rgba(4, 10, 24, 0.45);
+}
+
 .groups-panel {
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);
   gap: 22px;
   padding: 22px;
+}
+
+.mobile-header-card,
+.mobile-utility-card {
+  display: none;
+}
+
+.mobile-drawer-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(238, 245, 255, 0.96));
+}
+
+.mobile-drawer :deep(.v-navigation-drawer__scrim),
+.mobile-drawer :deep(.v-navigation-drawer__content),
+.mobile-drawer :deep(.v-navigation-drawer__prepend),
+.mobile-drawer :deep(.v-navigation-drawer__append) {
+  background: transparent;
+}
+
+.mobile-drawer-dark {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.98)) !important;
+  color: #eef4ff;
+}
+
+.mobile-drawer-dark :deep(.v-navigation-drawer__content),
+.mobile-drawer-dark .mobile-drawer-inner {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.98));
+}
+
+.mobile-drawer-brand {
+  margin-bottom: 20px;
+}
+
+.mobile-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-drawer-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.groups-shell-dark .mobile-drawer-profile {
+  background: rgba(18, 27, 43, 0.92);
+  border: 1px solid rgba(74, 92, 126, 0.42);
 }
 
 .sidebar-card {
@@ -388,6 +577,11 @@ function resetSort() {
   border-radius: 28px;
   background: rgba(245, 250, 255, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.groups-shell-dark .sidebar-card {
+  background: rgba(18, 27, 43, 0.88);
+  border-color: rgba(74, 92, 126, 0.42);
 }
 
 .brand-block {
@@ -422,10 +616,18 @@ function resetSort() {
   line-height: 1.1;
 }
 
+.groups-shell-dark .brand-name {
+  color: #f3f7ff;
+}
+
 .brand-caption {
   margin-top: 2px;
   font-size: 0.82rem;
   color: #7b8798;
+}
+
+.groups-shell-dark .brand-caption {
+  color: #94a6c4;
 }
 
 .nav-list {
@@ -445,6 +647,10 @@ function resetSort() {
   font-weight: 500;
 }
 
+.groups-shell-dark .nav-item {
+  color: #d8e2f2;
+}
+
 :deep(.nav-item .v-btn__content) {
   justify-content: flex-start;
 }
@@ -461,6 +667,117 @@ function resetSort() {
   gap: 22px;
 }
 
+.mobile-header-card {
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.groups-shell-dark .mobile-header-card {
+  background: rgba(22, 31, 48, 0.82);
+  border-color: rgba(74, 92, 126, 0.42);
+}
+
+.mobile-menu-btn {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid rgba(223, 231, 243, 0.92);
+  border-radius: 14px;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.groups-shell-dark .mobile-menu-btn {
+  color: #eef4ff;
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
+.mobile-brand-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mobile-brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+}
+
+.mobile-brand-copy {
+  min-width: 0;
+}
+
+.mobile-brand-copy .brand-name,
+.mobile-brand-copy .brand-caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.mobile-theme-btn {
+  color: #111827;
+}
+
+.mobile-utility-card {
+  flex-direction: column;
+  gap: 0;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.groups-shell-dark .mobile-utility-card {
+  background: rgba(22, 31, 48, 0.82);
+  border-color: rgba(74, 92, 126, 0.42);
+}
+
+.mobile-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-profile-pill {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  padding: 10px 12px;
+}
+
+.profile-pill > div {
+  min-width: 0;
+}
+
+.mobile-create-btn {
+  min-height: 56px;
+  padding: 0 18px;
+  border-radius: 18px;
+  text-transform: none;
+  letter-spacing: 0;
+  box-shadow: 0 18px 34px rgba(22, 119, 255, 0.22);
+}
+
 .topbar-card {
   display: flex;
   align-items: center;
@@ -470,6 +787,11 @@ function resetSort() {
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.58);
   border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.groups-shell-dark .topbar-card {
+  background: rgba(22, 31, 48, 0.82);
+  border-color: rgba(74, 92, 126, 0.42);
 }
 
 .search-wrap {
@@ -489,9 +811,18 @@ function resetSort() {
   border: 1px solid rgba(223, 231, 243, 0.92);
 }
 
+.groups-shell-dark .search-shell {
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
 .search-shell-icon {
   color: #6b7280;
   flex-shrink: 0;
+}
+
+.groups-shell-dark .search-shell-icon {
+  color: #8ea3c7;
 }
 
 .search-field {
@@ -518,6 +849,18 @@ function resetSort() {
   color: #172033;
 }
 
+.search-field :deep(.v-label),
+.search-field :deep(input::placeholder) {
+  color: #111827;
+  opacity: 1;
+}
+
+.groups-shell-dark .search-field :deep(input),
+.groups-shell-dark .search-field :deep(.v-label),
+.groups-shell-dark .search-field :deep(input::placeholder) {
+  color: #e7eefb;
+}
+
 .topbar-tools {
   display: flex;
   align-items: center;
@@ -532,10 +875,22 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.75);
 }
 
+.groups-shell-dark .top-icon-btn {
+  color: #dce6f7;
+  background: rgba(18, 27, 43, 0.92);
+  border-color: rgba(74, 92, 126, 0.46);
+}
+
 .top-icon-btn-active {
   color: #1677ff;
   background: rgba(232, 242, 255, 0.96);
   border-color: rgba(22, 119, 255, 0.28);
+}
+
+.groups-shell-dark .top-icon-btn-active {
+  color: #7fbcff;
+  background: rgba(22, 43, 76, 0.96);
+  border-color: rgba(82, 156, 255, 0.44);
 }
 
 .icon-badge-wrap {
@@ -569,10 +924,19 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.82);
 }
 
+.groups-shell-dark .profile-pill {
+  background: rgba(18, 27, 43, 0.92);
+  border: 1px solid rgba(74, 92, 126, 0.42);
+}
+
 .profile-name {
   font-size: 0.98rem;
   font-weight: 600;
   color: #172033;
+}
+
+.groups-shell-dark .profile-name {
+  color: #f2f7ff;
 }
 
 .profile-email {
@@ -581,12 +945,21 @@ function resetSort() {
   word-break: break-word;
 }
 
+.groups-shell-dark .profile-email {
+  color: #93a5c3;
+}
+
 .groups-card {
   min-width: 0;
   padding: 26px;
   border-radius: 28px;
   background: rgba(249, 251, 255, 0.58);
   border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.groups-shell-dark .groups-card {
+  background: rgba(22, 31, 48, 0.72);
+  border-color: rgba(74, 92, 126, 0.42);
 }
 
 .groups-header {
@@ -605,10 +978,18 @@ function resetSort() {
   color: #121826;
 }
 
+.groups-shell-dark .groups-title {
+  color: #f3f7ff;
+}
+
 .groups-subtitle {
   margin-top: 10px;
   font-size: 1rem;
   color: #66748a;
+}
+
+.groups-shell-dark .groups-subtitle {
+  color: #8fa3c1;
 }
 
 .create-btn {
@@ -619,6 +1000,10 @@ function resetSort() {
   letter-spacing: 0;
   font-size: 1rem;
   box-shadow: 0 18px 34px rgba(22, 119, 255, 0.28);
+}
+
+.desktop-only-btn {
+  display: inline-flex;
 }
 
 .toolbar-row {
@@ -633,6 +1018,10 @@ function resetSort() {
   font-size: 1rem;
   font-weight: 700;
   color: #172033;
+}
+
+.groups-shell-dark .toolbar-label {
+  color: #eef4ff;
 }
 
 .toolbar-actions {
@@ -650,6 +1039,12 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.8);
 }
 
+.groups-shell-dark .toolbar-btn {
+  color: #7fbcff;
+  background: rgba(18, 27, 43, 0.92);
+  border-color: rgba(82, 156, 255, 0.32);
+}
+
 .groups-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -664,6 +1059,11 @@ function resetSort() {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.groups-shell-dark .group-card {
+  background: rgba(18, 27, 43, 0.9);
+  box-shadow: 0 18px 38px rgba(4, 10, 24, 0.26);
+}
+
 .group-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 18px 36px rgba(110, 136, 173, 0.12);
@@ -673,11 +1073,23 @@ function resetSort() {
   border-radius: 24px;
 }
 
+.groups-shell-dark :deep(.v-overlay__content .dialog-card) {
+  background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
+  color: #eff5ff;
+  border: 1px solid rgba(74, 92, 126, 0.42);
+}
+
 .create-dialog-card {
   padding: 26px;
   background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(238, 245, 255, 0.92));
   border: 1px solid rgba(255, 255, 255, 0.72);
   box-shadow: 0 20px 45px rgba(76, 104, 148, 0.18);
+}
+
+.groups-shell-dark :deep(.v-overlay__content .create-dialog-card),
+.groups-shell-dark :deep(.v-overlay__content .filter-dialog-card) {
+  background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
+  box-shadow: 0 24px 48px rgba(4, 10, 24, 0.42);
 }
 
 .create-dialog-header {
@@ -694,10 +1106,20 @@ function resetSort() {
   color: #172033;
 }
 
+.groups-shell-dark .create-dialog-title,
+.groups-shell-dark .filter-dialog-title {
+  color: #f3f7ff;
+}
+
 .create-dialog-subtitle {
   margin-top: 8px;
   color: #64748b;
   line-height: 1.5;
+}
+
+.groups-shell-dark .create-dialog-subtitle,
+.groups-shell-dark .filter-dialog-subtitle {
+  color: #8fa3c1;
 }
 
 .create-dialog-content {
@@ -724,13 +1146,26 @@ function resetSort() {
   backdrop-filter: blur(10px);
 }
 
+.groups-shell-dark .create-field :deep(.v-field) {
+  background: rgba(12, 19, 32, 0.88);
+}
+
 .create-field :deep(.v-field__outline) {
   color: rgba(190, 202, 222, 0.95);
+}
+
+.groups-shell-dark .create-field :deep(.v-field__outline) {
+  color: rgba(74, 92, 126, 0.62);
 }
 
 .create-field :deep(.v-label),
 .create-field :deep(input) {
   color: #172033;
+}
+
+.groups-shell-dark .create-field :deep(.v-label),
+.groups-shell-dark .create-field :deep(input) {
+  color: #eef4ff;
 }
 
 .create-field-no-spin :deep(input[type='number']) {
@@ -763,10 +1198,20 @@ function resetSort() {
   color: #66748a;
 }
 
+.groups-shell-dark .trainer {
+  color: #8ea3c7;
+}
+
 .section {
   font-size: 1.08rem;
   font-weight: 700;
   color: #172033;
+}
+
+.groups-shell-dark .section,
+.groups-shell-dark .value,
+.groups-shell-dark .attendance-value {
+  color: #eef4ff;
 }
 
 .group-info-grid {
@@ -781,9 +1226,17 @@ function resetSort() {
   background: rgba(245, 249, 255, 0.88);
 }
 
+.groups-shell-dark .info-item {
+  background: rgba(12, 19, 32, 0.88);
+}
+
 .label {
   font-size: 0.78rem;
   color: #7b8798;
+}
+
+.groups-shell-dark .label {
+  color: #8fa3c1;
 }
 
 .value {
@@ -810,6 +1263,10 @@ function resetSort() {
   border-radius: 999px;
   overflow: hidden;
   background: rgba(209, 218, 230, 0.7);
+}
+
+.groups-shell-dark .attendance-bar {
+  background: rgba(63, 80, 114, 0.58);
 }
 
 .attendance-fill {
@@ -875,6 +1332,11 @@ function resetSort() {
   transition: all 0.2s ease;
 }
 
+.groups-shell-dark .filter-option {
+  background: rgba(12, 19, 32, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
 .filter-option:hover {
   transform: translateY(-1px);
   border-color: rgba(22, 119, 255, 0.35);
@@ -904,11 +1366,19 @@ function resetSort() {
   color: #172033;
 }
 
+.groups-shell-dark .filter-option-title {
+  color: #eef4ff;
+}
+
 .filter-option-text {
   display: block;
   margin-top: 4px;
   color: #6b7280;
   line-height: 1.45;
+}
+
+.groups-shell-dark .filter-option-text {
+  color: #8ea3c7;
 }
 
 .filter-dialog-actions {
@@ -929,6 +1399,12 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.82);
   border-color: rgba(22, 119, 255, 0.28);
   font-weight: 600;
+}
+
+.groups-shell-dark .reset-filter-btn {
+  background: rgba(18, 27, 43, 0.92);
+  color: #7fbcff;
+  border-color: rgba(82, 156, 255, 0.32);
 }
 
 .apply-filter-btn {
@@ -958,39 +1434,60 @@ function resetSort() {
 }
 
 @media (max-width: 1024px) {
+  .desktop-only-btn {
+    display: none !important;
+  }
+
+  .groups-shell {
+    width: 100%;
+    max-width: none;
+    overflow: hidden;
+  }
+
   .groups-panel {
     grid-template-columns: 1fr;
+    padding: 18px;
+    gap: 18px;
   }
 
-  .nav-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .sidebar-card {
+    display: none;
   }
 
-  .topbar-card,
+  .mobile-header-card,
+  .mobile-utility-card {
+    display: flex;
+  }
+
+  .topbar-card {
+    display: none;
+  }
+
+  .groups-header,
   .groups-header,
   .toolbar-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .search-wrap {
-    max-width: none;
+  .groups-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .topbar-tools {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .profile-pill {
+  .toolbar-actions,
+  .toolbar-btn {
     width: 100%;
   }
 }
 
 @media (max-width: 768px) {
   .groups-page {
+    padding: 10px;
+  }
+
+  .groups-panel {
     padding: 12px;
+    gap: 12px;
   }
 
   .groups-card {
@@ -1001,39 +1498,56 @@ function resetSort() {
     font-size: 1.9rem;
   }
 
-  .nav-list {
-    grid-template-columns: 1fr;
-  }
-
-  .topbar-tools {
-    gap: 10px;
-  }
-
-  .icon-badge-wrap {
-    flex: 1;
-  }
-
-  .top-icon-btn {
-    width: 100%;
-  }
-
   .groups-grid {
     grid-template-columns: 1fr;
   }
 
+  .group-card {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .group-card-top {
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .group-avatar {
+    width: 46px !important;
+    height: 46px !important;
+  }
+
   .group-info-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .info-item {
+    padding: 12px;
+  }
+
+  .mobile-profile-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mobile-create-btn {
+    width: 100%;
+    min-height: 50px;
   }
 }
 
 @media (max-width: 560px) {
   .groups-shell {
     border-radius: 24px;
+    width: 100%;
+    max-width: none;
+    overflow: hidden;
   }
 
   .groups-panel {
-    padding: 14px;
-    gap: 14px;
+    padding: 10px;
+    gap: 10px;
   }
 
   .sidebar-card,
@@ -1042,12 +1556,75 @@ function resetSort() {
     border-radius: 20px;
   }
 
+  .mobile-header-card,
+  .mobile-utility-card,
+  .groups-card {
+    padding: 14px;
+  }
+
+  .mobile-menu-btn,
+  .mobile-header-actions .top-icon-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+  }
+
+  .mobile-brand-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .mobile-header-actions {
+    gap: 8px;
+  }
+
   .brand-name {
     font-size: 1rem;
   }
 
   .brand-caption {
     font-size: 0.72rem;
+  }
+
+  .groups-title {
+    font-size: 1.65rem;
+  }
+
+  .groups-subtitle {
+    font-size: 0.92rem;
+  }
+
+  .group-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .group-card-top {
+    margin-bottom: 12px;
+  }
+
+  .group-avatar {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .section {
+    font-size: 0.98rem;
+  }
+
+  .trainer,
+  .value,
+  .attendance-value {
+    font-size: 0.88rem;
+  }
+
+  .info-item {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .attendance-block {
+    margin-top: 14px;
   }
 
   .filter-dialog-card {

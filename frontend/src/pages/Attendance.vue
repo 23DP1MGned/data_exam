@@ -1,7 +1,57 @@
 <template>
   <v-app>
     <v-main class="attendance-page">
-      <div class="attendance-shell">
+      <div class="attendance-shell" :class="{ 'attendance-shell-dark': darkMode }">
+        <v-navigation-drawer
+          v-if="isCompactNav && mobileMenuOpen"
+          v-model="mobileMenuOpen"
+          temporary
+          location="left"
+          width="286"
+          class="mobile-drawer"
+          :class="{ 'mobile-drawer-dark': darkMode }"
+        >
+          <div class="mobile-drawer-inner">
+            <div class="brand-block mobile-drawer-brand">
+              <div class="brand-icon">
+                <v-icon color="white">mdi-school-outline</v-icon>
+              </div>
+              <div class="brand-text">
+                <div class="brand-name">SportSystem</div>
+                <div class="brand-caption">Coach workspace</div>
+              </div>
+            </div>
+
+            <nav class="mobile-nav-list">
+              <v-btn
+                v-for="item in navItems"
+                :key="`mobile-${item.label}`"
+                :to="item.to"
+                variant="text"
+                class="nav-item"
+                :class="{ 'nav-item-active': item.to === '/attendance' }"
+                block
+                @click="mobileMenuOpen = false"
+              >
+                <template #prepend>
+                  <v-icon>{{ item.icon }}</v-icon>
+                </template>
+                {{ item.label }}
+              </v-btn>
+            </nav>
+
+            <div class="mobile-drawer-profile">
+              <v-avatar size="44">
+                <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+              </v-avatar>
+              <div>
+                <div class="profile-name">Maksims Richards</div>
+                <div class="profile-email">maksims@sportsystem.app</div>
+              </div>
+            </div>
+          </div>
+        </v-navigation-drawer>
+
         <div class="attendance-panel">
           <aside class="sidebar-card">
             <div class="brand-block">
@@ -33,13 +83,62 @@
           </aside>
 
           <section class="content-shell">
+            <div class="mobile-header-card">
+              <button type="button" class="mobile-menu-btn" @click="mobileMenuOpen = true">
+                <v-icon size="24">mdi-menu</v-icon>
+              </button>
+
+              <div class="mobile-brand-inline">
+                <div class="brand-icon mobile-brand-icon">
+                  <v-icon color="white">mdi-school-outline</v-icon>
+                </div>
+                <div class="mobile-brand-copy">
+                  <div class="brand-name">SportSystem</div>
+                  <div class="brand-caption">Attendance</div>
+                </div>
+              </div>
+
+              <div class="mobile-header-actions">
+                <v-btn
+                  icon
+                  variant="text"
+                  class="top-icon-btn mobile-theme-btn"
+                  :class="{ 'top-icon-btn-active': darkMode }"
+                  @click="darkMode = !darkMode"
+                >
+                  <v-icon>{{ darkMode ? 'mdi-weather-night' : 'mdi-white-balance-sunny' }}</v-icon>
+                </v-btn>
+
+                <div class="icon-badge-wrap">
+                  <v-btn icon variant="text" class="top-icon-btn">
+                    <v-icon>mdi-bell-outline</v-icon>
+                  </v-btn>
+                  <span class="icon-badge">4</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mobile-utility-card">
+              <div class="mobile-profile-row">
+                <div class="profile-pill mobile-profile-pill">
+                  <v-avatar size="42">
+                    <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                  </v-avatar>
+                  <div>
+                    <div class="profile-name">Maksims Richards</div>
+                    <div class="profile-email">maksims@sportsystem.app</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="topbar-card">
               <div class="search-wrap">
                 <div class="search-shell">
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
                   <v-text-field
                     v-model="search"
-                    label="Search attendance"
+                    placeholder="Search attendance"
                     variant="plain"
                     hide-details
                     density="comfortable"
@@ -237,11 +336,14 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const search = ref('')
 const darkMode = ref(false)
 const currentMonth = ref(new Date('2026-07-01'))
+const mobileMenuOpen = ref(false)
+const isCompactNav = ref(false)
+const darkModeStorageKey = 'app-dark-mode'
 
 const navItems = [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
@@ -307,6 +409,24 @@ const currentMonthLabel = computed(() =>
   })
 )
 
+onMounted(() => {
+  darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
+  updateViewportState()
+  window.addEventListener('resize', updateViewportState)
+})
+
+watch(darkMode, (value) => {
+  localStorage.setItem(darkModeStorageKey, String(value))
+})
+
+watch(isCompactNav, (value) => {
+  if (!value) mobileMenuOpen.value = false
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateViewportState)
+})
+
 const calendarWeeks = computed(() => {
   const startOfMonth = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth(), 1)
   const endOfMonth = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() + 1, 0)
@@ -344,6 +464,10 @@ function changeMonth(offset) {
     1
   )
 }
+
+function updateViewportState() {
+  isCompactNav.value = window.innerWidth <= 1024
+}
 </script>
 
 <style scoped>
@@ -361,11 +485,72 @@ function changeMonth(offset) {
   backdrop-filter: blur(18px);
 }
 
+.attendance-shell-dark {
+  border-color: rgba(91, 109, 145, 0.4);
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(28, 36, 54, 0.94));
+  box-shadow: 0 28px 80px rgba(4, 10, 24, 0.45);
+}
+
 .attendance-panel {
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);
   gap: 22px;
   padding: 22px;
+}
+
+.mobile-header-card,
+.mobile-utility-card {
+  display: none;
+}
+
+.mobile-drawer-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(238, 245, 255, 0.96));
+}
+
+.mobile-drawer :deep(.v-navigation-drawer__scrim),
+.mobile-drawer :deep(.v-navigation-drawer__content),
+.mobile-drawer :deep(.v-navigation-drawer__prepend),
+.mobile-drawer :deep(.v-navigation-drawer__append) {
+  background: transparent;
+}
+
+.mobile-drawer-dark {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.98)) !important;
+  color: #eef4ff;
+}
+
+.mobile-drawer-dark :deep(.v-navigation-drawer__content),
+.mobile-drawer-dark .mobile-drawer-inner {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.98));
+}
+
+.mobile-drawer-brand {
+  margin-bottom: 20px;
+}
+
+.mobile-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-drawer-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.attendance-shell-dark .mobile-drawer-profile {
+  background: rgba(18, 27, 43, 0.92);
+  border: 1px solid rgba(74, 92, 126, 0.42);
 }
 
 .sidebar-card {
@@ -375,6 +560,11 @@ function changeMonth(offset) {
   border-radius: 28px;
   background: rgba(245, 250, 255, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.attendance-shell-dark .sidebar-card {
+  background: rgba(18, 27, 43, 0.88);
+  border-color: rgba(74, 92, 126, 0.42);
 }
 
 .brand-block {
@@ -409,10 +599,18 @@ function changeMonth(offset) {
   line-height: 1.1;
 }
 
+.attendance-shell-dark .brand-name {
+  color: #f3f7ff;
+}
+
 .brand-caption {
   margin-top: 2px;
   font-size: 0.82rem;
   color: #7b8798;
+}
+
+.attendance-shell-dark .brand-caption {
+  color: #94a6c4;
 }
 
 .nav-list {
@@ -432,6 +630,10 @@ function changeMonth(offset) {
   font-weight: 500;
 }
 
+.attendance-shell-dark .nav-item {
+  color: #d8e2f2;
+}
+
 :deep(.nav-item .v-btn__content) {
   justify-content: flex-start;
 }
@@ -449,6 +651,108 @@ function changeMonth(offset) {
   min-width: 0;
 }
 
+.mobile-header-card {
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.attendance-shell-dark .mobile-header-card {
+  background: rgba(22, 31, 48, 0.82);
+  border-color: rgba(74, 92, 126, 0.42);
+}
+
+.mobile-menu-btn {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid rgba(223, 231, 243, 0.92);
+  border-radius: 14px;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.attendance-shell-dark .mobile-menu-btn {
+  color: #eef4ff;
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
+.mobile-brand-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mobile-brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+}
+
+.mobile-brand-copy {
+  min-width: 0;
+}
+
+.mobile-brand-copy .brand-name,
+.mobile-brand-copy .brand-caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.mobile-theme-btn {
+  color: #111827;
+}
+
+.mobile-utility-card {
+  flex-direction: column;
+  gap: 0;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.attendance-shell-dark .mobile-utility-card {
+  background: rgba(22, 31, 48, 0.82);
+  border-color: rgba(74, 92, 126, 0.42);
+}
+
+.mobile-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-profile-pill {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  padding: 10px 12px;
+}
+
+.profile-pill > div {
+  min-width: 0;
+}
+
 .topbar-card {
   display: flex;
   align-items: center;
@@ -458,6 +762,11 @@ function changeMonth(offset) {
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.58);
   border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.attendance-shell-dark .topbar-card {
+  background: rgba(22, 31, 48, 0.82);
+  border-color: rgba(74, 92, 126, 0.42);
 }
 
 .search-wrap {
@@ -477,9 +786,18 @@ function changeMonth(offset) {
   border: 1px solid rgba(223, 231, 243, 0.92);
 }
 
+.attendance-shell-dark .search-shell {
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
 .search-shell-icon {
   color: #6b7280;
   flex-shrink: 0;
+}
+
+.attendance-shell-dark .search-shell-icon {
+  color: #8ea3c7;
 }
 
 .search-field {
@@ -506,6 +824,18 @@ function changeMonth(offset) {
   color: #172033;
 }
 
+.search-field :deep(.v-label),
+.search-field :deep(input::placeholder) {
+  color: #111827;
+  opacity: 1;
+}
+
+.attendance-shell-dark .search-field :deep(input),
+.attendance-shell-dark .search-field :deep(.v-label),
+.attendance-shell-dark .search-field :deep(input::placeholder) {
+  color: #e7eefb;
+}
+
 .topbar-tools {
   display: flex;
   align-items: center;
@@ -520,10 +850,22 @@ function changeMonth(offset) {
   background: rgba(255, 255, 255, 0.75);
 }
 
+.attendance-shell-dark .top-icon-btn {
+  color: #dce6f7;
+  background: rgba(18, 27, 43, 0.92);
+  border-color: rgba(74, 92, 126, 0.46);
+}
+
 .top-icon-btn-active {
   color: #1677ff;
   background: rgba(232, 242, 255, 0.96);
   border-color: rgba(22, 119, 255, 0.28);
+}
+
+.attendance-shell-dark .top-icon-btn-active {
+  color: #7fbcff;
+  background: rgba(22, 43, 76, 0.96);
+  border-color: rgba(82, 156, 255, 0.44);
 }
 
 .icon-badge-wrap {
@@ -557,10 +899,19 @@ function changeMonth(offset) {
   background: rgba(255, 255, 255, 0.82);
 }
 
+.attendance-shell-dark .profile-pill {
+  background: rgba(18, 27, 43, 0.92);
+  border: 1px solid rgba(74, 92, 126, 0.42);
+}
+
 .profile-name {
   font-size: 0.98rem;
   font-weight: 600;
   color: #172033;
+}
+
+.attendance-shell-dark .profile-name {
+  color: #f2f7ff;
 }
 
 .profile-email {
@@ -569,11 +920,20 @@ function changeMonth(offset) {
   word-break: break-word;
 }
 
+.attendance-shell-dark .profile-email {
+  color: #93a5c3;
+}
+
 .attendance-card {
   padding: 28px;
   border-radius: 28px;
   background: rgba(249, 251, 255, 0.58);
   border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.attendance-shell-dark .attendance-card {
+  background: rgba(22, 31, 48, 0.72);
+  border-color: rgba(74, 92, 126, 0.42);
 }
 
 .attendance-header {
@@ -587,10 +947,18 @@ function changeMonth(offset) {
   color: #121826;
 }
 
+.attendance-shell-dark .attendance-title {
+  color: #f3f7ff;
+}
+
 .attendance-subtitle {
   margin-top: 10px;
   color: #66748a;
   font-size: 1rem;
+}
+
+.attendance-shell-dark .attendance-subtitle {
+  color: #8fa3c1;
 }
 
 .attendance-overview {
@@ -605,6 +973,15 @@ function changeMonth(offset) {
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 12px 28px rgba(110, 136, 173, 0.08);
+}
+
+.attendance-shell-dark .calendar-card,
+.attendance-shell-dark .stat-card,
+.attendance-shell-dark .timeline-wrap,
+.attendance-shell-dark .month-switcher {
+  background: rgba(18, 27, 43, 0.9);
+  border-color: rgba(74, 92, 126, 0.42);
+  box-shadow: 0 18px 38px rgba(4, 10, 24, 0.26);
 }
 
 .coach-card {
@@ -685,9 +1062,28 @@ function changeMonth(offset) {
   color: #172033;
 }
 
+.attendance-shell-dark .stat-value,
+.attendance-shell-dark .timeline-title,
+.attendance-shell-dark .timeline-percent,
+.attendance-shell-dark .toolbar-section-label,
+.attendance-shell-dark .calendar-title,
+.attendance-shell-dark .cell-date {
+  color: #eef4ff;
+}
+
 .stat-label {
   margin-top: 6px;
   color: #7b8798;
+}
+
+.attendance-shell-dark .stat-label,
+.attendance-shell-dark .timeline-caption,
+.attendance-shell-dark .toolbar-meta,
+.attendance-shell-dark .toolbar-date,
+.attendance-shell-dark .legend-item,
+.attendance-shell-dark .cell-status,
+.attendance-shell-dark .day-name {
+  color: #8fa3c1;
 }
 
 .timeline-wrap {
@@ -886,6 +1282,10 @@ function changeMonth(offset) {
   transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
+.attendance-shell-dark .calendar-cell {
+  border-top-color: rgba(63, 80, 114, 0.58);
+}
+
 .calendar-cell::before {
   content: '';
   position: absolute;
@@ -898,6 +1298,12 @@ function changeMonth(offset) {
   opacity: 0;
   transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
   pointer-events: none;
+}
+
+.attendance-shell-dark .calendar-cell::before {
+  background: rgba(12, 19, 32, 0.46);
+  border-color: rgba(63, 80, 114, 0.4);
+  box-shadow: 0 10px 22px rgba(4, 10, 24, 0.18);
 }
 
 .calendar-cell > * {
@@ -983,42 +1389,132 @@ function changeMonth(offset) {
 }
 
 @media (max-width: 1024px) {
+  .attendance-page {
+    padding: 16px;
+  }
+
+  .attendance-shell {
+    width: 100%;
+    max-width: none;
+    overflow: hidden;
+    border-radius: 28px;
+  }
+
   .attendance-panel {
     grid-template-columns: 1fr;
+    padding: 18px;
+    gap: 18px;
   }
 
-  .nav-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .sidebar-card,
+  .topbar-card {
+    display: none;
   }
 
-  .topbar-card,
+  .mobile-header-card,
+  .mobile-utility-card {
+    display: flex;
+  }
+
   .attendance-toolbar,
   .overview-top {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .search-wrap {
-    max-width: none;
+  .attendance-card {
+    padding: 24px;
   }
 
-  .topbar-tools {
-    flex-wrap: wrap;
-  }
-
-  .profile-pill {
+  .toolbar-meta {
     width: 100%;
+    justify-content: flex-start;
+  }
+
+  .month-switcher {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .attendance-overview {
     grid-template-columns: 1fr;
+  }
+
+  .coach-card {
+    align-items: flex-start;
+    text-align: left;
+    padding: 22px;
+  }
+
+  .coach-groups {
+    justify-content: flex-start;
+  }
+
+  .timeline-head,
+  .calendar-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendar-grid {
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .calendar-days,
+  .calendar-week {
+    min-width: 0;
+  }
+
+  .day-name {
+    padding: 0 6px 8px;
+    font-size: 0.8rem;
+  }
+
+  .calendar-cell {
+    min-height: 88px;
+    padding: 8px 6px;
+  }
+
+  .calendar-cell::before {
+    inset: 4px;
+    border-radius: 16px;
+  }
+
+  .cell-date {
+    font-size: 0.88rem;
+  }
+
+  .cell-status {
+    margin-top: 8px;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    gap: 5px;
   }
 }
 
 @media (max-width: 768px) {
   .attendance-page {
     padding: 12px;
+  }
+
+  .attendance-shell {
+    border-radius: 24px;
+  }
+
+  .attendance-panel {
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .mobile-header-card,
+  .mobile-utility-card,
+  .attendance-card,
+  .calendar-card,
+  .coach-card,
+  .stat-card,
+  .timeline-wrap {
+    border-radius: 20px;
   }
 
   .attendance-card {
@@ -1029,46 +1525,200 @@ function changeMonth(offset) {
     font-size: 1.85rem;
   }
 
-  .nav-list {
-    grid-template-columns: 1fr;
+  .attendance-subtitle {
+    font-size: 0.95rem;
   }
 
   .stats-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .timeline-percent {
+    font-size: 1.55rem;
+  }
+
+  .toolbar-date {
+    min-width: 0;
+    font-size: 0.95rem;
+  }
+
+  .calendar-card {
+    padding: 16px;
+  }
+
+  .calendar-title {
+    font-size: 1rem;
+  }
+
+  .legend-item {
+    font-size: 0.84rem;
   }
 
   .calendar-days,
   .calendar-week {
-    min-width: 760px;
+    min-width: 620px;
   }
 
   .calendar-grid {
     overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+  }
+
+  .day-name {
+    padding: 0 4px 6px;
+    font-size: 0.72rem;
+  }
+
+  .calendar-cell {
+    min-height: 74px;
+    padding: 6px 5px;
+  }
+
+  .calendar-cell::before {
+    inset: 3px;
+    border-radius: 13px;
+  }
+
+  .cell-date {
+    font-size: 0.78rem;
+  }
+
+  .cell-status {
+    margin-top: 6px;
+    gap: 4px;
+    font-size: 0.62rem;
+    line-height: 1.15;
   }
 }
 
 @media (max-width: 560px) {
-  .attendance-shell {
-    border-radius: 24px;
-  }
-
   .attendance-panel {
-    padding: 14px;
-    gap: 14px;
+    padding: 12px;
+    gap: 12px;
   }
 
-  .sidebar-card,
-  .topbar-card,
+  .mobile-header-card,
+  .mobile-utility-card {
+    padding: 12px 14px;
+  }
+
+  .mobile-menu-btn,
+  .top-icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .mobile-brand-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+  }
+
+  .mobile-brand-copy .brand-name {
+    font-size: 0.96rem;
+  }
+
+  .mobile-brand-copy .brand-caption {
+    font-size: 0.72rem;
+  }
+
+  .mobile-profile-pill {
+    min-height: 52px;
+    padding: 8px 10px;
+  }
+
+  .profile-name {
+    font-size: 0.92rem;
+  }
+
+  .profile-email {
+    font-size: 0.82rem;
+  }
+
   .attendance-card {
-    border-radius: 20px;
+    padding: 16px;
   }
 
-  .brand-name {
+  .attendance-title {
+    font-size: 1.65rem;
+  }
+
+  .coach-card {
+    padding: 18px;
+  }
+
+  .coach-avatar {
+    width: 68px !important;
+    height: 68px !important;
+  }
+
+  .coach-name {
     font-size: 1rem;
   }
 
-  .brand-caption {
+  .coach-group-pill {
+    font-size: 0.76rem;
+    padding: 6px 9px;
+  }
+
+  .stat-card,
+  .timeline-wrap,
+  .calendar-card {
+    padding: 14px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .stat-label,
+  .timeline-caption,
+  .cell-status {
+    font-size: 0.8rem;
+  }
+
+  .month-switcher {
+    padding: 6px;
+    border-radius: 16px;
+  }
+
+  .month-nav-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .toolbar-date {
+    font-size: 0.88rem;
+  }
+
+  .day-name {
     font-size: 0.72rem;
+    padding: 0 4px 6px;
+  }
+
+  .calendar-cell {
+    min-height: 64px;
+    padding: 5px 4px;
+  }
+
+  .calendar-cell::before {
+    inset: 2px;
+    border-radius: 11px;
+  }
+
+  .cell-date {
+    font-size: 0.72rem;
+  }
+
+  .cell-status {
+    margin-top: 5px;
+    font-size: 0.56rem;
+    gap: 3px;
   }
 }
 </style>

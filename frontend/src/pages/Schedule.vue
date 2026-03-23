@@ -1,7 +1,57 @@
 <template>
   <v-app>
     <v-main class="schedule-page">
-      <div class="schedule-shell">
+      <div class="schedule-shell" :class="{ 'schedule-shell-dark': darkMode }">
+        <v-navigation-drawer
+          v-if="isCompactNav && mobileMenuOpen"
+          v-model="mobileMenuOpen"
+          temporary
+          location="left"
+          width="286"
+          class="mobile-drawer"
+          :class="{ 'mobile-drawer-dark': darkMode }"
+        >
+          <div class="mobile-drawer-inner">
+            <div class="brand-block mobile-drawer-brand">
+              <div class="brand-icon">
+                <v-icon color="white">mdi-school-outline</v-icon>
+              </div>
+              <div class="brand-text">
+                <div class="brand-name">SportSystem</div>
+                <div class="brand-caption">Coach workspace</div>
+              </div>
+            </div>
+
+            <nav class="mobile-nav-list">
+              <v-btn
+                v-for="item in navItems"
+                :key="`mobile-${item.label}`"
+                :to="item.to || undefined"
+                variant="text"
+                class="nav-item"
+                :class="{ 'nav-item-active': item.to === '/schedule' }"
+                block
+                @click="mobileMenuOpen = false"
+              >
+                <template #prepend>
+                  <v-icon>{{ item.icon }}</v-icon>
+                </template>
+                {{ item.label }}
+              </v-btn>
+            </nav>
+
+            <div class="mobile-drawer-profile">
+              <v-avatar size="44">
+                <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+              </v-avatar>
+              <div>
+                <div class="profile-name">Maksims Richards</div>
+                <div class="profile-email">maksims@sportsystem.app</div>
+              </div>
+            </div>
+          </div>
+        </v-navigation-drawer>
+
         <div class="schedule-panel">
           <aside class="sidebar-card">
             <div class="brand-block">
@@ -33,13 +83,71 @@
           </aside>
 
           <section class="content-shell">
+            <div class="mobile-header-card">
+              <button type="button" class="mobile-menu-btn" @click="mobileMenuOpen = true">
+                <v-icon size="24">mdi-menu</v-icon>
+              </button>
+
+              <div class="mobile-brand-inline">
+                <div class="brand-icon mobile-brand-icon">
+                  <v-icon color="white">mdi-school-outline</v-icon>
+                </div>
+                <div class="mobile-brand-copy">
+                  <div class="brand-name">SportSystem</div>
+                  <div class="brand-caption">Schedule</div>
+                </div>
+              </div>
+
+              <div class="mobile-header-actions">
+                <v-btn
+                  icon
+                  variant="text"
+                  class="top-icon-btn mobile-theme-btn"
+                  :class="{ 'top-icon-btn-active': darkMode }"
+                  @click="darkMode = !darkMode"
+                >
+                  <v-icon>{{ darkMode ? 'mdi-weather-night' : 'mdi-white-balance-sunny' }}</v-icon>
+                </v-btn>
+
+                <div class="icon-badge-wrap">
+                  <v-btn icon variant="text" class="top-icon-btn">
+                    <v-icon>mdi-bell-outline</v-icon>
+                  </v-btn>
+                  <span class="icon-badge">6</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mobile-utility-card">
+              <div class="mobile-profile-row">
+                <div class="profile-pill mobile-profile-pill">
+                  <v-avatar size="42">
+                    <img src="https://i.pravatar.cc/80?img=12" alt="Coach profile">
+                  </v-avatar>
+                  <div>
+                    <div class="profile-name">Maksims Richards</div>
+                    <div class="profile-email">maksims@sportsystem.app</div>
+                  </div>
+                </div>
+
+                <v-btn
+                  color="primary"
+                  class="mobile-create-btn"
+                  prepend-icon="mdi-plus"
+                  @click="openCreate"
+                >
+                  Create training
+                </v-btn>
+              </div>
+            </div>
+
             <div class="topbar-card">
               <div class="search-wrap">
                 <div class="search-shell">
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
                   <v-text-field
                     v-model="search"
-                    label="Search schedule"
+                    placeholder="Search schedule"
                     variant="plain"
                     hide-details
                     density="comfortable"
@@ -89,7 +197,7 @@
 
                 <v-btn
                   color="primary"
-                  class="create-btn"
+                  class="create-btn desktop-only-btn"
                   prepend-icon="mdi-plus"
                   @click="openCreate"
                 >
@@ -362,7 +470,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const search = ref('')
 const tab = ref('upcoming')
@@ -375,6 +483,9 @@ const selectedSort = ref('time')
 const darkMode = ref(false)
 const currentPage = ref(1)
 const pageSize = 6
+const mobileMenuOpen = ref(false)
+const isCompactNav = ref(false)
+const darkModeStorageKey = 'app-dark-mode'
 
 const tabs = [
   { value: 'upcoming', label: 'Upcoming' },
@@ -705,6 +816,24 @@ watch(totalPages, (value) => {
   if (currentPage.value > value) currentPage.value = value
 })
 
+watch(isCompactNav, (value) => {
+  if (!value) mobileMenuOpen.value = false
+})
+
+onMounted(() => {
+  darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
+  updateViewportState()
+  window.addEventListener('resize', updateViewportState)
+})
+
+watch(darkMode, (value) => {
+  localStorage.setItem(darkModeStorageKey, String(value))
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateViewportState)
+})
+
 function toggleExpanded(id) {
   expandedId.value = expandedId.value === id ? null : id
 }
@@ -815,6 +944,10 @@ function resetSort() {
   sortTime()
   filterDialog.value = false
 }
+
+function updateViewportState() {
+  isCompactNav.value = window.innerWidth <= 1024
+}
 </script>
 
 <style scoped>
@@ -834,11 +967,75 @@ function resetSort() {
   backdrop-filter: blur(18px);
 }
 
+.schedule-shell-dark {
+  border-color: rgba(91, 109, 145, 0.4);
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(28, 36, 54, 0.94));
+  box-shadow: 0 28px 80px rgba(4, 10, 24, 0.45);
+}
+
 .schedule-panel {
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);
   gap: 22px;
   padding: 22px;
+}
+
+.mobile-header-card,
+.mobile-utility-card {
+  display: none;
+}
+
+.mobile-drawer-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(238, 245, 255, 0.96));
+}
+
+.mobile-drawer :deep(.v-navigation-drawer__scrim),
+.mobile-drawer :deep(.v-navigation-drawer__content),
+.mobile-drawer :deep(.v-navigation-drawer__prepend),
+.mobile-drawer :deep(.v-navigation-drawer__append) {
+  background: transparent;
+}
+
+.mobile-drawer-dark {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.98)) !important;
+  color: #eef4ff;
+}
+
+.mobile-drawer-dark :deep(.v-navigation-drawer__content) {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.98));
+}
+
+.mobile-drawer-dark .mobile-drawer-inner {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.98));
+}
+
+.mobile-drawer-brand {
+  margin-bottom: 20px;
+}
+
+.mobile-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-drawer-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.schedule-shell-dark .mobile-drawer-profile {
+  background: rgba(18, 27, 43, 0.92);
+  border: 1px solid rgba(74, 92, 126, 0.42);
 }
 
 .sidebar-card {
@@ -849,6 +1046,11 @@ function resetSort() {
   border-radius: 28px;
   background: rgba(245, 250, 255, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.schedule-shell-dark .sidebar-card {
+  background: rgba(18, 27, 43, 0.88);
+  border-color: rgba(74, 92, 126, 0.42);
 }
 
 .brand-block {
@@ -883,10 +1085,18 @@ function resetSort() {
   line-height: 1.1;
 }
 
+.schedule-shell-dark .brand-name {
+  color: #f3f7ff;
+}
+
 .brand-caption {
   margin-top: 2px;
   font-size: 0.82rem;
   color: #7b8798;
+}
+
+.schedule-shell-dark .brand-caption {
+  color: #94a6c4;
 }
 
 .nav-list {
@@ -906,6 +1116,10 @@ function resetSort() {
   font-weight: 500;
 }
 
+.schedule-shell-dark .nav-item {
+  color: #d8e2f2;
+}
+
 :deep(.nav-item .v-btn__content) {
   justify-content: flex-start;
 }
@@ -922,6 +1136,117 @@ function resetSort() {
   gap: 22px;
 }
 
+.mobile-header-card {
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.schedule-shell-dark .mobile-header-card {
+  background: rgba(22, 31, 48, 0.82);
+  border-color: rgba(74, 92, 126, 0.42);
+}
+
+.mobile-menu-btn {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid rgba(223, 231, 243, 0.92);
+  border-radius: 14px;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.schedule-shell-dark .mobile-menu-btn {
+  color: #eef4ff;
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
+.mobile-brand-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mobile-brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+}
+
+.mobile-brand-copy {
+  min-width: 0;
+}
+
+.mobile-brand-copy .brand-name,
+.mobile-brand-copy .brand-caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.mobile-theme-btn {
+  color: #111827;
+}
+
+.mobile-utility-card {
+  flex-direction: column;
+  gap: 0;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.schedule-shell-dark .mobile-utility-card {
+  background: rgba(22, 31, 48, 0.82);
+  border-color: rgba(74, 92, 126, 0.42);
+}
+
+.mobile-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-profile-pill {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  padding: 10px 12px;
+}
+
+.profile-pill > div {
+  min-width: 0;
+}
+
+.mobile-create-btn {
+  min-height: 56px;
+  padding: 0 18px;
+  border-radius: 18px;
+  text-transform: none;
+  letter-spacing: 0;
+  box-shadow: 0 18px 34px rgba(22, 119, 255, 0.22);
+}
+
 .topbar-card {
   display: flex;
   align-items: center;
@@ -931,6 +1256,11 @@ function resetSort() {
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.58);
   border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.schedule-shell-dark .topbar-card {
+  background: rgba(22, 31, 48, 0.82);
+  border-color: rgba(74, 92, 126, 0.42);
 }
 
 .search-wrap {
@@ -950,9 +1280,18 @@ function resetSort() {
   border: 1px solid rgba(223, 231, 243, 0.92);
 }
 
+.schedule-shell-dark .search-shell {
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
 .search-shell-icon {
   color: #6b7280;
   flex-shrink: 0;
+}
+
+.schedule-shell-dark .search-shell-icon {
+  color: #8ea3c7;
 }
 
 .search-field {
@@ -979,6 +1318,18 @@ function resetSort() {
   color: #172033;
 }
 
+.search-field :deep(.v-label),
+.search-field :deep(input::placeholder) {
+  color: #111827;
+  opacity: 1;
+}
+
+.schedule-shell-dark .search-field :deep(input),
+.schedule-shell-dark .search-field :deep(.v-label),
+.schedule-shell-dark .search-field :deep(input::placeholder) {
+  color: #e7eefb;
+}
+
 .topbar-tools {
   display: flex;
   align-items: center;
@@ -993,10 +1344,22 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.75);
 }
 
+.schedule-shell-dark .top-icon-btn {
+  color: #dce6f7;
+  background: rgba(18, 27, 43, 0.92);
+  border-color: rgba(74, 92, 126, 0.46);
+}
+
 .top-icon-btn-active {
   color: #1677ff;
   background: rgba(232, 242, 255, 0.96);
   border-color: rgba(22, 119, 255, 0.28);
+}
+
+.schedule-shell-dark .top-icon-btn-active {
+  color: #7fbcff;
+  background: rgba(22, 43, 76, 0.96);
+  border-color: rgba(82, 156, 255, 0.44);
 }
 
 .icon-badge-wrap {
@@ -1030,10 +1393,19 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.82);
 }
 
+.schedule-shell-dark .profile-pill {
+  background: rgba(18, 27, 43, 0.92);
+  border: 1px solid rgba(74, 92, 126, 0.42);
+}
+
 .profile-name {
   font-size: 0.98rem;
   font-weight: 600;
   color: #172033;
+}
+
+.schedule-shell-dark .profile-name {
+  color: #f2f7ff;
 }
 
 .profile-email {
@@ -1042,12 +1414,21 @@ function resetSort() {
   word-break: break-word;
 }
 
+.schedule-shell-dark .profile-email {
+  color: #93a5c3;
+}
+
 .schedule-card {
   min-width: 0;
   padding: 26px;
   border-radius: 28px;
   background: rgba(249, 251, 255, 0.58);
   border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.schedule-shell-dark .schedule-card {
+  background: rgba(22, 31, 48, 0.72);
+  border-color: rgba(74, 92, 126, 0.42);
 }
 
 .schedule-header {
@@ -1066,10 +1447,18 @@ function resetSort() {
   color: #121826;
 }
 
+.schedule-shell-dark .schedule-title {
+  color: #f3f7ff;
+}
+
 .schedule-subtitle {
   margin-top: 10px;
   font-size: 1rem;
   color: #66748a;
+}
+
+.schedule-shell-dark .schedule-subtitle {
+  color: #8fa3c1;
 }
 
 .create-btn {
@@ -1080,6 +1469,10 @@ function resetSort() {
   letter-spacing: 0;
   font-size: 1rem;
   box-shadow: 0 18px 34px rgba(22, 119, 255, 0.28);
+}
+
+.desktop-only-btn {
+  display: inline-flex;
 }
 
 .toolbar-row {
@@ -1191,8 +1584,16 @@ function resetSort() {
   color: #111827;
 }
 
+.schedule-shell-dark .day-primary {
+  color: #f3f7ff;
+}
+
 .day-secondary {
   color: #6b7280;
+}
+
+.schedule-shell-dark .day-secondary {
+  color: #8ea3c7;
 }
 
 .schedule-item {
@@ -1202,6 +1603,11 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid transparent;
   box-shadow: 0 12px 28px rgba(110, 136, 173, 0.08);
+}
+
+.schedule-shell-dark .schedule-item {
+  background: rgba(18, 27, 43, 0.9);
+  box-shadow: 0 18px 38px rgba(4, 10, 24, 0.26);
 }
 
 .schedule-item-expanded {
@@ -1222,12 +1628,29 @@ function resetSort() {
   color: #7d8899;
 }
 
+.schedule-shell-dark .meta-label {
+  color: #8fa3c1;
+}
+
 .slot-value,
 .course-title,
 .teacher-name {
   font-size: 1.05rem;
   font-weight: 600;
   color: #111827;
+}
+
+.schedule-shell-dark .slot-value,
+.schedule-shell-dark .course-title,
+.schedule-shell-dark .teacher-name,
+.schedule-shell-dark .course-subtitle,
+.schedule-shell-dark .meeting-link {
+  color: #eef4ff;
+}
+
+.schedule-shell-dark .course-title,
+.schedule-shell-dark .teacher-name {
+  color: #f5f9ff;
 }
 
 .course-title {
@@ -1238,6 +1661,7 @@ function resetSort() {
 .meeting-link {
   color: #172033;
   font-size: 0.96rem;
+  overflow-wrap: anywhere;
 }
 
 .meeting-link {
@@ -1272,6 +1696,11 @@ function resetSort() {
   font-size: 1.02rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+.schedule-shell-dark .student-avatar,
+.schedule-shell-dark .student-more {
+  border-color: rgba(18, 27, 43, 0.92);
 }
 
 .schedule-footer {
@@ -1325,11 +1754,22 @@ function resetSort() {
   border-radius: 24px;
 }
 
+.schedule-shell-dark :deep(.v-overlay__content .dialog-card) {
+  background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
+  color: #eff5ff;
+  border: 1px solid rgba(74, 92, 126, 0.42);
+}
+
 .filter-dialog-card {
   padding: 26px;
   background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(238, 245, 255, 0.92));
   border: 1px solid rgba(255, 255, 255, 0.72);
   box-shadow: 0 20px 45px rgba(76, 104, 148, 0.18);
+}
+
+.schedule-shell-dark :deep(.v-overlay__content .filter-dialog-card) {
+  background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
+  box-shadow: 0 24px 48px rgba(4, 10, 24, 0.42);
 }
 
 .filter-dialog-header {
@@ -1346,10 +1786,18 @@ function resetSort() {
   color: #172033;
 }
 
+.schedule-shell-dark .filter-dialog-title {
+  color: #f3f7ff;
+}
+
 .filter-dialog-subtitle {
   margin-top: 8px;
   color: #64748b;
   line-height: 1.5;
+}
+
+.schedule-shell-dark .filter-dialog-subtitle {
+  color: #8fa3c1;
 }
 
 .filter-options {
@@ -1370,6 +1818,11 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.84);
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.schedule-shell-dark .filter-option {
+  background: rgba(12, 19, 32, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
 }
 
 .filter-option:hover {
@@ -1401,11 +1854,19 @@ function resetSort() {
   color: #172033;
 }
 
+.schedule-shell-dark .filter-option-title {
+  color: #eef4ff;
+}
+
 .filter-option-text {
   display: block;
   margin-top: 4px;
   color: #6b7280;
   line-height: 1.45;
+}
+
+.schedule-shell-dark .filter-option-text {
+  color: #8ea3c7;
 }
 
 .filter-dialog-actions {
@@ -1426,6 +1887,12 @@ function resetSort() {
   background: rgba(255, 255, 255, 0.82);
   border-color: rgba(22, 119, 255, 0.28);
   font-weight: 600;
+}
+
+.schedule-shell-dark .reset-filter-btn {
+  background: rgba(18, 27, 43, 0.92);
+  color: #7fbcff;
+  border-color: rgba(82, 156, 255, 0.32);
 }
 
 .apply-filter-btn {
@@ -1473,19 +1940,37 @@ function resetSort() {
 }
 
 @media (max-width: 1024px) {
+  .desktop-only-btn {
+    display: none !important;
+  }
+
+  .schedule-shell {
+    width: 100%;
+    max-width: none;
+    overflow: hidden;
+  }
+
   .schedule-panel {
     grid-template-columns: 1fr;
+    padding: 18px;
+    gap: 18px;
   }
 
-  .nav-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .sidebar-card {
+    display: none;
   }
 
-  .topbar-card,
+  .mobile-header-card,
+  .mobile-utility-card {
+    display: flex;
+  }
+
+  .topbar-card {
+    display: none;
+  }
+
   .schedule-header {
-    flex-direction: column;
-    align-items: stretch;
+    display: block;
   }
 
   .toolbar-row {
@@ -1493,37 +1978,81 @@ function resetSort() {
     align-items: stretch;
   }
 
-  .search-wrap {
-    max-width: none;
+  .pill-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
   }
 
-  .topbar-tools {
-    flex-direction: column;
-    align-items: stretch;
+  .toolbar-actions {
+    width: 100%;
+  }
+
+  .toolbar-btn {
+    width: 100%;
   }
 
   .toolbar-actions {
     flex-wrap: wrap;
   }
 
-  .profile-pill {
-    width: 100%;
+  .schedule-card {
+    padding: 22px;
   }
 
   .schedule-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) 180px;
+    gap: 16px 20px;
   }
 
-  .course-block,
-  .teacher-block,
+  .schedule-grid > .slot-block:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .schedule-grid > .slot-block:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .schedule-grid > .slot-block:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .course-block {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .teacher-block {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
   .expand-block {
-    grid-column: 1 / -1;
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  .pagination-row {
+    flex-wrap: wrap;
   }
 }
 
 @media (max-width: 768px) {
   .schedule-page {
+    padding: 10px;
+  }
+
+  .schedule-panel {
     padding: 12px;
+    gap: 12px;
+  }
+
+  .mobile-header-card,
+  .mobile-utility-card {
+    display: flex;
   }
 
   .schedule-card {
@@ -1534,23 +2063,24 @@ function resetSort() {
     font-size: 1.9rem;
   }
 
-  .nav-list {
-    grid-template-columns: 1fr;
-  }
-
-  .topbar-tools {
-    gap: 10px;
-  }
-
   .pagination-row {
     flex-direction: column;
   }
 
-  .icon-badge-wrap {
-    flex: 1;
+  .toolbar-row {
+    gap: 14px;
   }
 
-  .top-icon-btn {
+  .pill-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolbar-actions {
+    width: 100%;
+  }
+
+  .toolbar-btn {
     width: 100%;
   }
 
@@ -1568,21 +2098,35 @@ function resetSort() {
 
   .action-row {
     width: 100%;
+    flex-direction: column;
   }
 
   .action-btn {
     flex: 1 1 100%;
+  }
+
+  .mobile-profile-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mobile-create-btn {
+    width: 100%;
+    min-height: 50px;
   }
 }
 
 @media (max-width: 560px) {
   .schedule-shell {
     border-radius: 24px;
+    width: 100%;
+    max-width: none;
+    overflow: hidden;
   }
 
   .schedule-panel {
-    padding: 14px;
-    gap: 14px;
+    padding: 10px;
+    gap: 10px;
   }
 
   .sidebar-card,
@@ -1591,12 +2135,60 @@ function resetSort() {
     border-radius: 20px;
   }
 
+  .mobile-header-card,
+  .mobile-utility-card,
+  .schedule-card {
+    padding: 14px;
+  }
+
+  .mobile-header-card {
+    gap: 10px;
+  }
+
+  .mobile-menu-btn,
+  .mobile-header-actions .top-icon-btn {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+  }
+
+  .mobile-brand-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .mobile-header-actions {
+    gap: 8px;
+  }
+
   .brand-name {
     font-size: 1rem;
   }
 
   .brand-caption {
     font-size: 0.72rem;
+  }
+
+  .schedule-title {
+    font-size: 1.65rem;
+  }
+
+  .schedule-subtitle {
+    font-size: 0.92rem;
+  }
+
+  .toolbar-btn,
+  .pill-tab {
+    min-height: 44px;
+  }
+
+  .pagination-pages {
+    gap: 8px;
+  }
+
+  .pagination-page-btn {
+    width: 40px;
+    height: 40px;
   }
 
   .filter-dialog-card {
