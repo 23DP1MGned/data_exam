@@ -9,17 +9,17 @@
           <span class="ml-3 font-weight-bold text-h6">SportSystem</span>
         </v-list-item>
 
-        <v-list-item link>
+        <v-list-item link to="/dashboard">
           <template v-slot:prepend><v-icon>mdi-home-outline</v-icon></template>
           <v-list-item-title>Home</v-list-item-title>
         </v-list-item>
 
-        <v-list-item link>
+        <v-list-item link to="/schedule">
           <template v-slot:prepend><v-icon>mdi-calendar</v-icon></template>
           <v-list-item-title>Schedule</v-list-item-title>
         </v-list-item>
 
-        <v-list-item active>
+        <v-list-item link to="/groups" active color="primary">
           <template v-slot:prepend><v-icon>mdi-account-group</v-icon></template>
           <v-list-item-title>Groups</v-list-item-title>
         </v-list-item>
@@ -29,7 +29,7 @@
           <v-list-item-title>Attendance</v-list-item-title>
         </v-list-item>
 
-        <v-list-item link>
+        <v-list-item link to="/payments">
           <template v-slot:prepend><v-icon>mdi-credit-card-outline</v-icon></template>
           <v-list-item-title>Payments</v-list-item-title>
         </v-list-item>
@@ -197,7 +197,7 @@ groups.value.sort((a,b)=> b.section.localeCompare(a.section))
 
 <style>
 body {
-  background: #f3f5fa;
+  background: transparent;
 }
 
 .group-card {

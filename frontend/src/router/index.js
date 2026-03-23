@@ -5,6 +5,7 @@ import Dashboard from '../pages/Dashboard.vue'
 import Register from '../pages/Register.vue'
 import Groups from '../pages/Groups.vue'
 import Schedule from '../pages/Schedule.vue'
+import Payments from '../pages/Payments.vue'
 
 const routes = [
   {
@@ -30,6 +31,10 @@ const routes = [
       {
     path: '/schedule',
     component: Schedule
+  },
+      {
+    path: '/payments',
+    component: Payments
   }
 ]
 

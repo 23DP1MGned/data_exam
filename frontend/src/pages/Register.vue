@@ -55,7 +55,8 @@ height:100vh;
 width:100%;
 position:relative;
 overflow:hidden;
-background:#020617;
+background:
+linear-gradient(160deg, #bfdcfb 0%, #b4d4f8 48%, #a4c7f0 100%);
 }
 
 
@@ -72,15 +73,15 @@ animation:liquidMove 18s infinite alternate ease-in-out;
 }
 
 .login-bg::before{
-background:rgb(37,99,235);
-top:-100px;
-left:-100px;
+background:rgba(29, 78, 216, 0.34);
+top:-140px;
+left:-140px;
 }
 
 .login-bg::after{
-background:rgb(14,165,233);
-bottom:-120px;
-right:-120px;
+background:rgba(14, 165, 233, 0.3);
+bottom:-140px;
+right:-140px;
 animation-duration:22s;
 }
 
@@ -96,9 +97,10 @@ transform:translate(120px,80px) scale(1.2);
 
 .login-card{
 border-radius:18px;
-background:rgba(120,120,120,0.75);
+background:rgba(255,255,255,0.74);
 backdrop-filter:blur(20px);
-box-shadow:0 30px 60px rgba(0,0,0,0.2);
+border:1px solid rgba(255,255,255,0.55);
+box-shadow:0 30px 60px rgba(81, 97, 128, 0.18);
 }
 
 
@@ -109,7 +111,7 @@ margin-bottom:4px;
 }
 
 .login-subtitle{
-color:#ffffff;
+color:#64748b;
 margin-bottom:10px;
 }
 
@@ -130,14 +132,14 @@ box-shadow:0 12px 25px rgba(0,0,0,0.15);
 .signup{
 margin-top:20px;
 font-size:14px;
-color:#000000;
+color:#475569;
 text-align:center;
 }
 
 .signup a{
 font-weight:600;
 text-decoration:none;
-color:#000000;
+color:#1d4ed8;
 }
 
 </style>
