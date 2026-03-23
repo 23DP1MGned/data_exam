@@ -6,6 +6,7 @@ import Register from '../pages/Register.vue'
 import Groups from '../pages/Groups.vue'
 import Schedule from '../pages/Schedule.vue'
 import Payments from '../pages/Payments.vue'
+import Attendance from '../pages/Attendance.vue'
 
 const routes = [
   {
@@ -35,6 +36,10 @@ const routes = [
       {
     path: '/payments',
     component: Payments
+  },
+      {
+    path: '/attendance',
+    component: Attendance
   }
 ]
 
