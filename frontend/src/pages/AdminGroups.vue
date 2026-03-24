@@ -479,7 +479,7 @@ const editingGroupId = ref(null)
 const darkModeStorageKey = 'app-dark-mode'
 
 const navItems = [
-  { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/home' },
+  { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
   { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/users' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
   { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' }

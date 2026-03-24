@@ -1,7 +1,7 @@
 <template>
   <v-app>
-    <v-main class="dashboard-page">
-      <div class="dashboard-shell" :class="{ 'dashboard-shell-dark': darkMode }">
+    <v-main class="admin-home-page">
+      <div class="admin-home-shell" :class="{ 'admin-home-shell-dark': darkMode }">
         <v-navigation-drawer
           v-if="isCompactNav && mobileMenuOpen"
           v-model="mobileMenuOpen"
@@ -18,7 +18,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Coach workspace</div>
+                <div class="brand-caption">Admin workspace</div>
               </div>
             </div>
 
@@ -29,7 +29,7 @@
                 :to="item.to || undefined"
                 variant="text"
                 class="nav-item"
-                :class="{ 'nav-item-active': item.to === '/home' }"
+                :class="{ 'nav-item-active': item.to === '/admin' }"
                 block
                 @click="mobileMenuOpen = false"
               >
@@ -42,7 +42,7 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
+                <img :src="avatarFor(profileSeed, profileName)" alt="Admin profile">
               </v-avatar>
               <div>
                 <div class="profile-name">{{ profileName }}</div>
@@ -61,7 +61,7 @@
           </div>
         </v-navigation-drawer>
 
-        <div class="dashboard-panel">
+        <div class="admin-home-panel">
           <aside class="sidebar-card">
             <div class="brand-block">
               <div class="brand-icon">
@@ -69,7 +69,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Coach workspace</div>
+                <div class="brand-caption">Admin workspace</div>
               </div>
             </div>
 
@@ -80,7 +80,7 @@
                 :to="item.to || undefined"
                 variant="text"
                 class="nav-item"
-                :class="{ 'nav-item-active': item.to === '/home' }"
+                :class="{ 'nav-item-active': item.to === '/admin' }"
                 block
               >
                 <template #prepend>
@@ -103,7 +103,7 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Home</div>
+                  <div class="brand-caption">Admin Panel</div>
                 </div>
               </div>
 
@@ -127,27 +127,17 @@
               </div>
             </div>
 
-              <div class="mobile-search-card">
+            <div class="mobile-utility-card">
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Admin profile">
                   </v-avatar>
                   <div>
                     <div class="profile-name">{{ profileName }}</div>
                     <div class="profile-email">{{ profileEmail }}</div>
                   </div>
                 </div>
-
-                <v-btn
-                  v-if="!isAdmin"
-                  color="primary"
-                  class="mobile-schedule-btn"
-                  prepend-icon="mdi-calendar-month-outline"
-                  to="/schedule"
-                >
-                  Schedule
-                </v-btn>
               </div>
             </div>
 
@@ -157,7 +147,7 @@
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
                   <v-text-field
                     v-model="search"
-                    :placeholder="isAdmin ? 'Search admin panel' : 'Search overview'"
+                    placeholder="Search admin panel"
                     variant="plain"
                     hide-details
                     density="comfortable"
@@ -197,7 +187,7 @@
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Admin profile">
                   </v-avatar>
                   <div>
                     <div class="profile-name">{{ profileName }}</div>
@@ -207,26 +197,14 @@
               </div>
             </div>
 
-            <div class="schedule-card">
-              <div class="schedule-header">
+            <div class="overview-shell-card">
+              <div class="overview-header">
                 <div>
-                  <h1 class="schedule-title">{{ isAdmin ? 'Admin Panel' : 'Home Overview' }}</h1>
-                  <div class="schedule-subtitle">
-                    {{ isAdmin
-                      ? 'System-wide admin overview with users, groups, sessions and payment activity'
-                      : 'Quick summary of trainings, groups, notifications and attendance' }}
+                  <h1 class="overview-title">Admin Panel</h1>
+                  <div class="overview-subtitle">
+                    System-wide overview with users, groups, sessions, payments and notifications.
                   </div>
                 </div>
-
-                <v-btn
-                  v-if="!isAdmin"
-                  color="primary"
-                  class="create-btn desktop-only-btn"
-                  prepend-icon="mdi-calendar-month-outline"
-                  to="/schedule"
-                >
-                  View full schedule
-                </v-btn>
               </div>
 
               <div class="overview-stats-grid">
@@ -236,7 +214,7 @@
                 </article>
               </div>
 
-              <div v-if="isAdmin" class="overview-grid">
+              <div class="overview-grid">
                 <section class="overview-card">
                   <div class="overview-card-header">
                     <div class="list-title">Latest Groups</div>
@@ -340,155 +318,9 @@
                   </div>
                 </section>
               </div>
-
-              <div v-else class="overview-grid">
-                <section class="overview-card">
-                  <div class="overview-card-header">
-                    <div class="list-title">Next 3 Days Trainings</div>
-                    <v-btn variant="text" color="primary" class="desktop-only-btn" to="/schedule">View full schedule</v-btn>
-                  </div>
-
-                  <div class="list-wrap">
-                    <article
-                      v-for="training in nextThreeDaysTrainings.slice(0, 5)"
-                      :key="training.id"
-                      class="overview-item"
-                    >
-                      <div>
-                        <div class="payment-name">{{ training.title }}</div>
-                        <div class="payment-meta">{{ training.trainer }} • {{ formatOverviewDate(training.date) }}</div>
-                      </div>
-                      <div class="payment-side">
-                        <div class="payment-amount">{{ training.start }} - {{ training.end }}</div>
-                      </div>
-                    </article>
-
-                    <div v-if="!nextThreeDaysTrainings.length" class="empty-state">
-                      No trainings scheduled for the next three days.
-                    </div>
-                  </div>
-                </section>
-
-                <section class="overview-card">
-                  <div class="overview-card-header">
-                    <div class="list-title">Notifications</div>
-                  </div>
-
-                  <div class="list-wrap">
-                    <article
-                      v-for="item in notifications"
-                      :key="item.id"
-                      class="overview-item"
-                    >
-                      <div>
-                        <div class="payment-name">{{ item.title }}</div>
-                        <div class="payment-meta">{{ item.time }}</div>
-                      </div>
-                    </article>
-                  </div>
-                </section>
-              </div>
             </div>
           </section>
         </div>
-
-        <v-dialog v-model="dialog" max-width="560">
-          <v-card class="dialog-card">
-            <v-card-title>
-              {{ isEditing ? 'Edit Training' : 'Create Training' }}
-            </v-card-title>
-
-            <v-card-text>
-              <v-text-field label="Title" v-model="newTraining.title" />
-              <v-text-field label="Date (YYYY-MM-DD)" v-model="newTraining.date" />
-              <v-text-field label="Start time" v-model="newTraining.start" />
-              <v-text-field label="End time" v-model="newTraining.end" />
-              <v-text-field label="Trainer" v-model="newTraining.trainer" />
-              <v-textarea label="Description" v-model="newTraining.description" />
-            </v-card-text>
-
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn @click="dialog = false">Cancel</v-btn>
-              <v-btn color="primary" @click="saveTraining">
-                {{ isEditing ? 'Update' : 'Save' }}
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-
-        <v-dialog v-model="filterDialog" max-width="520">
-          <v-card class="dialog-card filter-dialog-card">
-            <div class="filter-dialog-header">
-              <div>
-                <div class="filter-dialog-title">Filters</div>
-                <div class="filter-dialog-subtitle">
-                  Sort trainings by time or title without leaving the home overview.
-                </div>
-              </div>
-
-              <v-btn icon variant="text" @click="filterDialog = false">
-                <v-icon>mdi-close</v-icon>
-              </v-btn>
-            </div>
-
-            <div class="filter-options">
-              <button
-                type="button"
-                class="filter-option"
-                :class="{ 'filter-option-active': selectedSort === 'time' }"
-                @click="selectedSort = 'time'"
-              >
-                <span class="filter-option-icon">
-                  <v-icon size="18">mdi-clock-outline</v-icon>
-                </span>
-                <span>
-                  <span class="filter-option-title">By time</span>
-                  <span class="filter-option-text">Show trainings from the earliest start time.</span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                class="filter-option"
-                :class="{ 'filter-option-active': selectedSort === 'az' }"
-                @click="selectedSort = 'az'"
-              >
-                <span class="filter-option-icon">
-                  <v-icon size="18">mdi-sort-alphabetical-ascending</v-icon>
-                </span>
-                <span>
-                  <span class="filter-option-title">A to Z</span>
-                  <span class="filter-option-text">Order trainings alphabetically from A to Z.</span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                class="filter-option"
-                :class="{ 'filter-option-active': selectedSort === 'za' }"
-                @click="selectedSort = 'za'"
-              >
-                <span class="filter-option-icon">
-                  <v-icon size="18">mdi-sort-alphabetical-descending</v-icon>
-                </span>
-                <span>
-                  <span class="filter-option-title">Z to A</span>
-                  <span class="filter-option-text">Order trainings alphabetically from Z to A.</span>
-                </span>
-              </button>
-            </div>
-
-            <div class="filter-dialog-actions">
-              <v-btn variant="outlined" class="reset-filter-btn" @click="resetSort">
-                Reset
-              </v-btn>
-              <v-btn color="primary" class="apply-filter-btn" @click="applySelectedSort">
-                Apply filters
-              </v-btn>
-            </div>
-          </v-card>
-        </v-dialog>
 
         <AppNotificationsDialog
           v-model="notificationsDialog"
@@ -513,36 +345,18 @@ import { createAvatarDataUri } from '../utils/avatar'
 
 const router = useRouter()
 const search = ref('')
-const dialog = ref(false)
-const filterDialog = ref(false)
-const notificationsDialog = ref(false)
-const isEditing = ref(false)
-const selectedSort = ref('time')
 const darkMode = ref(false)
+const notificationsDialog = ref(false)
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const darkModeStorageKey = 'app-dark-mode'
-const loading = ref(false)
-const dashboardMode = ref('standard')
 
-const navItems = computed(() => {
-  if (user.value?.role === 'admin') {
-    return [
-      { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-      { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/users' },
-      { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
-      { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' }
-    ]
-  }
-
-  return [
-    { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
-    { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
-    { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-    { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
-    { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
-  ]
-})
+const navItems = [
+  { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
+  { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/users' },
+  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
+  { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' }
+]
 
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
 const { user } = useAuth()
@@ -554,42 +368,18 @@ const {
   markNotificationRead
 } = useNotifications()
 
-const trainings = ref([])
 const overviewStats = ref([])
 const adminGroups = ref([])
 const adminSessions = ref([])
 const adminPayments = ref([])
-const newTraining = ref({
-  title: '',
-  date: '',
-  start: '',
-  end: '',
-  trainer: '',
-  description: ''
-})
 
 const overviewQuery = computed(() => search.value.trim().toLowerCase())
 const profileName = computed(() => {
-  if (!user.value) return 'SportSystem User'
+  if (!user.value) return 'Admin User'
   return `${user.value.name} ${user.value.surname}`.trim()
 })
-const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
+const profileEmail = computed(() => user.value?.email ?? 'admin@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
-const isAdmin = computed(() => (user.value?.role === 'admin') || dashboardMode.value === 'admin')
-
-const nextThreeDaysTrainings = computed(() => {
-  const query = overviewQuery.value
-
-  return trainings.value.filter((training) => {
-    if (!query) return true
-
-    return [
-      training.title,
-      training.trainer,
-      training.group
-    ].some((value) => value.toLowerCase().includes(query))
-  })
-})
 
 const notifications = computed(() => notificationItems.value.slice(0, 3))
 const filteredAdminGroups = computed(() => {
@@ -602,6 +392,7 @@ const filteredAdminGroups = computed(() => {
     )
     .slice(0, 5)
 })
+
 const filteredAdminSessions = computed(() => {
   if (!overviewQuery.value) return adminSessions.value.slice(0, 5)
   return adminSessions.value
@@ -612,6 +403,7 @@ const filteredAdminSessions = computed(() => {
     )
     .slice(0, 5)
 })
+
 const filteredAdminPayments = computed(() => {
   if (!overviewQuery.value) return adminPayments.value.slice(0, 5)
   return adminPayments.value
@@ -639,53 +431,22 @@ watch(isCompactNav, (value) => {
   if (!value) mobileMenuOpen.value = false
 })
 
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateViewportState)
-})
-
 watch(notificationsDialog, (value) => {
   if (value) {
     loadNotifications(true)
   }
 })
 
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateViewportState)
+})
+
 async function loadDashboard() {
-  loading.value = true
-
-  try {
-    const data = await dashboardApi.get()
-    dashboardMode.value = data?.mode ?? 'standard'
-    trainings.value = (data?.next_trainings ?? []).map((training) => withTrainingAvatars({
-      ...training,
-      group: training.title,
-      students: []
-    }))
-    overviewStats.value = data?.overview_stats ?? []
-    adminGroups.value = data?.latest_groups ?? []
-    adminSessions.value = data?.recent_sessions ?? []
-    adminPayments.value = data?.recent_payments ?? []
-  } finally {
-    loading.value = false
-  }
-}
-
-function saveTraining() {
-  if (!newTraining.value.title) {
-    dialog.value = false
-    return
-  }
-
-  trainings.value.unshift(withTrainingAvatars({
-    id: Date.now(),
-    ...newTraining.value,
-    group: newTraining.value.title,
-    students: []
-  }))
-  dialog.value = false
-}
-
-function parseTime(value) {
-  return new Date(`1970-01-01 ${value}`).getTime()
+  const data = await dashboardApi.get()
+  overviewStats.value = data?.overview_stats ?? []
+  adminGroups.value = data?.latest_groups ?? []
+  adminSessions.value = data?.recent_sessions ?? []
+  adminPayments.value = data?.recent_payments ?? []
 }
 
 function formatOverviewDate(value) {
@@ -697,17 +458,6 @@ function formatOverviewDate(value) {
 
 function formatCurrency(value) {
   return `€${Number(value ?? 0)}`
-}
-
-function withTrainingAvatars(training) {
-  return {
-    ...training,
-    avatar: avatarFor(`trainer-${training.trainer}`, training.trainer),
-    students: (training.students || []).map((student) => ({
-      ...student,
-      avatar: avatarFor(`student-${student.name}`, student.name)
-    }))
-  }
 }
 
 async function handleNotificationClick(item) {
@@ -726,43 +476,17 @@ async function handleMobileLogout() {
   await handleLogout()
 }
 
-function sortAZ() {
-  trainings.value.sort((a, b) => a.title.localeCompare(b.title))
-}
-
-function sortZA() {
-  trainings.value.sort((a, b) => b.title.localeCompare(a.title))
-}
-
-function sortTime() {
-  trainings.value.sort((a, b) => parseTime(a.start) - parseTime(b.start))
-}
-
-function applySelectedSort() {
-  if (selectedSort.value === 'time') sortTime()
-  if (selectedSort.value === 'az') sortAZ()
-  if (selectedSort.value === 'za') sortZA()
-
-  filterDialog.value = false
-}
-
-function resetSort() {
-  selectedSort.value = 'time'
-  sortTime()
-  filterDialog.value = false
-}
-
 function updateViewportState() {
   isCompactNav.value = window.innerWidth <= 1024
 }
 </script>
 
 <style scoped>
-.dashboard-page {
+.admin-home-page {
   padding: 24px;
 }
 
-.dashboard-shell {
+.admin-home-shell {
   position: relative;
   max-width: 1440px;
   margin: 0 auto;
@@ -774,13 +498,13 @@ function updateViewportState() {
   backdrop-filter: blur(18px);
 }
 
-.dashboard-shell-dark {
+.admin-home-shell-dark {
   border-color: rgba(91, 109, 145, 0.4);
   background: linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(28, 36, 54, 0.94));
   box-shadow: 0 28px 80px rgba(4, 10, 24, 0.45);
 }
 
-.dashboard-panel {
+.admin-home-panel {
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);
   gap: 22px;
@@ -788,7 +512,7 @@ function updateViewportState() {
 }
 
 .mobile-header-card,
-.mobile-search-card {
+.mobile-utility-card {
   display: none;
 }
 
@@ -812,10 +536,7 @@ function updateViewportState() {
   color: #eef4ff;
 }
 
-.mobile-drawer-dark :deep(.v-navigation-drawer__content) {
-  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.98));
-}
-
+.mobile-drawer-dark :deep(.v-navigation-drawer__content),
 .mobile-drawer-dark .mobile-drawer-inner {
   background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.98));
 }
@@ -851,12 +572,12 @@ function updateViewportState() {
   background: rgba(255, 255, 255, 0.72);
 }
 
-.dashboard-shell-dark .mobile-drawer-profile {
+.admin-home-shell-dark .mobile-drawer-profile {
   background: rgba(18, 27, 43, 0.92);
   border: 1px solid rgba(74, 92, 126, 0.42);
 }
 
-.dashboard-shell-dark .mobile-logout-btn {
+.admin-home-shell-dark .mobile-logout-btn {
   color: #eef4ff;
   border-color: rgba(74, 92, 126, 0.42);
   background: rgba(18, 27, 43, 0.92);
@@ -872,7 +593,7 @@ function updateViewportState() {
   border: 1px solid rgba(255, 255, 255, 0.62);
 }
 
-.dashboard-shell-dark .sidebar-card {
+.admin-home-shell-dark .sidebar-card {
   background: rgba(18, 27, 43, 0.88);
   border-color: rgba(74, 92, 126, 0.42);
 }
@@ -909,7 +630,7 @@ function updateViewportState() {
   line-height: 1.1;
 }
 
-.dashboard-shell-dark .brand-name {
+.admin-home-shell-dark .brand-name {
   color: #f3f7ff;
 }
 
@@ -919,7 +640,7 @@ function updateViewportState() {
   color: #7b8798;
 }
 
-.dashboard-shell-dark .brand-caption {
+.admin-home-shell-dark .brand-caption {
   color: #94a6c4;
 }
 
@@ -940,7 +661,7 @@ function updateViewportState() {
   font-weight: 500;
 }
 
-.dashboard-shell-dark .nav-item {
+.admin-home-shell-dark .nav-item {
   color: #d8e2f2;
 }
 
@@ -952,10 +673,6 @@ function updateViewportState() {
   color: white;
   background: linear-gradient(180deg, #1677ff 0%, #0f5fe3 100%);
   box-shadow: 0 16px 34px rgba(22, 119, 255, 0.28);
-}
-
-.nav-item-settings {
-  margin-top: auto;
 }
 
 .content-shell {
@@ -974,7 +691,7 @@ function updateViewportState() {
   border: 1px solid rgba(255, 255, 255, 0.62);
 }
 
-.dashboard-shell-dark .mobile-header-card {
+.admin-home-shell-dark .mobile-header-card {
   background: rgba(22, 31, 48, 0.82);
   border-color: rgba(74, 92, 126, 0.42);
 }
@@ -993,7 +710,7 @@ function updateViewportState() {
   flex-shrink: 0;
 }
 
-.dashboard-shell-dark .mobile-menu-btn {
+.admin-home-shell-dark .mobile-menu-btn {
   color: #eef4ff;
   background: rgba(13, 20, 34, 0.88);
   border-color: rgba(63, 80, 114, 0.58);
@@ -1031,11 +748,7 @@ function updateViewportState() {
   flex-shrink: 0;
 }
 
-.mobile-theme-btn {
-  color: #111827;
-}
-
-.mobile-search-card {
+.mobile-utility-card {
   flex-direction: column;
   gap: 0;
   padding: 14px 16px;
@@ -1044,7 +757,7 @@ function updateViewportState() {
   border: 1px solid rgba(255, 255, 255, 0.62);
 }
 
-.dashboard-shell-dark .mobile-search-card {
+.admin-home-shell-dark .mobile-utility-card {
   background: rgba(22, 31, 48, 0.82);
   border-color: rgba(74, 92, 126, 0.42);
 }
@@ -1062,15 +775,6 @@ function updateViewportState() {
   padding: 10px 12px;
 }
 
-.mobile-schedule-btn {
-  min-height: 56px;
-  padding: 0 18px;
-  border-radius: 18px;
-  text-transform: none;
-  letter-spacing: 0;
-  box-shadow: 0 18px 34px rgba(22, 119, 255, 0.22);
-}
-
 .topbar-card {
   display: flex;
   align-items: center;
@@ -1082,7 +786,7 @@ function updateViewportState() {
   border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-.dashboard-shell-dark .topbar-card {
+.admin-home-shell-dark .topbar-card {
   background: rgba(22, 31, 48, 0.82);
   border-color: rgba(74, 92, 126, 0.42);
 }
@@ -1104,7 +808,7 @@ function updateViewportState() {
   border: 1px solid rgba(223, 231, 243, 0.92);
 }
 
-.dashboard-shell-dark .search-shell {
+.admin-home-shell-dark .search-shell {
   background: rgba(13, 20, 34, 0.88);
   border-color: rgba(63, 80, 114, 0.58);
 }
@@ -1114,7 +818,7 @@ function updateViewportState() {
   flex-shrink: 0;
 }
 
-.dashboard-shell-dark .search-shell-icon {
+.admin-home-shell-dark .search-shell-icon {
   color: #8ea3c7;
 }
 
@@ -1147,8 +851,8 @@ function updateViewportState() {
   opacity: 1;
 }
 
-.dashboard-shell-dark .search-field :deep(input),
-.dashboard-shell-dark .search-field :deep(input::placeholder) {
+.admin-home-shell-dark .search-field :deep(input),
+.admin-home-shell-dark .search-field :deep(input::placeholder) {
   color: #e7eefb;
 }
 
@@ -1166,7 +870,7 @@ function updateViewportState() {
   background: rgba(255, 255, 255, 0.75);
 }
 
-.dashboard-shell-dark .top-icon-btn {
+.admin-home-shell-dark .top-icon-btn {
   color: #dce6f7;
   background: rgba(18, 27, 43, 0.92);
   border-color: rgba(74, 92, 126, 0.46);
@@ -1178,11 +882,7 @@ function updateViewportState() {
   border-color: rgba(22, 119, 255, 0.28);
 }
 
-.logout-btn {
-  color: #111827;
-}
-
-.dashboard-shell-dark .top-icon-btn-active {
+.admin-home-shell-dark .top-icon-btn-active {
   color: #7fbcff;
   background: rgba(22, 43, 76, 0.96);
   border-color: rgba(82, 156, 255, 0.44);
@@ -1223,7 +923,7 @@ function updateViewportState() {
   min-width: 0;
 }
 
-.dashboard-shell-dark .profile-pill {
+.admin-home-shell-dark .profile-pill {
   background: rgba(18, 27, 43, 0.92);
   border: 1px solid rgba(74, 92, 126, 0.42);
 }
@@ -1234,7 +934,7 @@ function updateViewportState() {
   color: #172033;
 }
 
-.dashboard-shell-dark .profile-name {
+.admin-home-shell-dark .profile-name {
   color: #f2f7ff;
 }
 
@@ -1244,11 +944,11 @@ function updateViewportState() {
   word-break: break-word;
 }
 
-.dashboard-shell-dark .profile-email {
+.admin-home-shell-dark .profile-email {
   color: #93a5c3;
 }
 
-.schedule-card {
+.overview-shell-card {
   min-width: 0;
   padding: 26px;
   border-radius: 28px;
@@ -1256,12 +956,12 @@ function updateViewportState() {
   border: 1px solid rgba(255, 255, 255, 0.62);
 }
 
-.dashboard-shell-dark .schedule-card {
+.admin-home-shell-dark .overview-shell-card {
   background: rgba(22, 31, 48, 0.72);
   border-color: rgba(74, 92, 126, 0.42);
 }
 
-.schedule-header {
+.overview-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1269,7 +969,7 @@ function updateViewportState() {
   margin-bottom: 24px;
 }
 
-.schedule-title {
+.overview-title {
   margin: 0;
   font-size: 2.3rem;
   line-height: 1.1;
@@ -1277,32 +977,18 @@ function updateViewportState() {
   color: #121826;
 }
 
-.dashboard-shell-dark .schedule-title {
+.admin-home-shell-dark .overview-title {
   color: #f3f7ff;
 }
 
-.schedule-subtitle {
+.overview-subtitle {
   margin-top: 10px;
   font-size: 1rem;
   color: #66748a;
 }
 
-.dashboard-shell-dark .schedule-subtitle {
+.admin-home-shell-dark .overview-subtitle {
   color: #8fa3c1;
-}
-
-.create-btn {
-  min-height: 54px;
-  padding: 0 24px;
-  border-radius: 18px;
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: 1rem;
-  box-shadow: 0 18px 34px rgba(22, 119, 255, 0.28);
-}
-
-.desktop-only-btn {
-  display: inline-flex;
 }
 
 .overview-stats-grid {
@@ -1320,8 +1006,8 @@ function updateViewportState() {
   box-shadow: 0 12px 28px rgba(110, 136, 173, 0.08);
 }
 
-.dashboard-shell-dark .overview-stat-card,
-.dashboard-shell-dark .overview-card {
+.admin-home-shell-dark .overview-stat-card,
+.admin-home-shell-dark .overview-card {
   background: rgba(18, 27, 43, 0.9);
   border-color: rgba(74, 92, 126, 0.42);
   box-shadow: 0 18px 38px rgba(4, 10, 24, 0.26);
@@ -1336,7 +1022,7 @@ function updateViewportState() {
   color: #6f7d90;
 }
 
-.dashboard-shell-dark .summary-label {
+.admin-home-shell-dark .summary-label {
   color: #8fa3c1;
 }
 
@@ -1348,7 +1034,7 @@ function updateViewportState() {
   line-height: 1;
 }
 
-.dashboard-shell-dark .summary-value {
+.admin-home-shell-dark .summary-value {
   color: #f4f8ff;
 }
 
@@ -1377,7 +1063,7 @@ function updateViewportState() {
   color: #111827;
 }
 
-.dashboard-shell-dark .list-title {
+.admin-home-shell-dark .list-title {
   color: #f2f7ff;
 }
 
@@ -1403,7 +1089,7 @@ function updateViewportState() {
   flex: 1;
 }
 
-.dashboard-shell-dark .overview-item {
+.admin-home-shell-dark .overview-item {
   background: rgba(12, 19, 32, 0.88);
   border-color: rgba(63, 80, 114, 0.58);
 }
@@ -1415,8 +1101,8 @@ function updateViewportState() {
   overflow-wrap: anywhere;
 }
 
-.dashboard-shell-dark .payment-name,
-.dashboard-shell-dark .payment-amount {
+.admin-home-shell-dark .payment-name,
+.admin-home-shell-dark .payment-amount {
   color: #eef4ff;
 }
 
@@ -1427,7 +1113,14 @@ function updateViewportState() {
   overflow-wrap: anywhere;
 }
 
-.dashboard-shell-dark .payment-meta {
+.payment-secondary {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: #8fa0b8;
+}
+
+.admin-home-shell-dark .payment-meta,
+.admin-home-shell-dark .payment-secondary {
   color: #8ea3c7;
 }
 
@@ -1449,167 +1142,14 @@ function updateViewportState() {
   border: 1px dashed rgba(188, 199, 218, 0.9);
 }
 
-.dashboard-shell-dark .empty-state {
+.admin-home-shell-dark .empty-state {
   color: #99acc8;
   background: rgba(12, 19, 32, 0.76);
   border-color: rgba(63, 80, 114, 0.58);
 }
 
-.dialog-card {
-  border-radius: 24px;
-}
-
-.dashboard-shell-dark :deep(.v-overlay__content .dialog-card) {
-  background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
-  color: #eff5ff;
-  border: 1px solid rgba(74, 92, 126, 0.42);
-}
-
-.filter-dialog-card {
-  padding: 26px;
-  background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(238, 245, 255, 0.92));
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  box-shadow: 0 20px 45px rgba(76, 104, 148, 0.18);
-}
-
-.dashboard-shell-dark :deep(.v-overlay__content .filter-dialog-card) {
-  background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
-  box-shadow: 0 24px 48px rgba(4, 10, 24, 0.42);
-}
-
-.filter-dialog-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 20px;
-}
-
-.filter-dialog-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #172033;
-}
-
-.dashboard-shell-dark .filter-dialog-title {
-  color: #f3f7ff;
-}
-
-.filter-dialog-subtitle {
-  margin-top: 8px;
-  color: #64748b;
-  line-height: 1.5;
-}
-
-.dashboard-shell-dark .filter-dialog-subtitle {
-  color: #8fa3c1;
-}
-
-.filter-options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.filter-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  width: 100%;
-  padding: 16px 18px;
-  border: 1px solid rgba(199, 210, 224, 0.9);
-  border-radius: 20px;
-  text-align: left;
-  background: rgba(255, 255, 255, 0.84);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.dashboard-shell-dark .filter-option {
-  background: rgba(12, 19, 32, 0.88);
-  border-color: rgba(63, 80, 114, 0.58);
-}
-
-.filter-option:hover {
-  transform: translateY(-1px);
-  border-color: rgba(22, 119, 255, 0.35);
-}
-
-.filter-option-active {
-  border-color: rgba(22, 119, 255, 0.55);
-  background: linear-gradient(180deg, rgba(236, 244, 255, 0.98), rgba(227, 238, 255, 0.96));
-  box-shadow: 0 14px 28px rgba(22, 119, 255, 0.12);
-}
-
-.filter-option-icon {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  color: #1677ff;
-  background: rgba(22, 119, 255, 0.1);
-  flex-shrink: 0;
-}
-
-.filter-option-title {
-  display: block;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #172033;
-}
-
-.dashboard-shell-dark .filter-option-title {
-  color: #eef4ff;
-}
-
-.filter-option-text {
-  display: block;
-  margin-top: 4px;
-  color: #6b7280;
-  line-height: 1.45;
-}
-
-.dashboard-shell-dark .filter-option-text {
-  color: #8ea3c7;
-}
-
-.filter-dialog-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 22px;
-}
-
-.reset-filter-btn {
-  min-height: 46px;
-  padding: 0 18px;
-  border-radius: 16px;
-  text-transform: none;
-  letter-spacing: 0;
-  color: #1677ff;
-  background: rgba(255, 255, 255, 0.82);
-  border-color: rgba(22, 119, 255, 0.28);
-  font-weight: 600;
-}
-
-.dashboard-shell-dark .reset-filter-btn {
-  background: rgba(18, 27, 43, 0.92);
-  color: #7fbcff;
-  border-color: rgba(82, 156, 255, 0.32);
-}
-
-.apply-filter-btn {
-  min-height: 46px;
-  padding: 0 18px;
-  border-radius: 16px;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
 @media (max-width: 1280px) {
-  .dashboard-panel {
+  .admin-home-panel {
     grid-template-columns: 210px minmax(0, 1fr);
   }
 
@@ -1627,16 +1167,7 @@ function updateViewportState() {
 }
 
 @media (max-width: 1024px) {
-  .desktop-only-btn {
-    display: none !important;
-  }
-
-  .mobile-schedule-btn {
-    min-width: 168px;
-    padding: 0 22px;
-  }
-
-  .dashboard-panel {
+  .admin-home-panel {
     grid-template-columns: 1fr;
     padding: 18px;
     gap: 18px;
@@ -1650,7 +1181,7 @@ function updateViewportState() {
     display: flex;
   }
 
-  .mobile-search-card {
+  .mobile-utility-card {
     display: flex;
   }
 
@@ -1658,19 +1189,8 @@ function updateViewportState() {
     display: none;
   }
 
-  .schedule-card {
+  .overview-shell-card {
     padding: 22px;
-  }
-
-  .schedule-header {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: end;
-    gap: 16px;
-  }
-
-  .create-btn {
-    min-width: 220px;
   }
 
   .overview-stats-grid {
@@ -1685,10 +1205,6 @@ function updateViewportState() {
     padding: 20px;
   }
 
-  .overview-card-header {
-    align-items: center;
-  }
-
   .overview-item {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -1697,49 +1213,41 @@ function updateViewportState() {
 }
 
 @media (max-width: 768px) {
-  .dashboard-shell {
+  .admin-home-shell {
     width: 100%;
     max-width: none;
     overflow: hidden;
   }
 
-  .dashboard-page {
+  .admin-home-page {
     padding: 10px;
   }
 
-  .dashboard-panel {
+  .admin-home-panel {
     padding: 12px;
     gap: 12px;
     grid-template-columns: 1fr;
   }
 
   .mobile-header-card,
-  .mobile-search-card {
+  .mobile-utility-card {
     display: flex;
-  }
-
-  .overview-stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .topbar-card {
     display: none;
   }
 
-  .schedule-header {
+  .overview-header {
     margin-bottom: 20px;
     gap: 14px;
   }
 
-  .create-btn {
-    width: 100%;
-  }
-
-  .schedule-title {
+  .overview-title {
     font-size: 2rem;
   }
 
-  .schedule-subtitle {
+  .overview-subtitle {
     max-width: 34ch;
   }
 
@@ -1747,12 +1255,6 @@ function updateViewportState() {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
-  }
-
-  .overview-card-header :deep(.v-btn) {
-    justify-content: flex-start;
-    align-self: flex-start;
-    padding-left: 0;
   }
 
   .overview-item {
@@ -1766,81 +1268,34 @@ function updateViewportState() {
   }
 }
 
-@media (min-width: 769px) and (max-width: 900px) {
-  .dashboard-panel {
-    padding: 16px;
-    gap: 16px;
-  }
-
-  .nav-item {
-    flex: 1 1 calc(50% - 6px);
-    min-width: 0;
-  }
-
-  .topbar-card {
-    grid-template-columns: 1fr;
-  }
-
-  .topbar-tools {
-    grid-template-columns: 54px 54px minmax(0, 1fr);
-  }
-
-  .schedule-header {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
-
-  .create-btn {
-    width: 100%;
-    min-width: 0;
-  }
-}
-
 @media (max-width: 560px) {
-  .dashboard-shell {
+  .admin-home-shell {
     border-radius: 24px;
     width: 100%;
     max-width: none;
     overflow: hidden;
   }
 
-  .dashboard-panel {
+  .admin-home-panel {
     padding: 10px;
     gap: 10px;
   }
 
   .sidebar-card,
   .topbar-card,
-  .schedule-card {
+  .overview-shell-card {
     border-radius: 20px;
   }
 
-  .brand-block {
-    margin-bottom: 14px;
-    padding: 6px 4px;
-  }
-
-  .brand-name {
-    font-size: 1rem;
-  }
-
-  .brand-caption {
-    font-size: 0.72rem;
-  }
-
-  .schedule-header {
-    margin-bottom: 18px;
-  }
-
-  .schedule-title {
+  .overview-title {
     font-size: 1.65rem;
   }
 
-  .schedule-subtitle {
+  .overview-subtitle {
     font-size: 0.92rem;
   }
 
-  .schedule-card,
+  .overview-shell-card,
   .topbar-card,
   .sidebar-card {
     padding: 14px;
@@ -1870,16 +1325,12 @@ function updateViewportState() {
     padding: 14px;
   }
 
-  .topbar-tools {
-    grid-template-columns: 1fr;
-  }
-
   .mobile-header-card {
     padding: 12px 14px;
     border-radius: 20px;
   }
 
-  .mobile-search-card {
+  .mobile-utility-card {
     padding: 12px;
     border-radius: 20px;
   }
@@ -1912,18 +1363,8 @@ function updateViewportState() {
     grid-template-columns: 1fr;
   }
 
-  .schedule-header {
+  .overview-header {
     gap: 14px;
-  }
-
-  .overview-card-header :deep(.v-btn) {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .mobile-schedule-btn {
-    width: 100%;
-    min-height: 50px;
   }
 
   .profile-pill {
@@ -1934,192 +1375,6 @@ function updateViewportState() {
 
   .mobile-drawer-inner {
     padding: 14px;
-  }
-
-  .filter-dialog-card {
-    padding: 18px;
-  }
-
-  .filter-dialog-header,
-  .filter-dialog-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-}
-
-@media (max-width: 380px) {
-  .dashboard-page {
-    padding: 8px;
-  }
-
-  .dashboard-shell {
-    border-radius: 20px;
-  }
-
-  .dashboard-panel {
-    padding: 8px;
-    gap: 8px;
-  }
-
-  .mobile-header-card,
-  .mobile-search-card,
-  .schedule-card,
-  .sidebar-card {
-    padding: 10px;
-    border-radius: 18px;
-  }
-
-  .mobile-header-card {
-    gap: 8px;
-  }
-
-  .mobile-brand-inline {
-    gap: 8px;
-  }
-
-  .mobile-brand-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-  }
-
-  .mobile-brand-copy .brand-name {
-    font-size: 0.92rem;
-  }
-
-  .mobile-brand-copy .brand-caption {
-    font-size: 0.68rem;
-  }
-
-  .mobile-menu-btn,
-  .mobile-header-actions .top-icon-btn {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-  }
-
-  .icon-badge {
-    top: -1px;
-    right: -1px;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 4px;
-    font-size: 0.64rem;
-  }
-
-  .schedule-title {
-    font-size: 1.45rem;
-  }
-
-  .schedule-subtitle {
-    font-size: 0.88rem;
-  }
-
-  .create-btn,
-  .mobile-schedule-btn {
-    min-height: 46px;
-    padding: 0 14px;
-    font-size: 0.92rem;
-  }
-
-  .overview-stat-card,
-  .overview-card,
-  .overview-item,
-  .empty-state {
-    padding: 12px;
-    border-radius: 18px;
-  }
-
-  .summary-label,
-  .payment-meta {
-    font-size: 0.84rem;
-  }
-
-  .summary-value {
-    font-size: 1.45rem;
-  }
-
-  .list-title,
-  .payment-name,
-  .payment-amount {
-    font-size: 0.92rem;
-  }
-
-  .profile-pill,
-  .mobile-profile-pill {
-    padding: 8px 10px;
-  }
-
-  .profile-name {
-    font-size: 0.88rem;
-  }
-
-  .profile-email {
-    font-size: 0.78rem;
-  }
-}
-
-@media (max-width: 320px) {
-  .dashboard-page {
-    padding: 6px;
-  }
-
-  .dashboard-panel {
-    padding: 6px;
-    gap: 6px;
-  }
-
-  .mobile-header-card,
-  .mobile-search-card,
-  .schedule-card {
-    padding: 8px;
-    border-radius: 16px;
-  }
-
-  .mobile-brand-inline {
-    min-width: 0;
-  }
-
-  .mobile-brand-copy .brand-name {
-    font-size: 0.86rem;
-  }
-
-  .mobile-brand-copy .brand-caption {
-    font-size: 0.64rem;
-  }
-
-  .mobile-header-actions {
-    gap: 6px;
-  }
-
-  .mobile-menu-btn,
-  .mobile-header-actions .top-icon-btn {
-    width: 38px;
-    height: 38px;
-    min-width: 38px;
-  }
-
-  .overview-stats-grid,
-  .overview-grid,
-  .list-wrap {
-    gap: 10px;
-  }
-
-  .schedule-header,
-  .overview-card-header {
-    gap: 8px;
-  }
-
-  .schedule-title {
-    font-size: 1.34rem;
-  }
-
-  .schedule-subtitle {
-    font-size: 0.82rem;
-  }
-
-  .summary-value {
-    font-size: 1.28rem;
   }
 }
 </style>

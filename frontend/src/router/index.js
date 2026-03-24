@@ -11,6 +11,7 @@ import Attendance from '../pages/Attendance.vue'
 import Users from '../pages/Users.vue'
 import AdminGroups from '../pages/AdminGroups.vue'
 import AdminSessions from '../pages/AdminSessions.vue'
+import AdminHome from '../pages/AdminHome.vue'
 
 const routes = [
   {
@@ -26,6 +27,11 @@ const routes = [
     path: '/home',
     component: Home,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin',
+    component: AdminHome,
+    meta: { requiresAuth: true, adminOnly: true }
   },
   {
     path: '/register',
@@ -93,6 +99,10 @@ router.beforeEach(async (to) => {
     return '/login'
   }
 
+  if (user.value?.role === 'admin' && to.path === '/home') {
+    return '/admin'
+  }
+
   if (to.meta?.adminOnly && user.value?.role !== 'admin') {
     return '/home'
   }
@@ -100,13 +110,13 @@ router.beforeEach(async (to) => {
   if (
     user.value?.role === 'admin'
     && to.meta?.requiresAuth
-    && !['/home', '/users', '/manage-groups', '/manage-sessions'].includes(to.path)
+    && !['/admin', '/users', '/manage-groups', '/manage-sessions'].includes(to.path)
   ) {
-    return '/home'
+    return '/admin'
   }
 
   if (to.meta?.guestOnly && user.value) {
-    return '/home'
+    return user.value.role === 'admin' ? '/admin' : '/home'
   }
 
   return true
