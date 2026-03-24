@@ -110,7 +110,7 @@
                 </v-btn>
 
                 <div class="icon-badge-wrap">
-                  <v-btn icon variant="text" class="top-icon-btn">
+                  <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
                   <span class="icon-badge">6</span>
@@ -170,7 +170,7 @@
                 </div>
 
                 <div class="icon-badge-wrap">
-                  <v-btn icon variant="text" class="top-icon-btn">
+                  <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
                   <span class="icon-badge">6</span>
@@ -360,6 +360,8 @@
             </div>
           </v-card>
         </v-dialog>
+
+        <AppNotificationsDialog v-model="notificationsDialog" :dark-mode="darkMode" />
       </div>
     </v-main>
   </v-app>
@@ -367,11 +369,13 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import { createAvatarDataUri } from '../utils/avatar'
 
 const search = ref('')
 const dialog = ref(false)
 const filterDialog = ref(false)
+const notificationsDialog = ref(false)
 const isEditing = ref(false)
 const editingId = ref(null)
 const selectedSort = ref('time')

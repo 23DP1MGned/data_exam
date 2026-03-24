@@ -110,7 +110,7 @@
                 </v-btn>
 
                 <div class="icon-badge-wrap">
-                  <v-btn icon variant="text" class="top-icon-btn">
+                  <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
                   <span class="icon-badge">4</span>
@@ -161,7 +161,7 @@
                 </div>
 
                 <div class="icon-badge-wrap">
-                  <v-btn icon variant="text" class="top-icon-btn">
+                  <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
                   <span class="icon-badge">4</span>
@@ -330,6 +330,8 @@
             </div>
           </section>
         </div>
+
+        <AppNotificationsDialog v-model="notificationsDialog" :dark-mode="darkMode" />
       </div>
     </v-main>
   </v-app>
@@ -337,10 +339,12 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import { createAvatarDataUri } from '../utils/avatar'
 
 const search = ref('')
 const darkMode = ref(false)
+const notificationsDialog = ref(false)
 const currentMonth = ref(new Date('2026-07-01'))
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
