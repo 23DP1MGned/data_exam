@@ -69,8 +69,9 @@ class DatabaseSeeder extends Seeder
         $parent->children()->attach($child->id);
 
         $group = Group::create([
-            'name' => 'Football U14',
-            'age_category' => 'U14',
+            'name' => 'Football',
+            'group_number' => 1,
+            'age_category' => '12-14',
             'schedule_days' => 'Mon / Wed',
             'default_time' => '17:00',
             'price' => 50,
@@ -81,6 +82,7 @@ class DatabaseSeeder extends Seeder
 
         $completedSession = TrainingSession::create([
             'group_id' => $group->id,
+            'title' => 'Ball Control Training',
             'date' => Carbon::now()->subDays(2)->toDateString(),
             'start_time' => '17:00',
             'end_time' => '18:00',
@@ -89,6 +91,7 @@ class DatabaseSeeder extends Seeder
 
         $plannedSession = TrainingSession::create([
             'group_id' => $group->id,
+            'title' => 'Speed & Dribbling Session',
             'date' => Carbon::now()->addDay()->toDateString(),
             'start_time' => '17:30',
             'end_time' => '18:30',

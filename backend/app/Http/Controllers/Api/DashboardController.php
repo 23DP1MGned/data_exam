@@ -8,12 +8,19 @@ use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\TrainingSession;
 use App\Models\User;
+use App\Services\SessionTemplateService;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    public function __construct(private readonly SessionTemplateService $sessionTemplateService)
+    {
+    }
+
     public function index(Request $request)
     {
+        $this->sessionTemplateService->ensureUpcomingSessionsGenerated();
+
         $user = $request->user();
         $notifications = $user->notifications()->latest()->take(6)->get();
 
@@ -47,14 +54,18 @@ class DashboardController extends Controller
                 ],
                 'latest_groups' => $latestGroups->map(fn (Group $group) => [
                     'id' => $group->id,
-                    'name' => $group->name,
+                    'name' => $group->display_name,
+                    'group_number' => (int) ($group->group_number ?? $group->id),
+                    'group_code' => $group->group_code,
                     'coach' => trim(($group->coach->name ?? '').' '.($group->coach->surname ?? '')),
                     'age_category' => $group->age_category,
                     'students' => $group->children->count(),
                 ])->values(),
                 'recent_sessions' => $recentSessions->map(fn (TrainingSession $session) => [
                     'id' => $session->id,
-                    'title' => $session->group->name,
+                    'title' => $session->title ?: $session->group->name,
+                    'group_code' => $session->group->group_code,
+                    'group' => $session->group->display_name,
                     'trainer' => trim(($session->group->coach->name ?? '').' '.($session->group->coach->surname ?? '')),
                     'date' => $session->date->toDateString(),
                     'start' => substr($session->start_time, 0, 5),
@@ -116,7 +127,9 @@ class DashboardController extends Controller
             ],
             'next_trainings' => $upcoming->map(fn ($session) => [
                 'id' => $session->id,
-                'title' => $session->group->name,
+                'title' => $session->title ?: $session->group->name,
+                'group_code' => $session->group->group_code,
+                'group' => $session->group->display_name,
                 'trainer' => trim(($session->group->coach->name ?? '').' '.($session->group->coach->surname ?? '')),
                 'date' => $session->date->toDateString(),
                 'start' => substr($session->start_time, 0, 5),

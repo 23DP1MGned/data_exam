@@ -38,6 +38,7 @@ class GroupController extends Controller
 
         $group = Group::create([
             'name' => $request->validated('name'),
+            'group_number' => $request->validated('group_number') ?? $this->nextGroupNumber(),
             'age_category' => $request->validated('age_category'),
             'schedule_days' => $request->validated('schedule_days'),
             'default_time' => $request->validated('default_time'),
@@ -74,6 +75,7 @@ class GroupController extends Controller
 
         $group->update([
             'name' => $payload['name'],
+            'group_number' => $payload['group_number'] ?? $group->group_number,
             'age_category' => $payload['age_category'] ?? $group->age_category,
             'schedule_days' => $payload['schedule_days'] ?? $group->schedule_days,
             'default_time' => $payload['default_time'] ?? $group->default_time,
@@ -117,6 +119,11 @@ class GroupController extends Controller
             || ($user->role === User::ROLE_COACH && $group->coach_id === $user->id);
     }
 
+    private function nextGroupNumber(): int
+    {
+        return ((int) Group::query()->max('group_number')) + 1;
+    }
+
     private function formatGroup(Group $group): array
     {
         $firstSession = $group->sessions->sortBy('date')->first();
@@ -127,7 +134,10 @@ class GroupController extends Controller
 
         return [
             'id' => $group->id,
-            'section' => $group->name,
+            'section' => $group->display_name,
+            'base_name' => $group->name,
+            'group_number' => (int) ($group->group_number ?? $group->id),
+            'group_code' => $group->group_code,
             'trainer' => trim(($group->coach->name ?? '').' '.($group->coach->surname ?? '')),
             'age_category' => $group->age_category,
             'days' => $group->schedule_days ?: $group->sessions->sortBy('date')->take(2)->map(fn ($session) => $session->date->format('D'))->implode(' / '),

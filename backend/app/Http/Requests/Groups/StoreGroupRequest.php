@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Groups;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreGroupRequest extends FormRequest
 {
@@ -15,6 +16,7 @@ class StoreGroupRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'group_number' => ['nullable', 'integer', 'min:1', Rule::unique('groups', 'group_number')],
             'age_category' => ['nullable', 'string', 'max:255'],
             'schedule_days' => ['nullable', 'string', 'max:255'],
             'default_time' => ['nullable', 'string', 'max:255'],

@@ -251,29 +251,24 @@
 
                       <div class="group-copy">
                         <div class="group-name">{{ group.section }}</div>
-                        <div class="group-trainer">{{ group.trainer || 'Coach not assigned' }}</div>
                       </div>
                     </div>
-
-                    <v-chip size="small" class="group-chip">
-                      {{ group.age_category ? `Age ${group.age_category}` : 'No age category' }}
-                    </v-chip>
                   </div>
 
                   <div class="group-info-grid">
                     <div class="info-item">
+                      <span class="info-label">Coach</span>
+                      <span class="info-value">{{ group.trainer || 'Coach not assigned' }}</span>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-label">Age</span>
+                      <span class="info-value">{{ group.age_category || 'No age category' }}</span>
+                    </div>
+
+                    <div class="info-item">
                       <span class="info-label">Students</span>
                       <span class="info-value">{{ group.students }}</span>
-                    </div>
-
-                    <div class="info-item">
-                      <span class="info-label">Days</span>
-                      <span class="info-value">{{ group.days || 'Not set' }}</span>
-                    </div>
-
-                    <div class="info-item">
-                      <span class="info-label">Time</span>
-                      <span class="info-value">{{ group.time || 'Not set' }}</span>
                     </div>
 
                     <div class="info-item">
@@ -372,26 +367,6 @@
                     :menu-props="selectMenuProps"
                   />
                 </div>
-                <v-select
-                  v-model="form.schedule_days"
-                  :items="weekdayOptions"
-                  item-title="label"
-                  item-value="value"
-                  label="Schedule days"
-                  variant="outlined"
-                  class="create-field"
-                  :menu-props="selectMenuProps"
-                  chips
-                  multiple
-                  closable-chips
-                />
-                <v-text-field
-                  v-model="form.default_time"
-                  label="Default time"
-                  type="time"
-                  variant="outlined"
-                  class="create-field"
-                />
                 <v-text-field
                   v-model="form.price"
                   label="Price"
@@ -480,19 +455,9 @@ const darkModeStorageKey = 'app-dark-mode'
 
 const navItems = [
   { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-  { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/users' },
+  { label: 'Admin Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
   { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' }
-]
-
-const weekdayOptions = [
-  { label: 'Monday', value: 'Mon' },
-  { label: 'Tuesday', value: 'Tue' },
-  { label: 'Wednesday', value: 'Wed' },
-  { label: 'Thursday', value: 'Thu' },
-  { label: 'Friday', value: 'Fri' },
-  { label: 'Saturday', value: 'Sat' },
-  { label: 'Sunday', value: 'Sun' }
 ]
 
 const ageOptions = Array.from({ length: 15 }, (_, index) => {
@@ -556,7 +521,6 @@ const filteredGroups = computed(() => {
     return [
       group.section,
       group.trainer,
-      group.days,
       group.age_category
     ]
       .filter(Boolean)
@@ -607,8 +571,6 @@ function getDefaultForm() {
     name: '',
     age_from: null,
     age_to: null,
-    schedule_days: [],
-    default_time: '',
     price: 0,
     coach_id: null,
     child_ids: []
@@ -645,10 +607,8 @@ function openEditDialog(group) {
   editingGroupId.value = group.id
   formError.value = ''
   form.value = {
-    name: group.section ?? '',
+    name: group.base_name ?? group.section ?? '',
     ...parseAgeCategory(group.age_category),
-    schedule_days: parseScheduleDays(group.days),
-    default_time: group.time ?? '',
     price: group.price ?? 0,
     coach_id: coachIdByName(group.trainer),
     child_ids: Array.isArray(group.child_ids) ? [...group.child_ids] : []
@@ -659,15 +619,6 @@ function openEditDialog(group) {
 function coachIdByName(name) {
   const coach = users.value.find((item) => item.role === 'coach' && item.full_name === name)
   return coach?.id ?? null
-}
-
-function parseScheduleDays(value) {
-  if (!value) return []
-
-  return String(value)
-    .split('/')
-    .map((item) => item.trim())
-    .filter(Boolean)
 }
 
 function parseAgeCategory(value) {
@@ -728,10 +679,6 @@ function buildPayload() {
     age_category: form.value.age_from && form.value.age_to
       ? `${form.value.age_from}-${form.value.age_to}`
       : null,
-    schedule_days: Array.isArray(form.value.schedule_days) && form.value.schedule_days.length
-      ? form.value.schedule_days.join(' / ')
-      : null,
-    default_time: form.value.default_time?.trim() || null,
     price: form.value.price === '' || form.value.price == null ? 0 : Number(form.value.price),
     coach_id: form.value.coach_id || null,
     child_ids: Array.isArray(form.value.child_ids) ? form.value.child_ids : []

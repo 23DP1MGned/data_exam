@@ -29,7 +29,7 @@
                 :to="item.to || undefined"
                 variant="text"
                 class="nav-item"
-                :class="{ 'nav-item-active': item.to === '/users' }"
+                :class="{ 'nav-item-active': item.to === '/admin-users' }"
                 block
                 @click="mobileMenuOpen = false"
               >
@@ -80,7 +80,7 @@
                 :to="item.to || undefined"
                 variant="text"
                 class="nav-item"
-                :class="{ 'nav-item-active': item.to === '/users' }"
+                :class="{ 'nav-item-active': item.to === '/admin-users' }"
                 block
               >
                 <template #prepend>
@@ -103,7 +103,7 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Users</div>
+                  <div class="brand-caption">Admin Users</div>
                 </div>
               </div>
 
@@ -204,7 +204,7 @@
             <div class="users-card">
               <div class="users-header">
                 <div>
-                  <h1 class="users-title">Users</h1>
+                  <h1 class="users-title">Admin Users</h1>
                   <div class="users-subtitle">
                     Create, update and manage all system users from one admin panel.
                   </div>
@@ -507,7 +507,7 @@ const darkModeStorageKey = 'app-dark-mode'
 
 const navItems = [
   { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-  { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/users' },
+  { label: 'Admin Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
   { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' }
 ]

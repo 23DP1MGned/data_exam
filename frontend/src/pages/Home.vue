@@ -529,7 +529,7 @@ const navItems = computed(() => {
   if (user.value?.role === 'admin') {
     return [
       { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-      { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/users' },
+      { label: 'Admin Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
       { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
       { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' }
     ]

@@ -8,14 +8,21 @@ use App\Http\Requests\Sessions\UpdateSessionRequest;
 use App\Models\Group;
 use App\Models\TrainingSession;
 use App\Models\User;
+use App\Services\SessionTemplateService;
 use Illuminate\Http\Request;
 
 class SessionController extends Controller
 {
+    public function __construct(private readonly SessionTemplateService $sessionTemplateService)
+    {
+    }
+
     public function index(Request $request)
     {
+        $this->sessionTemplateService->ensureUpcomingSessionsGenerated();
+
         $user = $request->user();
-        $query = TrainingSession::query()->with(['group.coach', 'group.children']);
+        $query = TrainingSession::query()->with(['group.coach', 'group.children', 'sessionTemplate']);
 
         if ($request->filled('group_id')) {
             $query->where('group_id', $request->integer('group_id'));
@@ -35,15 +42,25 @@ class SessionController extends Controller
 
     public function store(StoreSessionRequest $request)
     {
-        $group = Group::findOrFail($request->validated('group_id'));
+        $validated = $request->validated();
+        $group = Group::findOrFail($validated['group_id']);
 
         if (! $this->canManageSessionGroup($request->user(), $group)) {
             return $this->error('Forbidden.', [], 403);
         }
 
-        $session = TrainingSession::create($request->validated());
+        if (! empty($validated['weekdays'])) {
+            $sessions = $this->sessionTemplateService->createRecurring($validated);
 
-        return $this->success($this->formatSession($session->load(['group.coach', 'group.children'])), 'Session created.', 201);
+            return $this->success([
+                'created_count' => $sessions->count(),
+                'first_session' => $sessions->isNotEmpty() ? $this->formatSession($sessions->first()) : null,
+            ], 'Recurring sessions created.', 201);
+        }
+
+        $session = TrainingSession::create($validated);
+
+        return $this->success($this->formatSession($session->load(['group.coach', 'group.children', 'sessionTemplate'])), 'Session created.', 201);
     }
 
     public function show(Request $request, TrainingSession $session)
@@ -52,18 +69,35 @@ class SessionController extends Controller
             return $this->error('Forbidden.', [], 403);
         }
 
-        return $this->success($this->formatSession($session->load(['group.coach', 'group.children'])));
+        return $this->success($this->formatSession($session->load(['group.coach', 'group.children', 'sessionTemplate'])));
     }
 
     public function update(UpdateSessionRequest $request, TrainingSession $session)
     {
+        $validated = $request->validated();
+
         if (! $this->canManageSessionGroup($request->user(), $session->group)) {
             return $this->error('Forbidden.', [], 403);
         }
 
-        $session->update($request->validated());
+        $targetGroup = Group::findOrFail($validated['group_id']);
 
-        return $this->success($this->formatSession($session->fresh()->load(['group.coach', 'group.children'])), 'Session updated.');
+        if (! $this->canManageSessionGroup($request->user(), $targetGroup)) {
+            return $this->error('Forbidden.', [], 403);
+        }
+
+        if (! empty($validated['weekdays']) || $session->session_template_id) {
+            $sessions = $this->sessionTemplateService->updateRecurring($session->load('sessionTemplate'), $validated);
+
+            return $this->success([
+                'updated_count' => $sessions->count(),
+                'first_session' => $sessions->isNotEmpty() ? $this->formatSession($sessions->first()) : null,
+            ], 'Recurring sessions updated.');
+        }
+
+        $session->update($validated);
+
+        return $this->success($this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'sessionTemplate'])), 'Session updated.');
     }
 
     public function destroy(Request $request, TrainingSession $session)
@@ -72,7 +106,7 @@ class SessionController extends Controller
             return $this->error('Forbidden.', [], 403);
         }
 
-        $session->delete();
+        $this->sessionTemplateService->deleteSession($session->load('sessionTemplate'));
 
         return $this->success([], 'Session deleted.');
     }
@@ -100,14 +134,18 @@ class SessionController extends Controller
         return [
             'id' => $session->id,
             'group_id' => $session->group_id,
-            'title' => $session->group->name,
+            'template_id' => $session->session_template_id,
+            'title' => $session->title ?: $session->group->name,
+            'weekdays' => $session->sessionTemplate?->weekdays ?? [$session->date->format('D')],
+            'group_code' => $session->group->group_code,
             'description' => $session->group->age_category ?? 'Training session',
             'trainer' => trim(($session->group->coach->name ?? '').' '.($session->group->coach->surname ?? '')),
             'start' => substr($session->start_time, 0, 5),
             'end' => substr($session->end_time, 0, 5),
+            'price' => (float) ($session->price ?? $session->group->price ?? 0),
             'date' => $session->date->toDateString(),
             'status' => $session->status,
-            'group' => $session->group->name,
+            'group' => $session->group->display_name,
             'students' => $session->group->children->map(fn (User $child) => [
                 'id' => $child->id,
                 'name' => trim($child->name.' '.$child->surname),

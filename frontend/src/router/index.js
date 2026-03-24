@@ -8,7 +8,7 @@ import Groups from '../pages/Groups.vue'
 import Schedule from '../pages/Schedule.vue'
 import Payments from '../pages/Payments.vue'
 import Attendance from '../pages/Attendance.vue'
-import Users from '../pages/Users.vue'
+import AdminUsers from '../pages/AdminUsers.vue'
 import AdminGroups from '../pages/AdminGroups.vue'
 import AdminSessions from '../pages/AdminSessions.vue'
 import AdminHome from '../pages/AdminHome.vue'
@@ -59,8 +59,8 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/users',
-    component: Users,
+    path: '/admin-users',
+    component: AdminUsers,
     meta: { requiresAuth: true, adminOnly: true }
   },
   {
@@ -110,7 +110,7 @@ router.beforeEach(async (to) => {
   if (
     user.value?.role === 'admin'
     && to.meta?.requiresAuth
-    && !['/admin', '/users', '/manage-groups', '/manage-sessions'].includes(to.path)
+    && !['/admin', '/admin-users', '/manage-groups', '/manage-sessions'].includes(to.path)
   ) {
     return '/admin'
   }

@@ -246,12 +246,12 @@
                   <div class="session-card-top">
                     <div class="session-card-main">
                       <v-avatar size="56" class="session-avatar">
-                        <img :src="avatarFor(`session-${session.id}-${session.group}`, session.group)" :alt="session.group">
+                        <img :src="avatarFor(`session-${session.id}-${session.title}`, session.title)" :alt="session.title">
                       </v-avatar>
 
                       <div class="session-copy">
-                        <div class="session-name">{{ session.group }}</div>
-                        <div class="session-trainer">{{ session.trainer || 'Coach not assigned' }}</div>
+                        <div class="session-name">{{ session.title }}</div>
+                        <div class="session-trainer">{{ session.group }}</div>
                       </div>
                     </div>
 
@@ -262,13 +262,13 @@
 
                   <div class="session-info-grid">
                     <div class="info-item">
-                      <span class="info-label">Date</span>
-                      <span class="info-value">{{ formatDate(session.date) }}</span>
+                      <span class="info-label">Day</span>
+                      <span class="info-value">{{ formatDay(session.date) }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">Group</span>
-                      <span class="info-value">{{ session.group }}</span>
+                      <span class="info-label">Coach</span>
+                      <span class="info-value">{{ session.trainer || 'Coach not assigned' }}</span>
                     </div>
 
                     <div class="info-item">
@@ -280,22 +280,11 @@
                       <span class="info-label">End</span>
                       <span class="info-value">{{ session.end }}</span>
                     </div>
-                  </div>
 
-                  <div class="session-linked">
-                    <div class="linked-title">Children in this group</div>
-                    <div v-if="session.students?.length" class="children-chips">
-                      <v-chip
-                        v-for="student in session.students"
-                        :key="student.id"
-                        size="small"
-                        variant="tonal"
-                        class="child-chip"
-                      >
-                        {{ student.name }}
-                      </v-chip>
+                    <div class="info-item">
+                      <span class="info-label">Price per training</span>
+                      <span class="info-value">{{ formatPrice(session.price) }}</span>
                     </div>
-                    <div v-else class="linked-empty">No children linked</div>
                   </div>
 
                   <div class="session-card-actions">
@@ -328,7 +317,11 @@
               <div>
                 <div class="create-dialog-title">{{ editingSessionId ? 'Edit Session' : 'Create Session' }}</div>
                 <div class="create-dialog-subtitle">
-                  Select a group, date, time and session status inside the admin panel.
+                  {{
+                    editingSessionId
+                      ? 'Update the training title, group, weekdays, time, status and price.'
+                      : 'Set the training title, choose its group, then define weekdays, time and price.'
+                  }}
                 </div>
               </div>
 
@@ -349,6 +342,13 @@
               </v-alert>
 
               <div class="create-fields-grid">
+                <v-text-field
+                  v-model="form.title"
+                  label="Training title"
+                  variant="outlined"
+                  class="create-field create-field-full"
+                />
+
                 <v-autocomplete
                   v-model="form.group_id"
                   :items="groupOptions"
@@ -362,15 +362,25 @@
                   clearable
                 />
 
-                <v-text-field
-                  v-model="form.date"
-                  label="Date"
-                  type="date"
+                <v-autocomplete
+                  v-model="form.weekdays"
+                  :items="weekdayOptions"
+                  item-title="label"
+                  item-value="value"
+                  label="Days of week"
                   variant="outlined"
-                  class="create-field"
+                  class="create-field create-field-full weekdays-field"
+                  :menu-props="selectMenuProps"
+                  :hint="resolvedDateHint"
+                  persistent-hint
+                  multiple
+                  chips
+                  closable-chips
+                  clearable
                 />
 
                 <v-select
+                  v-if="editingSessionId"
                   v-model="form.status"
                   :items="statusOptions"
                   item-title="label"
@@ -386,7 +396,7 @@
                   label="Start time"
                   type="time"
                   variant="outlined"
-                  class="create-field"
+                  class="create-field time-field"
                 />
 
                 <v-text-field
@@ -394,7 +404,18 @@
                   label="End time"
                   type="time"
                   variant="outlined"
-                  class="create-field"
+                  class="create-field time-field"
+                />
+
+                <v-text-field
+                  v-model="form.price"
+                  label="Price per training"
+                  type="number"
+                  variant="outlined"
+                  class="create-field price-field"
+                  prepend-inner-icon="mdi-currency-eur"
+                  min="0"
+                  step="0.01"
                 />
               </div>
             </v-card-text>
@@ -446,7 +467,7 @@ const darkModeStorageKey = 'app-dark-mode'
 
 const navItems = [
   { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-  { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/users' },
+  { label: 'Admin Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
   { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' }
 ]
@@ -455,6 +476,16 @@ const statusOptions = [
   { label: 'Planned', value: 'planned' },
   { label: 'Completed', value: 'completed' },
   { label: 'Cancelled', value: 'cancelled' }
+]
+
+const weekdayOptions = [
+  { label: 'Monday', value: 'Mon' },
+  { label: 'Tuesday', value: 'Tue' },
+  { label: 'Wednesday', value: 'Wed' },
+  { label: 'Thursday', value: 'Thu' },
+  { label: 'Friday', value: 'Fri' },
+  { label: 'Saturday', value: 'Sat' },
+  { label: 'Sunday', value: 'Sun' }
 ]
 
 const selectMenuProps = computed(() => ({
@@ -486,9 +517,23 @@ const profileSeed = computed(() => user.value?.email ?? profileName.value)
 const groupOptions = computed(() =>
   groups.value.map((group) => ({
     label: `${group.section}${group.trainer ? ` • ${group.trainer}` : ''}`,
-    value: group.id
+    value: group.id,
+    price: Number(group.price ?? 0)
   }))
 )
+
+const resolvedDateHint = computed(() => {
+  const selectedWeekdays = sortWeekdays(form.value.weekdays || [])
+  if (!selectedWeekdays.length) {
+    return 'Select one or more weekdays for these recurring trainings.'
+  }
+
+  if (editingSessionId.value) {
+    return `Repeats every week on ${formatWeekdayLabels(selectedWeekdays)}`
+  }
+
+  return `Will create recurring trainings every week on ${formatWeekdayLabels(selectedWeekdays)}`
+})
 
 const filteredSessions = computed(() => {
   const query = search.value.trim().toLowerCase()
@@ -497,6 +542,7 @@ const filteredSessions = computed(() => {
     if (!query) return true
 
     return [
+      session.title,
       session.group,
       session.trainer,
       session.status,
@@ -536,6 +582,20 @@ watch(notificationsDialog, (value) => {
   }
 })
 
+watch(
+  () => form.value.group_id,
+  (groupId) => {
+    if (editingSessionId.value || !groupId) return
+
+    const selectedGroup = groupOptions.value.find((item) => item.value === groupId)
+    if (!selectedGroup) return
+
+    if (form.value.price === '' || form.value.price === null || Number(form.value.price) === 0) {
+      form.value.price = selectedGroup.price
+    }
+  }
+)
+
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateViewportState)
 })
@@ -543,9 +603,11 @@ onBeforeUnmount(() => {
 function getDefaultForm() {
   return {
     group_id: null,
-    date: '',
+    title: '',
+    weekdays: [],
     start_time: '',
     end_time: '',
+    price: '',
     status: 'planned'
   }
 }
@@ -570,6 +632,37 @@ function formatDate(value) {
   })
 }
 
+function formatDay(value) {
+  return new Date(value).toLocaleDateString('en-US', {
+    weekday: 'long'
+  })
+}
+
+function sortWeekdays(weekdays) {
+  const weekdayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+  return [...new Set(weekdays)].sort((left, right) => weekdayOrder.indexOf(left) - weekdayOrder.indexOf(right))
+}
+
+function formatWeekdayLabels(weekdays) {
+  const labelMap = Object.fromEntries(weekdayOptions.map((item) => [item.value, item.label]))
+
+  return weekdays
+    .map((weekday) => labelMap[weekday] ?? weekday)
+    .join(', ')
+}
+
+function formatPrice(value) {
+  const numericValue = Number(value ?? 0)
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: numericValue % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2
+  }).format(numericValue)
+}
+
 function closeDialog() {
   sessionDialog.value = false
   editingSessionId.value = null
@@ -589,9 +682,11 @@ function openEditDialog(session) {
   formError.value = ''
   form.value = {
     group_id: session.group_id ?? null,
-    date: session.date ?? '',
+    title: session.title ?? '',
+    weekdays: sortWeekdays(session.weekdays || []),
     start_time: session.start ?? '',
     end_time: session.end ?? '',
+    price: session.price ?? '',
     status: session.status ?? 'planned'
   }
   sessionDialog.value = true
@@ -630,9 +725,11 @@ async function initializePage() {
 function buildPayload() {
   return {
     group_id: form.value.group_id || null,
-    date: form.value.date || null,
+    title: form.value.title?.trim() || '',
+    weekdays: sortWeekdays(form.value.weekdays || []),
     start_time: form.value.start_time || null,
     end_time: form.value.end_time || null,
+    price: form.value.price === '' || form.value.price === null ? 0 : Number(form.value.price),
     status: form.value.status || 'planned'
   }
 }
@@ -649,8 +746,18 @@ async function saveSession() {
       return
     }
 
-    if (!payload.date || !payload.start_time || !payload.end_time) {
-      formError.value = 'Date, start time and end time are required.'
+    if (!payload.title) {
+      formError.value = 'Training title is required.'
+      return
+    }
+
+    if (!payload.weekdays.length || !payload.start_time || !payload.end_time) {
+      formError.value = 'Days of week, start time and end time are required.'
+      return
+    }
+
+    if (Number.isNaN(payload.price) || payload.price < 0) {
+      formError.value = 'Price per training must be a valid non-negative number.'
       return
     }
 
@@ -719,6 +826,30 @@ async function handleMobileLogout() {
   border-color: rgba(91, 109, 145, 0.4);
   background: linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(28, 36, 54, 0.94));
   box-shadow: 0 28px 80px rgba(4, 10, 24, 0.45);
+}
+
+.price-field :deep(input[type='number']) {
+  -moz-appearance: textfield;
+}
+
+.price-field :deep(input[type='number']::-webkit-outer-spin-button),
+.price-field :deep(input[type='number']::-webkit-inner-spin-button) {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.create-dialog-card :deep(.time-field input[type='time']::-webkit-calendar-picker-indicator) {
+  opacity: 1;
+  filter: brightness(0);
+}
+
+.create-dialog-card :deep(.price-field .v-field__prepend-inner),
+.create-dialog-card :deep(.price-field .v-field__prepend-inner .v-icon) {
+  color: #172033;
+}
+
+.create-dialog-card :deep(.price-field .v-field__prepend-inner .v-icon) {
+  font-size: 18px;
 }
 
 .admin-sessions-panel {
@@ -1166,15 +1297,13 @@ async function handleMobileLogout() {
 
 .sessions-subtitle,
 .summary-label,
-.info-label,
-.linked-title {
+.info-label {
   color: #7b8798;
 }
 
 .admin-sessions-shell-dark .sessions-subtitle,
 .admin-sessions-shell-dark .summary-label,
-.admin-sessions-shell-dark .info-label,
-.admin-sessions-shell-dark .linked-title {
+.admin-sessions-shell-dark .info-label {
   color: #94a6c4;
 }
 
@@ -1337,45 +1466,6 @@ async function handleMobileLogout() {
 .info-value {
   font-weight: 600;
   color: #172033;
-}
-
-.session-linked {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(211, 221, 236, 0.95);
-}
-
-.admin-sessions-shell-dark .session-linked {
-  border-top-color: rgba(61, 78, 111, 0.72);
-}
-
-.children-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.child-chip {
-  border-radius: 999px;
-  color: #1f4fa3;
-  background: rgba(198, 223, 255, 0.7);
-  border: 1px solid rgba(147, 184, 243, 0.78);
-}
-
-.admin-sessions-shell-dark .child-chip {
-  color: #dce9ff;
-  background: rgba(31, 72, 133, 0.42);
-  border-color: rgba(83, 122, 188, 0.62);
-}
-
-.linked-empty {
-  color: #7b8798;
-}
-
-.admin-sessions-shell-dark .linked-empty {
-  color: #94a6c4;
 }
 
 .session-card-actions {
@@ -1551,13 +1641,28 @@ async function handleMobileLogout() {
 
 .create-dialog-card :deep(.create-field input),
 .create-dialog-card :deep(.create-field textarea),
+.create-dialog-card :deep(.create-field .v-field__input),
+.create-dialog-card :deep(.create-field .v-autocomplete__selection),
 .create-dialog-card :deep(.create-field .v-select__selection-text),
 .create-dialog-card :deep(.create-field .v-select__selection) {
   color: #172033;
 }
 
+.create-dialog-card :deep(.create-field .v-chip),
+.create-dialog-card :deep(.create-field .v-chip__content),
+.create-dialog-card :deep(.create-field .v-chip .v-icon),
+.create-dialog-card :deep(.create-field .v-chip .v-chip__close) {
+  color: #172033;
+}
+
+.create-dialog-card :deep(.weekdays-field .v-chip) {
+  background: rgba(207, 226, 252, 0.72);
+  border: 1px solid rgba(147, 184, 243, 0.82);
+}
+
 .create-dialog-card :deep(.create-field .v-label),
-.create-dialog-card :deep(.create-field .v-field__append-inner) {
+.create-dialog-card :deep(.create-field .v-field__append-inner),
+.create-dialog-card :deep(.create-field .v-messages__message) {
   color: #6f7f96;
 }
 
@@ -1575,14 +1680,38 @@ async function handleMobileLogout() {
 
 .admin-sessions-shell-dark .create-dialog-card :deep(.create-field input),
 .admin-sessions-shell-dark .create-dialog-card :deep(.create-field textarea),
+.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-field__input),
+.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-autocomplete__selection),
 .admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-select__selection-text),
 .admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-select__selection) {
   color: #eef4ff;
 }
 
+.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-chip),
+.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-chip__content),
+.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-chip .v-icon),
+.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-chip .v-chip__close) {
+  color: #eef4ff;
+}
+
+.admin-sessions-shell-dark .create-dialog-card :deep(.weekdays-field .v-chip) {
+  background: rgba(31, 72, 133, 0.42);
+  border: 1px solid rgba(83, 122, 188, 0.62);
+}
+
 .admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-label),
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-field__append-inner) {
+.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-field__append-inner),
+.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-messages__message) {
   color: #94a6c4;
+}
+
+.admin-sessions-shell-dark .create-dialog-card :deep(.time-field input[type='time']::-webkit-calendar-picker-indicator) {
+  filter: invert(1);
+}
+
+.admin-sessions-shell-dark .create-dialog-card :deep(.price-field .v-field__prepend-inner),
+.admin-sessions-shell-dark .create-dialog-card :deep(.price-field .v-field__prepend-inner .v-icon) {
+  color: #eef4ff;
 }
 
 :deep(.admin-sessions-select-menu) {

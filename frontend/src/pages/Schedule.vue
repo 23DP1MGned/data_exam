@@ -381,7 +381,7 @@
                 item-title="section"
                 item-value="id"
               />
-              <v-text-field label="Title" v-model="newTraining.title" readonly />
+              <v-text-field label="Training title" v-model="newTraining.title" />
               <v-text-field label="Date (YYYY-MM-DD)" v-model="newTraining.date" />
               <v-text-field label="Start time" v-model="newTraining.start" />
               <v-text-field label="End time" v-model="newTraining.end" />
@@ -724,6 +724,7 @@ async function loadSessions() {
 async function saveTraining() {
   const payload = {
     group_id: newTraining.value.group_id,
+    title: newTraining.value.title,
     date: newTraining.value.date,
     start_time: newTraining.value.start,
     end_time: newTraining.value.end,
@@ -802,7 +803,6 @@ function syncTrainingGroupDetails() {
   const selectedGroup = groupOptions.value.find((group) => group.id === newTraining.value.group_id)
   if (!selectedGroup) return
 
-  newTraining.value.title = selectedGroup.section
   newTraining.value.trainer = selectedGroup.trainer
   newTraining.value.description = selectedGroup.age_category || 'Training session'
   newTraining.value.group = selectedGroup.section

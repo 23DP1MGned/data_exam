@@ -9,16 +9,22 @@ use App\Models\PaymentItem;
 use App\Models\TrainingSession;
 use App\Models\User;
 use App\Services\PaymentService;
+use App\Services\SessionTemplateService;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
-    public function __construct(private readonly PaymentService $paymentService)
+    public function __construct(
+        private readonly PaymentService $paymentService,
+        private readonly SessionTemplateService $sessionTemplateService
+    )
     {
     }
 
     public function index(Request $request)
     {
+        $this->sessionTemplateService->ensureUpcomingSessionsGenerated();
+
         $user = $request->user();
         $paymentsQuery = Payment::query()->with(['parent', 'child', 'items.session.group']);
 
@@ -63,13 +69,13 @@ class PaymentController extends Controller
                         'session_id' => $session->id,
                         'child_id' => $child->id,
                         'child_name' => trim($child->name.' '.$child->surname),
-                        'name' => $session->group->name,
+                        'name' => $session->title ?: $session->group->name,
                         'date' => $session->date->format('d M'),
                         'deadline' => $session->date->copy()->subDay()->format('d M'),
-                        'category' => $session->group->name,
-                        'group' => $session->group->name,
+                        'category' => $session->group->display_name,
+                        'group' => $session->group->display_name,
                         'trainer' => trim(($session->group->coach->name ?? '').' '.($session->group->coach->surname ?? '')),
-                        'amount' => (float) ($session->group->price ?: 25),
+                        'amount' => (float) (($session->price ?: $session->group->price) ?: 25),
                         'status' => now()->greaterThan($session->date->copy()->subDay()->endOfDay()) ? 'Overdue' : 'Pending',
                     ]);
             })
@@ -96,9 +102,9 @@ class PaymentController extends Controller
 
                         return [
                             'id' => 'session-'.$session->id.'-'.$child->id,
-                            'name' => $session->group->name,
+                            'name' => $session->title ?: $session->group->name,
                             'date' => $session->date->format('d M'),
-                            'amount' => (float) ($session->group->price ?: 25),
+                            'amount' => (float) (($session->price ?: $session->group->price) ?: 25),
                             'method' => '',
                             'status' => $isPaid ? 'Paid' : 'Missed',
                             'detail' => 'Completed training event',
@@ -109,7 +115,7 @@ class PaymentController extends Controller
 
         $paymentActivity = $payments->map(fn (Payment $payment) => [
                 'id' => 'payment-'.$payment->id,
-                'name' => $payment->items->first()?->session?->group?->name ?? trim(($payment->child->name ?? '').' '.($payment->child->surname ?? '')),
+                'name' => $payment->items->first()?->session?->group?->display_name ?? trim(($payment->child->name ?? '').' '.($payment->child->surname ?? '')),
                 'date' => $payment->created_at->format('d M'),
                 'amount' => (float) $payment->amount,
                 'method' => $payment->method,
@@ -215,7 +221,7 @@ class PaymentController extends Controller
                 'session_id' => $item->session_id,
                 'month' => $item->month,
                 'price' => (float) $item->price,
-                'session_name' => $item->session?->group?->name,
+                'session_name' => $item->session?->group?->display_name,
             ])->values(),
             'created_at' => $payment->created_at?->toISOString(),
         ];

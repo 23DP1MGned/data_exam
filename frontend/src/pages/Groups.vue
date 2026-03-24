@@ -219,7 +219,7 @@
 
                     <div>
                       <div class="section">{{ group.section }}</div>
-                      <div class="trainer">{{ group.trainer }}</div>
+                      <div class="trainer">Group #{{ group.group_number }} • {{ group.trainer }}</div>
                     </div>
                   </div>
 
@@ -419,7 +419,7 @@ const newGroup = ref({
 
 const filteredGroups = computed(() =>
   groups.value.filter((group) =>
-    [group.section, group.trainer, group.days].some((value) =>
+    [group.section, String(group.group_number ?? ''), group.trainer, group.days].some((value) =>
       value.toLowerCase().includes(search.value.toLowerCase())
     )
   )
