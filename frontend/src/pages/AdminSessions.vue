@@ -222,6 +222,37 @@
                 </article>
               </div>
 
+              <div class="session-view-switch">
+                <div class="session-view-tabs">
+                  <v-btn
+                    variant="text"
+                    class="view-switch-btn"
+                    :class="{ 'view-switch-btn-active': activeView === 'plans' }"
+                    @click="activeView = 'plans'"
+                  >
+                    Weekly trainings
+                  </v-btn>
+                  <v-btn
+                    variant="text"
+                    class="view-switch-btn"
+                    :class="{ 'view-switch-btn-active': activeView === 'dates' }"
+                    @click="activeView = 'dates'"
+                  >
+                    Session dates
+                  </v-btn>
+                </div>
+
+                <v-btn
+                  v-if="activeView === 'dates'"
+                  variant="text"
+                  class="session-filter-btn"
+                  prepend-icon="mdi-tune-variant"
+                  @click="sessionDatesFilterDialog = true"
+                >
+                  Filter
+                </v-btn>
+              </div>
+
               <div v-if="errorMessage" class="state-wrap">
                 <v-alert type="error" variant="tonal" border="start">
                   {{ errorMessage }}
@@ -237,7 +268,7 @@
                 No sessions found for the current search.
               </div>
 
-              <div v-else class="sessions-grid">
+              <div v-else-if="activeView === 'plans'" class="sessions-grid">
                 <article
                   v-for="session in filteredSessions"
                   :key="session.id"
@@ -254,16 +285,17 @@
                         <div class="session-trainer">{{ session.group }}</div>
                       </div>
                     </div>
-
-                    <v-chip size="small" class="status-chip" :class="statusChipClass(session.status)">
-                      {{ formatStatus(session.status) }}
-                    </v-chip>
                   </div>
 
                   <div class="session-info-grid">
                     <div class="info-item">
-                      <span class="info-label">Day</span>
-                      <span class="info-value">{{ formatDay(session.date) }}</span>
+                      <span class="info-label">Days</span>
+                      <span class="info-value">{{ formatSessionWeekdays(session) }}</span>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-label">Nearest date</span>
+                      <span class="info-value">{{ formatNearestDate(session.date) }}</span>
                     </div>
 
                     <div class="info-item">
@@ -307,6 +339,74 @@
                   </div>
                 </article>
               </div>
+
+              <div v-else class="sessions-grid">
+                <article
+                  v-for="session in filteredSessionDates"
+                  :key="`date-${session.id}`"
+                  class="session-card"
+                >
+                  <div class="session-card-top">
+                    <div class="session-card-main">
+                      <v-avatar size="56" class="session-avatar">
+                        <img :src="avatarFor(`session-date-${session.id}-${session.title}`, session.title)" :alt="session.title">
+                      </v-avatar>
+
+                      <div class="session-copy">
+                        <div class="session-name">{{ session.title }}</div>
+                        <div class="session-trainer">{{ session.group }}</div>
+                      </div>
+                    </div>
+
+                    <v-chip size="small" class="status-chip" :class="statusChipClass(session.status)">
+                      {{ formatStatus(session.status) }}
+                    </v-chip>
+                  </div>
+
+                  <div class="session-info-grid">
+                    <div class="info-item">
+                      <span class="info-label">Date</span>
+                      <span class="info-value">{{ formatDate(session.date) }}</span>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-label">Day</span>
+                      <span class="info-value">{{ formatDay(session.date) }}</span>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-label">Coach</span>
+                      <span class="info-value">{{ session.trainer || 'Coach not assigned' }}</span>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-label">Start</span>
+                      <span class="info-value">{{ session.start }}</span>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-label">End</span>
+                      <span class="info-value">{{ session.end }}</span>
+                    </div>
+
+                    <div class="info-item">
+                      <span class="info-label">Price per training</span>
+                      <span class="info-value">{{ formatPrice(session.price) }}</span>
+                    </div>
+                  </div>
+
+                  <div class="session-card-actions">
+                    <v-btn
+                      color="primary"
+                      class="action-btn action-btn-edit"
+                      prepend-icon="mdi-flag-outline"
+                      @click="openStatusDialog(session)"
+                    >
+                      Change status
+                    </v-btn>
+                  </div>
+                </article>
+              </div>
             </div>
           </section>
         </div>
@@ -319,7 +419,7 @@
                 <div class="create-dialog-subtitle">
                   {{
                     editingSessionId
-                      ? 'Update the training title, group, weekdays, time, status and price.'
+                      ? 'Update the training title, group, weekdays, time and price.'
                       : 'Set the training title, choose its group, then define weekdays, time and price.'
                   }}
                 </div>
@@ -379,18 +479,6 @@
                   clearable
                 />
 
-                <v-select
-                  v-if="editingSessionId"
-                  v-model="form.status"
-                  :items="statusOptions"
-                  item-title="label"
-                  item-value="value"
-                  label="Status"
-                  variant="outlined"
-                  class="create-field"
-                  :menu-props="selectMenuProps"
-                />
-
                 <v-text-field
                   v-model="form.start_time"
                   label="Start time"
@@ -430,6 +518,123 @@
           </v-card>
         </v-dialog>
 
+        <v-dialog v-model="statusDialog" max-width="560">
+          <v-card class="dialog-card create-dialog-card">
+            <div class="create-dialog-header">
+              <div>
+                <div class="create-dialog-title">Update Session Status</div>
+                <div class="create-dialog-subtitle">
+                  Change the status for one dated session without editing the weekly training plan.
+                </div>
+              </div>
+
+              <v-btn icon variant="text" @click="closeStatusDialog">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </div>
+
+            <v-card-text class="create-dialog-content">
+              <v-alert
+                v-if="statusError"
+                type="error"
+                variant="tonal"
+                border="start"
+                class="dialog-alert"
+              >
+                {{ statusError }}
+              </v-alert>
+
+              <div class="status-instance-summary">
+                <div class="payment-name">{{ selectedInstanceSession?.title || 'Session instance' }}</div>
+                <div class="payment-meta">{{ selectedInstanceSession?.group || 'Group not set' }}</div>
+                <div class="payment-secondary">
+                  {{ selectedInstanceSession?.date ? formatDate(selectedInstanceSession.date) : '' }}
+                </div>
+              </div>
+
+              <v-select
+                v-model="statusForm.status"
+                :items="statusOptions"
+                item-title="label"
+                item-value="value"
+                label="Status"
+                variant="outlined"
+                class="create-field"
+                :menu-props="selectMenuProps"
+              />
+            </v-card-text>
+
+            <v-card-actions class="create-dialog-actions">
+              <v-spacer></v-spacer>
+              <v-btn color="primary" class="apply-filter-btn" :loading="statusSaving" @click="saveInstanceStatus">
+                Save status
+              </v-btn>
+              <v-btn variant="text" class="reset-filter-btn" @click="closeStatusDialog">Cancel</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="sessionDatesFilterDialog" max-width="620">
+          <v-card class="dialog-card create-dialog-card">
+            <div class="create-dialog-header">
+              <div>
+                <div class="create-dialog-title">Filter Session Dates</div>
+                <div class="create-dialog-subtitle">
+                  Narrow concrete session instances by date range or sort order.
+                </div>
+              </div>
+
+              <v-btn icon variant="text" @click="sessionDatesFilterDialog = false">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </div>
+
+            <v-card-text class="create-dialog-content">
+              <div class="session-date-filters-dialog">
+                <v-text-field
+                  v-model="sessionDateFrom"
+                  label="From date"
+                  type="date"
+                  variant="outlined"
+                  hide-details
+                  class="create-field session-date-filter-field"
+                />
+
+                <v-text-field
+                  v-model="sessionDateTo"
+                  label="To date"
+                  type="date"
+                  variant="outlined"
+                  hide-details
+                  class="create-field session-date-filter-field"
+                />
+
+                <v-select
+                  v-model="sessionDatesSort"
+                  :items="sessionDateSortOptions"
+                  item-title="label"
+                  item-value="value"
+                  label="Sort by"
+                  variant="outlined"
+                  hide-details
+                  class="create-field session-date-filter-field session-date-filter-full"
+                  :menu-props="selectMenuProps"
+                />
+              </div>
+            </v-card-text>
+
+            <v-card-actions class="create-dialog-actions">
+              <v-spacer></v-spacer>
+              <v-btn color="primary" class="apply-filter-btn" @click="sessionDatesFilterDialog = false">
+                Apply
+              </v-btn>
+              <v-btn variant="text" class="reset-filter-btn" @click="resetSessionDateFilters">
+                Reset
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
         <AppNotificationsDialog
           v-model="notificationsDialog"
           :dark-mode="darkMode"
@@ -454,28 +659,47 @@ import { createAvatarDataUri } from '../utils/avatar'
 const router = useRouter()
 const search = ref('')
 const darkMode = ref(false)
+const activeView = ref('plans')
+const sessionDateFrom = ref('')
+const sessionDateTo = ref('')
+const sessionDatesSort = ref('date-asc')
+const sessionDatesFilterDialog = ref(false)
 const sessionDialog = ref(false)
+const statusDialog = ref(false)
 const notificationsDialog = ref(false)
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const loading = ref(false)
 const saving = ref(false)
+const statusSaving = ref(false)
 const errorMessage = ref('')
 const formError = ref('')
+const statusError = ref('')
 const editingSessionId = ref(null)
+const selectedInstanceId = ref(null)
 const darkModeStorageKey = 'app-dark-mode'
 
 const navItems = [
   { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
   { label: 'Admin Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
-  { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' }
+  { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
+  { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/admin-payments' }
 ]
 
 const statusOptions = [
   { label: 'Planned', value: 'planned' },
   { label: 'Completed', value: 'completed' },
   { label: 'Cancelled', value: 'cancelled' }
+]
+
+const sessionDateSortOptions = [
+  { label: 'Date: nearest first', value: 'date-asc' },
+  { label: 'Date: latest first', value: 'date-desc' },
+  { label: 'Alphabet: A-Z', value: 'alpha-asc' },
+  { label: 'Alphabet: Z-A', value: 'alpha-desc' },
+  { label: 'Time: earliest first', value: 'time-asc' },
+  { label: 'Time: latest first', value: 'time-desc' }
 ]
 
 const weekdayOptions = [
@@ -506,6 +730,7 @@ const {
 const sessions = ref([])
 const groups = ref([])
 const form = ref(getDefaultForm())
+const statusForm = ref(getDefaultStatusForm())
 
 const profileName = computed(() => {
   if (!user.value) return 'Admin User'
@@ -552,6 +777,48 @@ const filteredSessions = computed(() => {
       .some((value) => value.toLowerCase().includes(query))
   })
 })
+
+const filteredSessionDates = computed(() => {
+  const from = sessionDateFrom.value ? new Date(sessionDateFrom.value) : null
+  const to = sessionDateTo.value ? new Date(sessionDateTo.value) : null
+
+  const filtered = filteredSessions.value.filter((session) => {
+    const sessionDate = new Date(session.date)
+
+    if (from && sessionDate < from) return false
+    if (to && sessionDate > to) return false
+
+    return true
+  })
+
+  return [...filtered].sort((left, right) => {
+    if (sessionDatesSort.value === 'date-desc') {
+      return new Date(right.date) - new Date(left.date)
+    }
+
+    if (sessionDatesSort.value === 'alpha-asc') {
+      return left.title.localeCompare(right.title)
+    }
+
+    if (sessionDatesSort.value === 'alpha-desc') {
+      return right.title.localeCompare(left.title)
+    }
+
+    if (sessionDatesSort.value === 'time-asc') {
+      return String(left.start).localeCompare(String(right.start))
+    }
+
+    if (sessionDatesSort.value === 'time-desc') {
+      return String(right.start).localeCompare(String(left.start))
+    }
+
+    return new Date(left.date) - new Date(right.date)
+  })
+})
+
+const selectedInstanceSession = computed(() =>
+  sessions.value.find((item) => item.id === selectedInstanceId.value) ?? null
+)
 
 const overviewStats = computed(() => [
   { label: 'Total sessions', value: sessions.value.length },
@@ -612,6 +879,12 @@ function getDefaultForm() {
   }
 }
 
+function getDefaultStatusForm() {
+  return {
+    status: 'planned'
+  }
+}
+
 function updateViewportState() {
   isCompactNav.value = window.innerWidth <= 1024
 }
@@ -638,6 +911,10 @@ function formatDay(value) {
   })
 }
 
+function formatNearestDate(value) {
+  return formatDate(value)
+}
+
 function sortWeekdays(weekdays) {
   const weekdayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -650,6 +927,16 @@ function formatWeekdayLabels(weekdays) {
   return weekdays
     .map((weekday) => labelMap[weekday] ?? weekday)
     .join(', ')
+}
+
+function formatSessionWeekdays(session) {
+  return formatWeekdayLabels(session.weekdays?.length ? session.weekdays : [new Date(session.date).toLocaleDateString('en-US', { weekday: 'short' })])
+}
+
+function resetSessionDateFilters() {
+  sessionDateFrom.value = ''
+  sessionDateTo.value = ''
+  sessionDatesSort.value = 'date-asc'
 }
 
 function formatPrice(value) {
@@ -668,6 +955,13 @@ function closeDialog() {
   editingSessionId.value = null
   formError.value = ''
   form.value = getDefaultForm()
+}
+
+function closeStatusDialog() {
+  statusDialog.value = false
+  selectedInstanceId.value = null
+  statusError.value = ''
+  statusForm.value = getDefaultStatusForm()
 }
 
 function openCreateDialog() {
@@ -690,6 +984,15 @@ function openEditDialog(session) {
     status: session.status ?? 'planned'
   }
   sessionDialog.value = true
+}
+
+function openStatusDialog(session) {
+  selectedInstanceId.value = session.id
+  statusError.value = ''
+  statusForm.value = {
+    status: session.status ?? 'planned'
+  }
+  statusDialog.value = true
 }
 
 function extractErrorMessage(error, fallback) {
@@ -729,8 +1032,7 @@ function buildPayload() {
     weekdays: sortWeekdays(form.value.weekdays || []),
     start_time: form.value.start_time || null,
     end_time: form.value.end_time || null,
-    price: form.value.price === '' || form.value.price === null ? 0 : Number(form.value.price),
-    status: form.value.status || 'planned'
+    price: form.value.price === '' || form.value.price === null ? 0 : Number(form.value.price)
   }
 }
 
@@ -785,6 +1087,34 @@ async function deleteSession(session) {
     await initializePage()
   } catch (error) {
     errorMessage.value = extractErrorMessage(error, 'Failed to delete session.')
+  }
+}
+
+async function saveInstanceStatus() {
+  statusSaving.value = true
+  statusError.value = ''
+
+  try {
+    if (!selectedInstanceId.value) {
+      statusError.value = 'Please choose a specific session instance.'
+      return
+    }
+
+    if (!statusForm.value.status) {
+      statusError.value = 'Status is required.'
+      return
+    }
+
+    await sessionsApi.updateStatus(selectedInstanceId.value, {
+      status: statusForm.value.status
+    })
+
+    await initializePage()
+    closeStatusDialog()
+  } catch (error) {
+    statusError.value = extractErrorMessage(error, 'Failed to update session status.')
+  } finally {
+    statusSaving.value = false
   }
 }
 
@@ -1314,6 +1644,121 @@ async function handleMobileLogout() {
   margin-bottom: 22px;
 }
 
+.session-view-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+  padding: 8px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(229, 236, 246, 0.94);
+}
+
+.admin-sessions-shell-dark .session-view-switch {
+  background: rgba(13, 20, 34, 0.86);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
+.session-view-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.view-switch-btn {
+  min-height: 46px;
+  padding-inline: 18px;
+  border-radius: 16px;
+  color: #6e7f97;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+}
+
+.admin-sessions-shell-dark .view-switch-btn {
+  color: #9eb1cf;
+}
+
+.view-switch-btn-active {
+  color: white;
+  background: linear-gradient(180deg, #1677ff 0%, #0f5fe3 100%);
+  box-shadow: 0 14px 28px rgba(22, 119, 255, 0.22);
+}
+
+.session-filter-btn {
+  min-height: 46px;
+  margin-left: auto;
+  padding-inline: 16px;
+  border-radius: 16px;
+  color: #6e7f97;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+}
+
+.admin-sessions-shell-dark .session-filter-btn {
+  color: #9eb1cf;
+}
+
+.session-date-filters-dialog {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.session-date-filter-full {
+  grid-column: 1 / -1;
+}
+
+.session-date-filter-field :deep(.v-field) {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(223, 232, 246, 0.95);
+}
+
+.session-date-filter-field :deep(.v-field--focused) {
+  box-shadow:
+    inset 0 0 0 1px rgba(74, 144, 255, 0.72),
+    0 0 0 4px rgba(22, 119, 255, 0.08);
+}
+
+.session-date-filter-field :deep(.v-field__outline) {
+  --v-field-border-opacity: 0;
+}
+
+.session-date-filter-field :deep(input),
+.session-date-filter-field :deep(.v-select__selection-text),
+.session-date-filter-field :deep(.v-select__selection) {
+  color: #172033;
+}
+
+.session-date-filter-field :deep(.v-label),
+.session-date-filter-field :deep(.v-field__append-inner) {
+  color: #6f7f96;
+}
+
+.admin-sessions-shell-dark .session-date-filter-field :deep(.v-field) {
+  background: rgba(17, 25, 40, 0.86);
+  box-shadow: inset 0 0 0 1px rgba(64, 82, 116, 0.72);
+}
+
+.admin-sessions-shell-dark .session-date-filter-field :deep(input),
+.admin-sessions-shell-dark .session-date-filter-field :deep(.v-select__selection-text),
+.admin-sessions-shell-dark .session-date-filter-field :deep(.v-select__selection) {
+  color: #eef4ff;
+}
+
+.admin-sessions-shell-dark .session-date-filter-field :deep(.v-label),
+.admin-sessions-shell-dark .session-date-filter-field :deep(.v-field__append-inner) {
+  color: #94a6c4;
+}
+
+.admin-sessions-shell-dark .session-date-filter-field :deep(input[type='date']::-webkit-calendar-picker-indicator) {
+  filter: invert(1);
+}
+
 .overview-stat-card {
   padding: 20px;
   border-radius: 22px;
@@ -1563,6 +2008,19 @@ async function handleMobileLogout() {
 
 .dialog-alert {
   margin-bottom: 16px;
+}
+
+.status-instance-summary {
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(241, 246, 255, 0.8);
+  border: 1px solid rgba(223, 232, 246, 0.95);
+}
+
+.admin-sessions-shell-dark .status-instance-summary {
+  background: rgba(17, 25, 40, 0.88);
+  border-color: rgba(58, 75, 108, 0.62);
 }
 
 .create-fields-grid {
@@ -1825,8 +2283,24 @@ async function handleMobileLogout() {
   .overview-stats-grid,
   .sessions-grid,
   .create-fields-grid,
-  .session-info-grid {
+  .session-info-grid,
+  .session-date-filters-dialog {
     grid-template-columns: 1fr;
+  }
+
+  .session-view-switch {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .session-view-tabs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .session-filter-btn {
+    margin-left: 0;
+    justify-content: flex-start;
   }
 
   .desktop-only-btn {

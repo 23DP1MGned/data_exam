@@ -51,6 +51,9 @@ export const sessionsApi = {
   update(id, payload) {
     return unwrap(apiClient.put(`/sessions/${id}`, payload))
   },
+  updateStatus(id, payload) {
+    return unwrap(apiClient.patch(`/sessions/${id}/status`, payload))
+  },
   remove(id) {
     return unwrap(apiClient.delete(`/sessions/${id}`))
   }
@@ -77,6 +80,9 @@ export const paymentsApi = {
   },
   get(id) {
     return unwrap(apiClient.get(`/payments/${id}`))
+  },
+  refund(id) {
+    return unwrap(apiClient.post(`/payments/${id}/refund`))
   }
 }
 

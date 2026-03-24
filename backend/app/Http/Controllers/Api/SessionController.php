@@ -111,6 +111,26 @@ class SessionController extends Controller
         return $this->success([], 'Session deleted.');
     }
 
+    public function updateStatus(Request $request, TrainingSession $session)
+    {
+        if (! $this->canManageSessionGroup($request->user(), $session->group)) {
+            return $this->error('Forbidden.', [], 403);
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:planned,completed,cancelled'],
+        ]);
+
+        $session->update([
+            'status' => $validated['status'],
+        ]);
+
+        return $this->success(
+            $this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'sessionTemplate'])),
+            'Session status updated.'
+        );
+    }
+
     private function canManageSessionGroup(User $user, Group $group): bool
     {
         return $user->role === User::ROLE_ADMIN

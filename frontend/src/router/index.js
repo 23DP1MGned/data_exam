@@ -12,6 +12,7 @@ import AdminUsers from '../pages/AdminUsers.vue'
 import AdminGroups from '../pages/AdminGroups.vue'
 import AdminSessions from '../pages/AdminSessions.vue'
 import AdminHome from '../pages/AdminHome.vue'
+import AdminPayments from '../pages/AdminPayments.vue'
 
 const routes = [
   {
@@ -72,6 +73,11 @@ const routes = [
     path: '/manage-sessions',
     component: AdminSessions,
     meta: { requiresAuth: true, adminOnly: true }
+  },
+  {
+    path: '/admin-payments',
+    component: AdminPayments,
+    meta: { requiresAuth: true, adminOnly: true }
   }
 ]
 
@@ -110,7 +116,7 @@ router.beforeEach(async (to) => {
   if (
     user.value?.role === 'admin'
     && to.meta?.requiresAuth
-    && !['/admin', '/admin-users', '/manage-groups', '/manage-sessions'].includes(to.path)
+    && !['/admin', '/admin-users', '/manage-groups', '/manage-sessions', '/admin-payments'].includes(to.path)
   ) {
     return '/admin'
   }

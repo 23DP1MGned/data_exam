@@ -21,6 +21,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('users', UserController::class)->middleware('role:admin');
 
     Route::apiResource('groups', GroupController::class);
+    Route::patch('/sessions/{session}/status', [SessionController::class, 'updateStatus'])->middleware('role:admin,coach');
     Route::apiResource('sessions', SessionController::class);
     Route::get('/attendance', [AttendanceController::class, 'index']);
     Route::post('/attendance', [AttendanceController::class, 'store'])->middleware('role:admin,coach');
@@ -29,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/payments', [PaymentController::class, 'index']);
     Route::post('/payments', [PaymentController::class, 'store'])->middleware('role:admin,parent');
     Route::get('/payments/{payment}', [PaymentController::class, 'show']);
+    Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])->middleware('role:admin');
 
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{notification}', [NotificationController::class, 'update']);

@@ -457,7 +457,8 @@ const navItems = [
   { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
   { label: 'Admin Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
-  { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' }
+  { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
+  { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/admin-payments' }
 ]
 
 const ageOptions = Array.from({ length: 15 }, (_, index) => {

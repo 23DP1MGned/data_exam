@@ -89,7 +89,8 @@ class SessionTemplateService
 
             return $template->sessions()
                 ->with('group.coach', 'group.children', 'sessionTemplate')
-                ->whereBetween('date', [now()->startOfDay()->toDateString(), now()->copy()->addMonth()->endOfDay()->toDateString()])
+                ->whereDate('date', '>=', now()->startOfDay()->toDateString())
+                ->whereDate('date', '<=', now()->copy()->addMonth()->endOfDay()->toDateString())
                 ->orderBy('date')
                 ->orderBy('start_time')
                 ->get();
@@ -117,10 +118,25 @@ class SessionTemplateService
     private function syncTemplateSessions(SessionTemplate $template, Carbon $from, Carbon $through): EloquentCollection
     {
         $desiredDates = $this->resolveDates($template, $from, $through);
+        $rangeStart = $from->copy()->startOfDay()->toDateString();
+        $rangeEnd = $through->copy()->endOfDay()->toDateString();
 
         $existingSessions = $template->sessions()
             ->with(['attendanceRecords', 'paymentItems'])
-            ->whereBetween('date', [$from->toDateString(), $through->toDateString()])
+            ->whereDate('date', '>=', $rangeStart)
+            ->whereDate('date', '<=', $rangeEnd)
+            ->orderBy('date')
+            ->orderBy('id')
+            ->get();
+
+        $this->removeDuplicateSessions($existingSessions);
+
+        $existingSessions = $template->sessions()
+            ->with(['attendanceRecords', 'paymentItems'])
+            ->whereDate('date', '>=', $rangeStart)
+            ->whereDate('date', '<=', $rangeEnd)
+            ->orderBy('date')
+            ->orderBy('id')
             ->get()
             ->keyBy(fn (TrainingSession $session) => $session->date->toDateString());
 
@@ -163,10 +179,30 @@ class SessionTemplateService
 
         return $template->sessions()
             ->with('group.coach', 'group.children', 'sessionTemplate')
-            ->whereBetween('date', [$from->toDateString(), $through->toDateString()])
+            ->whereDate('date', '>=', $rangeStart)
+            ->whereDate('date', '<=', $rangeEnd)
             ->orderBy('date')
             ->orderBy('start_time')
             ->get();
+    }
+
+    private function removeDuplicateSessions(EloquentCollection $sessions): void
+    {
+        $sessions
+            ->groupBy(fn (TrainingSession $session) => $session->date->toDateString())
+            ->filter(fn (EloquentCollection $sessionsOnDate) => $sessionsOnDate->count() > 1)
+            ->each(function (EloquentCollection $sessionsOnDate) {
+                $sessionToKeep = $sessionsOnDate->first(fn (TrainingSession $session) => ! $this->canRegenerateSession($session))
+                    ?? $sessionsOnDate->sortBy('id')->first();
+
+                $sessionsOnDate
+                    ->reject(fn (TrainingSession $session) => $session->id === $sessionToKeep?->id)
+                    ->each(function (TrainingSession $session) {
+                        if ($this->canRegenerateSession($session)) {
+                            $session->delete();
+                        }
+                    });
+            });
     }
 
     private function resolveDates(SessionTemplate $template, Carbon $from, Carbon $through): array

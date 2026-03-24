@@ -61,70 +61,88 @@ class PaymentController extends Controller
 
         $dueTrainings = $dueSessions
             ->flatMap(function (TrainingSession $session) use ($relevantChildIds, $paidSessionKeys) {
+                if (! $this->shouldDisplayDueTraining($session)) {
+                    return collect();
+                }
+
                 return $session->group->children
                     ->whereIn('id', $relevantChildIds)
                     ->filter(fn ($child) => ! in_array($session->id.'-'.$child->id, $paidSessionKeys, true))
-                    ->map(fn ($child) => [
-                        'id' => $session->id.'-'.$child->id,
-                        'session_id' => $session->id,
-                        'child_id' => $child->id,
-                        'child_name' => trim($child->name.' '.$child->surname),
-                        'name' => $session->title ?: $session->group->name,
-                        'date' => $session->date->format('d M'),
-                        'deadline' => $session->date->copy()->subDay()->format('d M'),
-                        'category' => $session->group->display_name,
-                        'group' => $session->group->display_name,
-                        'trainer' => trim(($session->group->coach->name ?? '').' '.($session->group->coach->surname ?? '')),
-                        'amount' => (float) (($session->price ?: $session->group->price) ?: 25),
-                        'status' => now()->greaterThan($session->date->copy()->subDay()->endOfDay()) ? 'Overdue' : 'Pending',
-                    ]);
+                    ->map(function ($child) use ($session) {
+                        $parent = $child->parents()->first();
+                        $deadline = $this->resolvePaymentDeadline($session);
+                        $visibleFrom = $this->resolvePendingVisibleFrom($session);
+
+                        return [
+                            'id' => $session->id.'-'.$child->id,
+                            'session_id' => $session->id,
+                            'parent_id' => $parent?->id,
+                            'parent_name' => $parent ? trim($parent->name.' '.$parent->surname) : null,
+                            'child_id' => $child->id,
+                            'child_name' => trim($child->name.' '.$child->surname),
+                            'name' => $session->title ?: $session->group->name,
+                            'date' => $session->date->format('d M'),
+                            'deadline' => $deadline->format('d M'),
+                            'deadline_at' => $deadline->toISOString(),
+                            'visible_from_at' => $visibleFrom->toISOString(),
+                            'category' => $session->group->display_name,
+                            'group' => $session->group->display_name,
+                            'trainer' => trim(($session->group->coach->name ?? '').' '.($session->group->coach->surname ?? '')),
+                            'amount' => (float) (($session->price ?: $session->group->price) ?: 25),
+                            'status' => $this->resolveDueStatus($session),
+                            'overdue_days' => now()->greaterThan($deadline) ? $deadline->diffInDays(now()) : 0,
+                        ];
+                    });
             })
             ->values();
 
-        $completedSessionActivity = TrainingSession::query()
-            ->with(['group.coach', 'group.children'])
-            ->where(function ($builder) {
-                $builder
-                    ->where('status', 'completed')
-                    ->orWhere(function ($inner) {
-                        $inner
-                            ->where('status', 'planned')
-                            ->where('date', '<', now()->toDateString());
-                    });
-            })
-            ->whereHas('group.children', fn ($builder) => $builder->whereIn('users.id', $relevantChildIds))
-            ->get()
-            ->flatMap(function (TrainingSession $session) use ($relevantChildIds, $paidSessionKeys) {
-                return $session->group->children
-                    ->whereIn('id', $relevantChildIds)
-                    ->map(function ($child) use ($session, $paidSessionKeys) {
-                        $isPaid = in_array($session->id.'-'.$child->id, $paidSessionKeys, true);
+        $dueActivity = $dueTrainings->map(function (array $item) {
+            return [
+                'id' => 'due-'.$item['id'],
+                'name' => $item['child_name'] ?: $item['name'],
+                'date' => $item['date'],
+                'amount' => (float) $item['amount'],
+                'method' => '',
+                'status' => $item['status'],
+                'detail' => $item['status'] === 'Overdue'
+                    ? 'Payment overdue · '.$item['name'].($item['parent_name'] ? ' · Parent: '.$item['parent_name'] : '')
+                    : 'Waiting for payment · '.$item['name'].($item['parent_name'] ? ' · Parent: '.$item['parent_name'] : ''),
+                'sort_value' => strtotime(
+                    $item['status'] === 'Overdue'
+                        ? ($item['deadline_at'] ?? 'now')
+                        : ($item['visible_from_at'] ?? 'now')
+                ),
+            ];
+        });
 
-                        return [
-                            'id' => 'session-'.$session->id.'-'.$child->id,
-                            'name' => $session->title ?: $session->group->name,
-                            'date' => $session->date->format('d M'),
-                            'amount' => (float) (($session->price ?: $session->group->price) ?: 25),
-                            'method' => '',
-                            'status' => $isPaid ? 'Paid' : 'Missed',
-                            'detail' => 'Completed training event',
-                            'sort_value' => $session->date->copy()->endOfDay()->timestamp,
-                        ];
-                    });
-            });
+        $paymentActivity = $payments->map(function (Payment $payment) {
+            $childName = trim(($payment->child->name ?? '').' '.($payment->child->surname ?? ''));
+            $parentName = trim(($payment->parent->name ?? '').' '.($payment->parent->surname ?? ''));
+            $firstItem = $payment->items->first();
+            $itemLabel = $firstItem?->session?->title
+                ?: $firstItem?->session?->group?->display_name
+                ?: ($firstItem?->type === 'month' ? 'Monthly payment' : 'Payment item');
+            $activityTimestamp = $payment->updated_at ?? $payment->created_at;
+            $detailPrefix = match ($payment->status) {
+                'refunded' => 'Refund action',
+                'failed' => 'Failed payment',
+                'pending' => 'Pending payment',
+                default => 'Payment action',
+            };
 
-        $paymentActivity = $payments->map(fn (Payment $payment) => [
+            return [
                 'id' => 'payment-'.$payment->id,
-                'name' => $payment->items->first()?->session?->group?->display_name ?? trim(($payment->child->name ?? '').' '.($payment->child->surname ?? '')),
-                'date' => $payment->created_at->format('d M'),
+                'name' => $childName ?: $parentName ?: $itemLabel,
+                'date' => $activityTimestamp?->format('d M') ?? now()->format('d M'),
                 'amount' => (float) $payment->amount,
                 'method' => $payment->method,
                 'status' => ucfirst($payment->status),
-                'detail' => 'Payment action',
-                'sort_value' => $payment->created_at?->timestamp ?? 0,
-            ]);
+                'detail' => $detailPrefix.' · '.$itemLabel.($parentName ? ' · Parent: '.$parentName : ''),
+                'sort_value' => $activityTimestamp?->timestamp ?? 0,
+            ];
+        });
 
-        $recentActivity = $completedSessionActivity
+        $recentActivity = $dueActivity
             ->merge($paymentActivity)
             ->sortByDesc('sort_value')
             ->map(function (array $item) {
@@ -162,7 +180,7 @@ class PaymentController extends Controller
         return $this->success([
             'summary' => [
                 'total_paid' => $payments->where('status', 'paid')->sum('amount'),
-                'pending' => $payments->where('status', 'pending')->sum('amount'),
+                'pending' => $dueTrainings->where('status', 'Pending')->sum('amount'),
                 'overdue' => $dueTrainings->where('status', 'Overdue')->sum('amount'),
             ],
             'account_balance' => (float) ($user->parentProfile?->account_balance ?? 0),
@@ -205,12 +223,25 @@ class PaymentController extends Controller
         return $this->success($this->formatPayment($payment->load(['parent', 'child', 'items.session.group'])));
     }
 
+    public function refund(Request $request, Payment $payment)
+    {
+        if ($request->user()->role !== User::ROLE_ADMIN) {
+            return $this->error('Forbidden.', [], 403);
+        }
+
+        $payment = $this->paymentService->refund($payment);
+
+        return $this->success($this->formatPayment($payment), 'Payment refunded.');
+    }
+
     private function formatPayment(Payment $payment): array
     {
         return [
             'id' => $payment->id,
             'parent_id' => $payment->parent_id,
             'child_id' => $payment->child_id,
+            'parent_name' => trim(($payment->parent->name ?? '').' '.($payment->parent->surname ?? '')),
+            'child_name' => trim(($payment->child->name ?? '').' '.($payment->child->surname ?? '')),
             'amount' => (float) $payment->amount,
             'status' => $payment->status,
             'method' => $payment->method,
@@ -221,9 +252,33 @@ class PaymentController extends Controller
                 'session_id' => $item->session_id,
                 'month' => $item->month,
                 'price' => (float) $item->price,
-                'session_name' => $item->session?->group?->display_name,
+                'session_name' => $item->session?->title ?: $item->session?->group?->display_name,
             ])->values(),
             'created_at' => $payment->created_at?->toISOString(),
         ];
+    }
+
+    private function resolveDueStatus(TrainingSession $session): string
+    {
+        return now()->greaterThan($this->resolvePaymentDeadline($session))
+            ? 'Overdue'
+            : 'Pending';
+    }
+
+    private function resolvePaymentDeadline(TrainingSession $session)
+    {
+        return $session->date->copy()->subDay()->endOfDay();
+    }
+
+    private function shouldDisplayDueTraining(TrainingSession $session): bool
+    {
+        $visibleFrom = $this->resolvePendingVisibleFrom($session);
+
+        return now()->greaterThanOrEqualTo($visibleFrom);
+    }
+
+    private function resolvePendingVisibleFrom(TrainingSession $session)
+    {
+        return $this->resolvePaymentDeadline($session)->copy()->subDays(7)->startOfDay();
     }
 }
