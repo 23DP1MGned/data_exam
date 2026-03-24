@@ -528,7 +528,8 @@ const dashboardMode = ref('standard')
 const navItems = computed(() => {
   if (user.value?.role === 'admin') {
     return [
-      { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/home' }
+      { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/home' },
+      { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/users' }
     ]
   }
 

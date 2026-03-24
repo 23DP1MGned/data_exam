@@ -180,7 +180,7 @@ const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 
 const needsPhone = computed(() => ['parent', 'coach'].includes(form.role))
-const needsBirthDate = computed(() => ['parent', 'child'].includes(form.role))
+const needsBirthDate = computed(() => ['parent', 'child', 'coach'].includes(form.role))
 
 watch(() => form.role, () => {
   form.phone = ''

@@ -89,3 +89,17 @@ export const notificationsApi = {
   }
 }
 
+export const usersApi = {
+  list(params = {}) {
+    return unwrap(apiClient.get('/users', { params }))
+  },
+  create(payload) {
+    return unwrap(apiClient.post('/users', payload))
+  },
+  update(id, payload) {
+    return unwrap(apiClient.put(`/users/${id}`, payload))
+  },
+  remove(id) {
+    return unwrap(apiClient.delete(`/users/${id}`))
+  }
+}

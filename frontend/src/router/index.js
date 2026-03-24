@@ -8,6 +8,7 @@ import Groups from '../pages/Groups.vue'
 import Schedule from '../pages/Schedule.vue'
 import Payments from '../pages/Payments.vue'
 import Attendance from '../pages/Attendance.vue'
+import Users from '../pages/Users.vue'
 
 const routes = [
   {
@@ -48,6 +49,11 @@ const routes = [
     path: '/attendance',
     component: Attendance,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/users',
+    component: Users,
+    meta: { requiresAuth: true, adminOnly: true }
   }
 ]
 
@@ -75,10 +81,14 @@ router.beforeEach(async (to) => {
     return '/login'
   }
 
+  if (to.meta?.adminOnly && user.value?.role !== 'admin') {
+    return '/home'
+  }
+
   if (
     user.value?.role === 'admin'
     && to.meta?.requiresAuth
-    && to.path !== '/home'
+    && !['/home', '/users'].includes(to.path)
   ) {
     return '/home'
   }

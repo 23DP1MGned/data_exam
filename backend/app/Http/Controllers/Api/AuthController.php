@@ -5,15 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
-use App\Models\ChildProfile;
-use App\Models\CoachProfile;
-use App\Models\ParentProfile;
 use App\Models\User;
+use App\Services\UserAccountService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    public function __construct(private readonly UserAccountService $userAccountService)
+    {
+    }
+
     public function login(LoginRequest $request)
     {
         $user = User::query()->where('email', $request->validated('email'))->first();
@@ -34,53 +36,7 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request)
     {
-        $validated = $request->validated();
-
-        $user = User::create([
-            'name' => $validated['name'],
-            'surname' => $validated['surname'],
-            'email' => $validated['email'],
-            'password' => $validated['password'],
-            'role' => $validated['role'],
-        ]);
-
-        if ($user->role === User::ROLE_PARENT) {
-            ParentProfile::create([
-                'user_id' => $user->id,
-                'phone' => $validated['phone'] ?? null,
-                'birth_date' => $validated['birth_date'] ?? null,
-            ]);
-
-            if (! empty($validated['child_identifier'])) {
-                $child = User::query()
-                    ->where('role', User::ROLE_CHILD)
-                    ->where(function ($query) use ($validated) {
-                        $query->where('email', $validated['child_identifier'])
-                            ->orWhereHas('childProfile', fn ($profile) => $profile->where('personal_code', $validated['child_identifier']));
-                    })
-                    ->first();
-
-                if ($child) {
-                    $user->children()->syncWithoutDetaching([$child->id]);
-                }
-            }
-        }
-
-        if ($user->role === User::ROLE_CHILD) {
-            ChildProfile::create([
-                'user_id' => $user->id,
-                'birth_date' => $validated['birth_date'] ?? null,
-                'personal_code' => $validated['personal_code'],
-            ]);
-        }
-
-        if ($user->role === User::ROLE_COACH) {
-            CoachProfile::create([
-                'user_id' => $user->id,
-                'phone' => $validated['phone'] ?? null,
-                'specialization' => $validated['specialization'] ?? null,
-            ]);
-        }
+        $user = $this->userAccountService->create($request->validated());
 
         $token = $user->createToken('frontend')->plainTextToken;
 

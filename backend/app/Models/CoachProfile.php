@@ -10,8 +10,16 @@ class CoachProfile extends Model
     protected $fillable = [
         'user_id',
         'phone',
+        'birth_date',
         'specialization',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'birth_date' => 'date',
+        ];
+    }
 
     public function user(): BelongsTo
     {
