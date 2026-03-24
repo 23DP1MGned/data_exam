@@ -42,11 +42,11 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
               </v-avatar>
               <div>
-                <div class="profile-name">Maksims Richards</div>
-                <div class="profile-email">maksims@sportsystem.app</div>
+                <div class="profile-name">{{ profileName }}</div>
+                <div class="profile-email">{{ profileEmail }}</div>
               </div>
             </div>
           </div>
@@ -113,7 +113,7 @@
                   <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
-                  <span class="icon-badge">6</span>
+                  <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
               </div>
             </div>
@@ -122,11 +122,11 @@
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
                   </v-avatar>
                   <div>
-                    <div class="profile-name">Maksims Richards</div>
-                    <div class="profile-email">maksims@sportsystem.app</div>
+                    <div class="profile-name">{{ profileName }}</div>
+                    <div class="profile-email">{{ profileEmail }}</div>
                   </div>
                 </div>
               </div>
@@ -164,16 +164,16 @@
                   <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
-                  <span class="icon-badge">6</span>
+                  <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
                   </v-avatar>
                   <div>
-                    <div class="profile-name">Maksims Richards</div>
-                    <div class="profile-email">maksims@sportsystem.app</div>
+                    <div class="profile-name">{{ profileName }}</div>
+                    <div class="profile-email">{{ profileEmail }}</div>
                   </div>
                 </div>
               </div>
@@ -479,10 +479,20 @@
               </v-btn>
             </div>
 
-            <div v-if="selectedDueTraining" class="pay-dialog-body">
-              <div class="pay-training-card">
-                <div class="payment-name">{{ selectedDueTraining.name }}</div>
-                <div class="payment-meta">{{ selectedDueTraining.date }} · {{ selectedDueTraining.group }}</div>
+              <div v-if="selectedDueTraining" class="pay-dialog-body">
+                <v-alert
+                  v-if="paymentError"
+                  type="error"
+                  variant="tonal"
+                  density="comfortable"
+                  class="mb-4"
+                >
+                  {{ paymentError }}
+                </v-alert>
+
+                <div class="pay-training-card">
+                  <div class="payment-name">{{ selectedDueTraining.name }}</div>
+                  <div class="payment-meta">{{ selectedDueTraining.date }} · {{ selectedDueTraining.group }}</div>
                 <div class="payment-secondary">Coach: {{ selectedDueTraining.trainer }}</div>
                 <div class="payment-deadline">Payment deadline: {{ selectedDueTraining.deadline }}</div>
                 <div class="pay-training-amount">{{ formatCurrency(selectedDueTraining.amount) }}</div>
@@ -527,7 +537,13 @@
           </v-card>
         </v-dialog>
 
-        <AppNotificationsDialog v-model="notificationsDialog" :dark-mode="darkMode" />
+        <AppNotificationsDialog
+          v-model="notificationsDialog"
+          :dark-mode="darkMode"
+          :notifications="notificationItems"
+          :loading="notificationsLoading"
+          @notification-click="handleNotificationClick"
+        />
 
       </div>
     </v-main>
@@ -537,6 +553,9 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
+import { useNotifications } from '../composables/useNotifications'
+import { paymentsApi } from '../services/api'
+import { useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
 const search = ref('')
@@ -550,9 +569,30 @@ const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const selectedDueTrainingId = ref(null)
 const selectedPaymentMethod = ref('Card')
-const accountBalance = ref(1560)
 const darkModeStorageKey = 'app-dark-mode'
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
+const paymentError = ref('')
+const loading = ref(false)
+const { user } = useAuth()
+const {
+  items: notificationItems,
+  loading: notificationsLoading,
+  unreadCount,
+  loadNotifications,
+  markNotificationRead
+} = useNotifications()
+const paymentsData = ref({
+  summary: {
+    total_paid: 0,
+    pending: 0,
+    failed: 0
+  },
+  account_balance: 0,
+  due_trainings: [],
+  recent_activity: [],
+  spending_breakdown: [],
+  payments: []
+})
 
 const navItems = [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
@@ -562,147 +602,66 @@ const navItems = [
   { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
 ]
 
-const dueTrainings = ref([
-  {
-    id: 1,
-    name: 'Football Training',
-    date: '26 Mar',
-    deadline: '25 Mar',
-    category: 'Football',
-    group: 'Football U14',
-    trainer: 'Kristaps Bērziņš',
-    amount: 40,
-    status: 'Pending'
-  },
-  {
-    id: 2,
-    name: 'Swimming Session',
-    date: '28 Mar',
-    deadline: '27 Mar',
-    category: 'Swimming',
-    group: 'Swimming Beginners',
-    trainer: 'Laura Ozola',
-    amount: 35,
-    status: 'Pending'
-  },
-  {
-    id: 3,
-    name: 'Boxing Practice',
-    date: '29 Mar',
-    deadline: '28 Mar',
-    category: 'Boxing',
-    group: 'Junior Boxing',
-    trainer: 'Mārtiņš Liepa',
-    amount: 50,
-    status: 'Overdue'
-  },
-  {
-    id: 4,
-    name: 'Running Club',
-    date: '31 Mar',
-    deadline: '30 Mar',
-    category: 'Running',
-    group: 'Running Club',
-    trainer: 'Elīna Kalniņa',
-    amount: 30,
-    status: 'Pending'
-  },
-  {
-    id: 5,
-    name: 'Basketball Practice',
-    date: '2 Apr',
-    deadline: '1 Apr',
-    category: 'Basketball',
-    group: 'Basketball Teens',
-    trainer: 'Artūrs Jansons',
-    amount: 45,
-    status: 'Pending'
-  }
-])
-
-const chartPoints = [
-  { label: 'Jan', x: 24, y: 122 },
-  { label: 'Feb', x: 72, y: 102 },
-  { label: 'Mar', x: 120, y: 110 },
-  { label: 'Apr', x: 168, y: 78 },
-  { label: 'May', x: 216, y: 88 },
-  { label: 'Jun', x: 264, y: 56 },
-  { label: 'Jul', x: 312, y: 70 }
-]
-
 const chartGridLines = [32, 72, 112, 152]
+const profileName = computed(() => {
+  if (!user.value) return 'SportSystem User'
+  return `${user.value.name} ${user.value.surname}`.trim()
+})
+const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
+const profileSeed = computed(() => user.value?.email ?? profileName.value)
+const dueTrainings = computed(() => paymentsData.value.due_trainings ?? [])
+const paymentRecords = computed(() => paymentsData.value.payments ?? [])
+const accountBalance = computed(() => Number(paymentsData.value.account_balance ?? 0))
+const chartPoints = computed(() => {
+  const monthLabels = []
+  const now = new Date()
+
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const month = new Date(now.getFullYear(), now.getMonth() - offset, 1)
+    monthLabels.push({
+      key: `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`,
+      label: month.toLocaleDateString('en-US', { month: 'short' })
+    })
+  }
+
+  const totals = paymentRecords.value.reduce((acc, payment) => {
+    if (payment.status !== 'paid' || !payment.created_at) return acc
+    const date = new Date(payment.created_at)
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    acc[key] = (acc[key] || 0) + Number(payment.amount)
+    return acc
+  }, {})
+
+  const values = monthLabels.map((month) => totals[month.key] || 0)
+  const maxValue = Math.max(...values, 1)
+
+  return monthLabels.map((month, index) => ({
+    label: month.label,
+    x: 24 + index * 48,
+    y: 150 - ((values[index] / maxValue) * 90)
+  }))
+})
 
 const chartLinePath = computed(() =>
-  chartPoints.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
+  chartPoints.value.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
 )
 
 const chartAreaPath = computed(() => {
   const line = chartLinePath.value
-  const lastPoint = chartPoints[chartPoints.length - 1]
-  const firstPoint = chartPoints[0]
+  const lastPoint = chartPoints.value[chartPoints.value.length - 1]
+  const firstPoint = chartPoints.value[0]
 
   return `${line} L ${lastPoint.x} 160 L ${firstPoint.x} 160 Z`
 })
 
-const transactions = ref([
-  { id: 1, name: 'Football Training', date: '12 Mar', amount: 40, status: 'Paid', category: 'Football', detail: 'Completed training event' },
-  { id: 2, name: 'Basketball Practice', date: '10 Mar', amount: 35, status: 'Missed', category: 'Basketball', detail: 'Completed training event' },
-  { id: 3, name: 'Swimming Session', date: '8 Mar', amount: 50, status: 'Paid', category: 'Swimming', detail: 'Completed training event' },
-  { id: 4, name: 'Boxing Session', date: '6 Mar', amount: 45, status: 'Paid', category: 'Boxing', detail: 'Completed training event' },
-  { id: 5, name: 'Yoga Class', date: '4 Mar', amount: 30, status: 'Missed', category: 'Yoga', detail: 'Completed training event' },
-  { id: 6, name: 'Tennis Practice', date: '2 Mar', amount: 55, status: 'Paid', category: 'Tennis', detail: 'Completed training event' },
-  { id: 7, name: 'Dance Training', date: '28 Feb', amount: 40, status: 'Paid', category: 'Dance', detail: 'Completed training event' },
-  { id: 8, name: 'Athletics Session', date: '26 Feb', amount: 35, status: 'Missed', category: 'Athletics', detail: 'Completed training event' }
-])
-
-const payments = ref([
-  { id: 1, name: 'Football Training', date: '12 Mar', method: 'Card', amount: 40, status: 'Paid', category: 'Football', detail: 'Payment action' },
-  { id: 2, name: 'Swimming Session', date: '11 Mar', method: 'Account balance', amount: 35, status: 'Returned', category: 'Swimming', detail: 'Payment action' },
-  { id: 3, name: 'Boxing Session', date: '8 Mar', method: 'Card', amount: 50, status: 'Paid', category: 'Boxing', detail: 'Payment action' },
-  { id: 4, name: 'Running Club', date: '5 Mar', method: 'Account balance', amount: 25, status: 'Returned', category: 'Running', detail: 'Payment action' },
-  { id: 5, name: 'Basketball Practice', date: '3 Mar', method: 'Card', amount: 60, status: 'Paid', category: 'Basketball', detail: 'Payment action' },
-  { id: 6, name: 'Tennis Practice', date: '1 Mar', method: 'Card', amount: 45, status: 'Paid', category: 'Tennis', detail: 'Payment action' }
-])
-
 const normalizedSearch = computed(() => search.value.trim().toLowerCase())
-const totalPaid = computed(() =>
-  payments.value
-    .filter((item) => item.status === 'Paid')
-    .reduce((sum, item) => sum + item.amount, 0)
-)
-
-const pendingTotal = computed(() =>
-  dueTrainings.value
-    .filter((item) => item.status === 'Pending')
-    .reduce((sum, item) => sum + item.amount, 0)
-)
-
-const overdueTotal = computed(() =>
-  dueTrainings.value
-    .filter((item) => item.status === 'Overdue')
-    .reduce((sum, item) => sum + item.amount, 0)
-)
-
 const summaryCards = computed(() => [
-  { label: 'Total Paid', value: formatCurrency(totalPaid.value) },
-  { label: 'Pending', value: formatCurrency(pendingTotal.value) },
-  { label: 'Overdue', value: formatCurrency(overdueTotal.value) }
+  { label: 'Total Paid', value: formatCurrency(paymentsData.value.summary?.total_paid ?? 0) },
+  { label: 'Pending', value: formatCurrency(paymentsData.value.summary?.pending ?? 0) },
+  { label: 'Overdue', value: formatCurrency(paymentsData.value.summary?.overdue ?? 0) }
 ])
 
-const recentActivity = computed(() =>
-  [...transactions.value, ...payments.value]
-    .map((item) => ({
-      id: `${item.method ? 'payment' : 'training'}-${item.id}`,
-      name: item.name,
-      date: item.date,
-      amount: item.amount,
-      method: item.method ?? '',
-      status: item.status,
-      detail: item.detail ?? '',
-      sortValue: parseShortDate(item.date).getTime()
-    }))
-    .sort((a, b) => b.sortValue - a.sortValue)
-)
+const recentActivity = computed(() => paymentsData.value.recent_activity ?? [])
 
 const filteredRecentActivity = computed(() => {
   if (!normalizedSearch.value) return recentActivity.value
@@ -730,22 +689,7 @@ const selectedDueTraining = computed(() =>
 
 const previewDueTrainings = computed(() => filteredDueTrainings.value.slice(0, 3))
 const previewRecentActivity = computed(() => filteredRecentActivity.value.slice(0, 3))
-const spendingBreakdown = computed(() => {
-  const paidPayments = payments.value.filter((item) => item.status === 'Paid')
-  const total = paidPayments.reduce((sum, item) => sum + item.amount, 0)
-  const grouped = paidPayments.reduce((acc, item) => {
-    acc[item.category] = (acc[item.category] || 0) + item.amount
-    return acc
-  }, {})
-
-  return Object.entries(grouped)
-    .map(([category, amount]) => ({
-      category,
-      amount,
-      percentage: total ? `${Math.round((amount / total) * 100)}%` : '0%'
-    }))
-    .sort((a, b) => b.amount - a.amount)
-})
+const spendingBreakdown = computed(() => paymentsData.value.spending_breakdown ?? [])
 
 const getStatusColor = (status) => {
   if (status === 'Paid') return 'green'
@@ -761,6 +705,8 @@ onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
   updateViewportState()
   window.addEventListener('resize', updateViewportState)
+  loadPayments()
+  loadNotifications()
 })
 
 watch(darkMode, (value) => {
@@ -775,6 +721,12 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateViewportState)
 })
 
+watch(notificationsDialog, (value) => {
+  if (value) {
+    loadNotifications(true)
+  }
+})
+
 function updateViewportState() {
   isCompactNav.value = window.innerWidth <= 1024
 }
@@ -784,52 +736,54 @@ function formatCurrency(amount) {
 }
 
 function openPayDialog(training) {
+  paymentError.value = ''
   selectedDueTrainingId.value = training.id
   selectedPaymentMethod.value = training.amount <= accountBalance.value ? 'Account balance' : 'Card'
   payDialog.value = true
 }
 
-function confirmPayment() {
+async function loadPayments() {
+  loading.value = true
+
+  try {
+    paymentsData.value = await paymentsApi.list()
+  } finally {
+    loading.value = false
+  }
+}
+
+async function confirmPayment() {
   const training = selectedDueTraining.value
 
   if (!training) return
   if (selectedPaymentMethod.value === 'Account balance' && training.amount > accountBalance.value) return
 
-  if (selectedPaymentMethod.value === 'Account balance') {
-    accountBalance.value -= training.amount
+  try {
+    await paymentsApi.create({
+      child_id: training.child_id,
+      method: selectedPaymentMethod.value,
+      items: [
+        {
+          type: 'session',
+          session_id: training.session_id,
+          price: training.amount
+        }
+      ]
+    })
+
+    await loadPayments()
+    selectedDueTrainingId.value = null
+    payDialog.value = false
+  } catch (error) {
+    const errors = error?.response?.data?.errors ?? {}
+    paymentError.value = errors.method?.[0] || error?.response?.data?.message || 'Payment failed.'
   }
-
-  const nextId = Date.now()
-  transactions.value.unshift({
-    id: nextId,
-    name: training.name,
-    date: training.date,
-    amount: training.amount,
-    status: 'Paid'
-  })
-
-  payments.value.unshift({
-    id: nextId + 1,
-    name: training.name,
-    date: formatToday(),
-    method: selectedPaymentMethod.value,
-    amount: training.amount,
-    status: 'Paid',
-    category: training.category,
-    detail: 'Payment action'
-  })
-
-  dueTrainings.value = dueTrainings.value.filter((item) => item.id !== training.id)
-  selectedDueTrainingId.value = null
-  payDialog.value = false
 }
 
-function parseShortDate(value) {
-  return new Date(`${value} 2026`)
-}
-
-function formatToday() {
-  return new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }).replace(',', '')
+async function handleNotificationClick(item) {
+  if (item?.unread) {
+    await markNotificationRead(item.id)
+  }
 }
 </script>
 

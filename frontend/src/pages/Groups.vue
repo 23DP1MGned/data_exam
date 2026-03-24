@@ -42,11 +42,11 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
               </v-avatar>
               <div>
-                <div class="profile-name">Maksims Richards</div>
-                <div class="profile-email">maksims@sportsystem.app</div>
+                <div class="profile-name">{{ profileName }}</div>
+                <div class="profile-email">{{ profileEmail }}</div>
               </div>
             </div>
           </div>
@@ -113,7 +113,7 @@
                   <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
-                  <span class="icon-badge">6</span>
+                  <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
               </div>
             </div>
@@ -122,11 +122,11 @@
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
                   </v-avatar>
                   <div>
-                    <div class="profile-name">Maksims Richards</div>
-                    <div class="profile-email">maksims@sportsystem.app</div>
+                    <div class="profile-name">{{ profileName }}</div>
+                    <div class="profile-email">{{ profileEmail }}</div>
                   </div>
                 </div>
 
@@ -168,16 +168,16 @@
                   <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
-                  <span class="icon-badge">6</span>
+                  <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
                   </v-avatar>
                   <div>
-                    <div class="profile-name">Maksims Richards</div>
-                    <div class="profile-email">maksims@sportsystem.app</div>
+                    <div class="profile-name">{{ profileName }}</div>
+                    <div class="profile-email">{{ profileEmail }}</div>
                   </div>
                 </div>
               </div>
@@ -278,7 +278,7 @@
             <v-card-text class="create-dialog-content">
               <div class="create-fields-grid">
                 <v-text-field v-model="newGroup.section" label="Group name" variant="outlined" class="create-field" />
-                <v-text-field v-model="newGroup.trainer" label="Trainer" variant="outlined" class="create-field" />
+                <v-text-field v-model="newGroup.ageCategory" label="Age category" variant="outlined" class="create-field" />
                 <v-text-field v-model="newGroup.days" label="Days" placeholder="Mon / Wed" variant="outlined" class="create-field" />
                 <v-text-field v-model="newGroup.time" label="Time" placeholder="17:00" variant="outlined" class="create-field" />
                 <v-text-field v-model="newGroup.students" label="Students" type="number" min="0" variant="outlined" class="create-field create-field-no-spin" />
@@ -352,7 +352,13 @@
           </v-card>
         </v-dialog>
 
-        <AppNotificationsDialog v-model="notificationsDialog" :dark-mode="darkMode" />
+        <AppNotificationsDialog
+          v-model="notificationsDialog"
+          :dark-mode="darkMode"
+          :notifications="notificationItems"
+          :loading="notificationsLoading"
+          @notification-click="handleNotificationClick"
+        />
       </div>
     </v-main>
   </v-app>
@@ -361,6 +367,9 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
+import { useNotifications } from '../composables/useNotifications'
+import { groupsApi } from '../services/api'
+import { useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
 const search = ref('')
@@ -372,6 +381,7 @@ const selectedSort = ref('az')
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const darkModeStorageKey = 'app-dark-mode'
+const loading = ref(false)
 
 const navItems = [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
@@ -382,21 +392,25 @@ const navItems = [
 ]
 
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
-
-const groups = ref([
-  { id: 1, trainer: 'Jānis Ozols', section: 'Football U14', days: 'Mon / Wed', time: '17:00', students: 12, price: 50, attendance: 85, avatar: 'https://i.pravatar.cc/100?img=1' },
-  { id: 2, trainer: 'Alex Johnson', section: 'Basketball', days: 'Tue / Thu', time: '19:00', students: 10, price: 60, attendance: 78, avatar: 'https://i.pravatar.cc/100?img=2' },
-  { id: 3, trainer: 'Mike Smith', section: 'Running', days: 'Mon / Fri', time: '15:00', students: 8, price: 40, attendance: 92, avatar: 'https://i.pravatar.cc/100?img=3' },
-  { id: 4, trainer: 'Anna Petrova', section: 'Dance', days: 'Sat', time: '16:00', students: 14, price: 45, attendance: 88, avatar: 'https://i.pravatar.cc/100?img=4' },
-  { id: 5, trainer: 'David Brown', section: 'Boxing', days: 'Mon / Thu', time: '18:00', students: 9, price: 55, attendance: 80, avatar: 'https://i.pravatar.cc/100?img=5' },
-  { id: 6, trainer: 'Olga Ivanova', section: 'Yoga', days: 'Tue / Sat', time: '10:00', students: 11, price: 35, attendance: 95, avatar: 'https://i.pravatar.cc/100?img=6' }
-])
-
-groups.value = groups.value.map(withGroupAvatar)
+const { user } = useAuth()
+const {
+  items: notificationItems,
+  loading: notificationsLoading,
+  unreadCount,
+  loadNotifications,
+  markNotificationRead
+} = useNotifications()
+const groups = ref([])
+const profileName = computed(() => {
+  if (!user.value) return 'SportSystem User'
+  return `${user.value.name} ${user.value.surname}`.trim()
+})
+const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
+const profileSeed = computed(() => user.value?.email ?? profileName.value)
 
 const newGroup = ref({
   section: '',
-  trainer: '',
+  ageCategory: '',
   days: '',
   time: '',
   students: 0,
@@ -415,6 +429,8 @@ onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
   updateViewportState()
   window.addEventListener('resize', updateViewportState)
+  loadGroups()
+  loadNotifications()
 })
 
 watch(darkMode, (value) => {
@@ -429,6 +445,12 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateViewportState)
 })
 
+watch(notificationsDialog, (value) => {
+  if (value) {
+    loadNotifications(true)
+  }
+})
+
 function sortAZ() {
   groups.value.sort((a, b) => a.section.localeCompare(b.section))
 }
@@ -440,7 +462,7 @@ function sortZA() {
 function openCreateDialog() {
   newGroup.value = {
     section: '',
-    trainer: '',
+    ageCategory: '',
     days: '',
     time: '',
     students: 0,
@@ -449,23 +471,31 @@ function openCreateDialog() {
   createDialog.value = true
 }
 
-function saveGroup() {
-  groups.value.unshift({
-    ...withGroupAvatar({
-      id: Date.now(),
-      section: newGroup.value.section || 'New Group',
-      trainer: newGroup.value.trainer || 'New Trainer',
-      days: newGroup.value.days || 'Mon / Wed',
-      time: newGroup.value.time || '17:00',
-      students: Number(newGroup.value.students) || 0,
-      price: Number(newGroup.value.price) || 0,
-      attendance: calculateAttendance(Number(newGroup.value.students) || 0)
-    })
+async function loadGroups() {
+  loading.value = true
+
+  try {
+    const response = await groupsApi.list()
+    groups.value = response.map(withGroupAvatar)
+    if (selectedSort.value === 'az') sortAZ()
+    if (selectedSort.value === 'za') sortZA()
+  } finally {
+    loading.value = false
+  }
+}
+
+async function saveGroup() {
+  await groupsApi.create({
+    name: newGroup.value.section || 'New Group',
+    age_category: newGroup.value.ageCategory || null,
+    schedule_days: newGroup.value.days || null,
+    default_time: newGroup.value.time || null,
+    price: Number(newGroup.value.price) || 0
   })
 
+  await loadGroups()
   if (selectedSort.value === 'az') sortAZ()
   if (selectedSort.value === 'za') sortZA()
-
   createDialog.value = false
 }
 
@@ -497,6 +527,12 @@ function withGroupAvatar(group) {
   return {
     ...group,
     avatar: avatarFor(`group-${group.section}-${group.trainer}`, group.section)
+  }
+}
+
+async function handleNotificationClick(item) {
+  if (item?.unread) {
+    await markNotificationRead(item.id)
   }
 }
 </script>

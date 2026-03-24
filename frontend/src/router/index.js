@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { bootstrapAuth, useAuth } from '../services/auth'
 
 import Login from '../pages/Login.vue'
 import Home from '../pages/Home.vue'
@@ -15,31 +16,38 @@ const routes = [
   },
   {
     path: '/login',
-    component: Login
+    component: Login,
+    meta: { guestOnly: true }
   },
   {
     path: '/home',
-    component: Home
+    component: Home,
+    meta: { requiresAuth: true }
   },
   {
     path: '/register',
-    component: Register
+    component: Register,
+    meta: { guestOnly: true }
   },
-    {
+  {
     path: '/groups',
-    component: Groups
+    component: Groups,
+    meta: { requiresAuth: true }
   },
-      {
+  {
     path: '/schedule',
-    component: Schedule
+    component: Schedule,
+    meta: { requiresAuth: true }
   },
-      {
+  {
     path: '/payments',
-    component: Payments
+    component: Payments,
+    meta: { requiresAuth: true }
   },
-      {
+  {
     path: '/attendance',
-    component: Attendance
+    component: Attendance,
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -48,6 +56,38 @@ const router = createRouter({
   routes
 })
 
+router.beforeEach(async (to) => {
+  const { isAuthenticated } = useAuth()
 
+  if (!isAuthenticated.value) {
+    if (to.meta?.requiresAuth) {
+      return '/login'
+    }
+
+    return true
+  }
+
+  await bootstrapAuth()
+
+  const { user } = useAuth()
+
+  if (!user.value && to.meta?.requiresAuth) {
+    return '/login'
+  }
+
+  if (
+    user.value?.role === 'admin'
+    && to.meta?.requiresAuth
+    && to.path !== '/home'
+  ) {
+    return '/home'
+  }
+
+  if (to.meta?.guestOnly && user.value) {
+    return '/home'
+  }
+
+  return true
+})
 
 export default router

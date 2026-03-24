@@ -42,13 +42,22 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
               </v-avatar>
               <div>
-                <div class="profile-name">Maksims Richards</div>
-                <div class="profile-email">maksims@sportsystem.app</div>
+                <div class="profile-name">{{ profileName }}</div>
+                <div class="profile-email">{{ profileEmail }}</div>
               </div>
             </div>
+
+            <v-btn
+              variant="outlined"
+              class="mobile-logout-btn"
+              prepend-icon="mdi-logout"
+              @click="handleMobileLogout"
+            >
+              Log out
+            </v-btn>
           </div>
         </v-navigation-drawer>
 
@@ -113,24 +122,25 @@
                   <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
-                  <span class="icon-badge">6</span>
+                  <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
               </div>
             </div>
 
-            <div class="mobile-search-card">
+              <div class="mobile-search-card">
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
                   </v-avatar>
                   <div>
-                    <div class="profile-name">Maksims Richards</div>
-                    <div class="profile-email">maksims@sportsystem.app</div>
+                    <div class="profile-name">{{ profileName }}</div>
+                    <div class="profile-email">{{ profileEmail }}</div>
                   </div>
                 </div>
 
                 <v-btn
+                  v-if="!isAdmin"
                   color="primary"
                   class="mobile-schedule-btn"
                   prepend-icon="mdi-calendar-month-outline"
@@ -147,7 +157,7 @@
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
                   <v-text-field
                     v-model="search"
-                    placeholder="Search overview"
+                    :placeholder="isAdmin ? 'Search admin panel' : 'Search overview'"
                     variant="plain"
                     hide-details
                     density="comfortable"
@@ -173,16 +183,25 @@
                   <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
-                  <span class="icon-badge">6</span>
+                  <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
+
+                <v-btn
+                  icon
+                  variant="text"
+                  class="top-icon-btn logout-btn"
+                  @click="handleLogout"
+                >
+                  <v-icon>mdi-logout</v-icon>
+                </v-btn>
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
                   </v-avatar>
                   <div>
-                    <div class="profile-name">Maksims Richards</div>
-                    <div class="profile-email">maksims@sportsystem.app</div>
+                    <div class="profile-name">{{ profileName }}</div>
+                    <div class="profile-email">{{ profileEmail }}</div>
                   </div>
                 </div>
               </div>
@@ -191,11 +210,16 @@
             <div class="schedule-card">
               <div class="schedule-header">
                 <div>
-                  <h1 class="schedule-title">Home Overview</h1>
-                  <div class="schedule-subtitle">Quick summary of trainings, groups, notifications and attendance</div>
+                  <h1 class="schedule-title">{{ isAdmin ? 'Admin Panel' : 'Home Overview' }}</h1>
+                  <div class="schedule-subtitle">
+                    {{ isAdmin
+                      ? 'System-wide admin overview with users, groups, sessions and payment activity'
+                      : 'Quick summary of trainings, groups, notifications and attendance' }}
+                  </div>
                 </div>
 
                 <v-btn
+                  v-if="!isAdmin"
                   color="primary"
                   class="create-btn desktop-only-btn"
                   prepend-icon="mdi-calendar-month-outline"
@@ -212,7 +236,112 @@
                 </article>
               </div>
 
-              <div class="overview-grid">
+              <div v-if="isAdmin" class="overview-grid">
+                <section class="overview-card">
+                  <div class="overview-card-header">
+                    <div class="list-title">Latest Groups</div>
+                  </div>
+
+                  <div class="list-wrap">
+                    <article
+                      v-for="group in filteredAdminGroups"
+                      :key="group.id"
+                      class="overview-item"
+                    >
+                      <div>
+                        <div class="payment-name">{{ group.name }}</div>
+                        <div class="payment-meta">{{ group.coach }} • {{ group.age_category || 'No age category' }}</div>
+                      </div>
+                      <div class="payment-side">
+                        <div class="payment-amount">{{ group.students }} students</div>
+                      </div>
+                    </article>
+
+                    <div v-if="!filteredAdminGroups.length" class="empty-state">
+                      No groups found.
+                    </div>
+                  </div>
+                </section>
+
+                <section class="overview-card">
+                  <div class="overview-card-header">
+                    <div class="list-title">Upcoming Sessions</div>
+                  </div>
+
+                  <div class="list-wrap">
+                    <article
+                      v-for="session in filteredAdminSessions"
+                      :key="session.id"
+                      class="overview-item"
+                    >
+                      <div>
+                        <div class="payment-name">{{ session.title }}</div>
+                        <div class="payment-meta">{{ session.trainer }} • {{ formatOverviewDate(session.date) }}</div>
+                      </div>
+                      <div class="payment-side">
+                        <div class="payment-amount">{{ session.start }} - {{ session.end }}</div>
+                      </div>
+                    </article>
+
+                    <div v-if="!filteredAdminSessions.length" class="empty-state">
+                      No sessions found.
+                    </div>
+                  </div>
+                </section>
+
+                <section class="overview-card">
+                  <div class="overview-card-header">
+                    <div class="list-title">Recent Payments</div>
+                  </div>
+
+                  <div class="list-wrap">
+                    <article
+                      v-for="payment in filteredAdminPayments"
+                      :key="payment.id"
+                      class="overview-item"
+                    >
+                      <div>
+                        <div class="payment-name">{{ payment.child }}</div>
+                        <div class="payment-meta">{{ payment.parent }} • {{ payment.method }}</div>
+                        <div class="payment-secondary">{{ payment.created_at }}</div>
+                      </div>
+                      <div class="payment-side">
+                        <div class="payment-amount">{{ formatCurrency(payment.amount) }}</div>
+                        <div class="payment-meta">{{ payment.status }}</div>
+                      </div>
+                    </article>
+
+                    <div v-if="!filteredAdminPayments.length" class="empty-state">
+                      No payments found.
+                    </div>
+                  </div>
+                </section>
+
+                <section class="overview-card">
+                  <div class="overview-card-header">
+                    <div class="list-title">System Notifications</div>
+                  </div>
+
+                  <div class="list-wrap">
+                    <article
+                      v-for="item in notifications"
+                      :key="item.id"
+                      class="overview-item"
+                    >
+                      <div>
+                        <div class="payment-name">{{ item.title }}</div>
+                        <div class="payment-meta">{{ item.time }}</div>
+                      </div>
+                    </article>
+
+                    <div v-if="!notifications.length" class="empty-state">
+                      No notifications available.
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <div v-else class="overview-grid">
                 <section class="overview-card">
                   <div class="overview-card-header">
                     <div class="list-title">Next 3 Days Trainings</div>
@@ -361,7 +490,13 @@
           </v-card>
         </v-dialog>
 
-        <AppNotificationsDialog v-model="notificationsDialog" :dark-mode="darkMode" />
+        <AppNotificationsDialog
+          v-model="notificationsDialog"
+          :dark-mode="darkMode"
+          :notifications="notificationItems"
+          :loading="notificationsLoading"
+          @notification-click="handleNotificationClick"
+        />
       </div>
     </v-main>
   </v-app>
@@ -369,108 +504,58 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
+import { useNotifications } from '../composables/useNotifications'
+import { dashboardApi } from '../services/api'
+import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
+const router = useRouter()
 const search = ref('')
 const dialog = ref(false)
 const filterDialog = ref(false)
 const notificationsDialog = ref(false)
 const isEditing = ref(false)
-const editingId = ref(null)
 const selectedSort = ref('time')
 const darkMode = ref(false)
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const darkModeStorageKey = 'app-dark-mode'
+const loading = ref(false)
+const dashboardMode = ref('standard')
 
-const navItems = [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
-  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
-  { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
-]
-
-const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
-
-const trainings = ref([
-  {
-    id: 1,
-    title: 'Football Training U14',
-    description: 'Speed and coordination practice',
-    trainer: 'Jānis Ozols',
-    start: '09:00 AM',
-    end: '10:20 AM',
-    date: '2026-03-23',
-    status: 'upcoming',
-    group: 'Football U14',
-    avatar: 'https://i.pravatar.cc/100?img=32',
-    students: [
-      { id: 1, name: 'Anna', avatar: 'https://i.pravatar.cc/80?img=5' },
-      { id: 2, name: 'Liam', avatar: 'https://i.pravatar.cc/80?img=6' },
-      { id: 3, name: 'Noah', avatar: 'https://i.pravatar.cc/80?img=7' },
-      { id: 4, name: 'Emma', avatar: 'https://i.pravatar.cc/80?img=8' }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Basketball Training',
-    description: 'Passing combinations and finishing drills',
-    trainer: 'Alex Johnson',
-    start: '01:20 PM',
-    end: '03:00 PM',
-    date: '2026-03-23',
-    status: 'upcoming',
-    group: 'Basketball Juniors',
-    avatar: 'https://i.pravatar.cc/100?img=44',
-    students: [
-      { id: 5, name: 'Ethan', avatar: 'https://i.pravatar.cc/80?img=9' },
-      { id: 6, name: 'Sofia', avatar: 'https://i.pravatar.cc/80?img=10' }
-    ]
-  },
-  {
-    id: 3,
-    title: 'Running Practice',
-    description: 'Stamina blocks and sprint intervals',
-    trainer: 'Mike Smith',
-    start: '03:30 PM',
-    end: '04:30 PM',
-    date: '2026-03-23',
-    status: 'upcoming',
-    group: 'Running Club',
-    avatar: 'https://i.pravatar.cc/100?img=47',
-    students: [
-      { id: 7, name: 'Mia', avatar: 'https://i.pravatar.cc/80?img=11' },
-      { id: 8, name: 'Lucas', avatar: 'https://i.pravatar.cc/80?img=12' }
-    ]
-  },
-  {
-    id: 4,
-    title: 'Swimming Session',
-    description: 'Technique work and lap pacing',
-    trainer: 'Anna Petrova',
-    start: '09:20 AM',
-    end: '11:00 AM',
-    date: '2026-03-24',
-    status: 'past',
-    group: 'Swimming Beginners',
-    avatar: 'https://i.pravatar.cc/100?img=53',
-    students: [
-      { id: 9, name: 'Oliver', avatar: 'https://i.pravatar.cc/80?img=13' },
-      { id: 10, name: 'Isabella', avatar: 'https://i.pravatar.cc/80?img=14' }
+const navItems = computed(() => {
+  if (user.value?.role === 'admin') {
+    return [
+      { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/home' }
     ]
   }
-])
 
-trainings.value = trainings.value.map(withTrainingAvatars)
+  return [
+    { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
+    { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
+    { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
+    { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
+    { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
+  ]
+})
 
-const notifications = ref([
-  { id: 1, title: 'Training canceled for Football U14', time: '10 minutes ago' },
-  { id: 2, title: 'New payment received from Basketball Juniors', time: '1 hour ago' },
-  { id: 3, title: 'Attendance report for Running Club is ready', time: 'Today, 08:20 AM' }
-])
+const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
+const { user } = useAuth()
+const {
+  items: notificationItems,
+  loading: notificationsLoading,
+  unreadCount,
+  loadNotifications,
+  markNotificationRead
+} = useNotifications()
 
+const trainings = ref([])
+const overviewStats = ref([])
+const adminGroups = ref([])
+const adminSessions = ref([])
+const adminPayments = ref([])
 const newTraining = ref({
   title: '',
   date: '',
@@ -481,19 +566,18 @@ const newTraining = ref({
 })
 
 const overviewQuery = computed(() => search.value.trim().toLowerCase())
-const todayKey = computed(() => new Date().toISOString().slice(0, 10))
-const threeDaysAheadKey = computed(() => {
-  const date = new Date()
-  date.setDate(date.getDate() + 2)
-  return date.toISOString().slice(0, 10)
+const profileName = computed(() => {
+  if (!user.value) return 'SportSystem User'
+  return `${user.value.name} ${user.value.surname}`.trim()
 })
+const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
+const profileSeed = computed(() => user.value?.email ?? profileName.value)
+const isAdmin = computed(() => (user.value?.role === 'admin') || dashboardMode.value === 'admin')
 
 const nextThreeDaysTrainings = computed(() => {
-  const query = search.value.trim().toLowerCase()
+  const query = overviewQuery.value
 
   return trainings.value.filter((training) => {
-    const isWithinNextThreeDays = training.date >= todayKey.value && training.date <= threeDaysAheadKey.value
-    if (!isWithinNextThreeDays) return false
     if (!query) return true
 
     return [
@@ -504,49 +588,44 @@ const nextThreeDaysTrainings = computed(() => {
   })
 })
 
-const pendingPayments = computed(() => 4)
-const attendanceRate = computed(() => {
-  const attendedSessions = 18
-  const totalSessions = 22
-  return `${Math.round((attendedSessions / totalSessions) * 100)}%`
+const notifications = computed(() => notificationItems.value.slice(0, 3))
+const filteredAdminGroups = computed(() => {
+  if (!overviewQuery.value) return adminGroups.value.slice(0, 5)
+  return adminGroups.value
+    .filter((group) =>
+      [group.name, group.coach, group.age_category].filter(Boolean).some((value) =>
+        value.toLowerCase().includes(overviewQuery.value)
+      )
+    )
+    .slice(0, 5)
 })
-
-const nextTrainingCountdown = computed(() => {
-  const now = new Date()
-
-  const upcomingTrainings = trainings.value
-    .map((training) => ({
-      ...training,
-      startAt: parseTrainingDateTime(training.date, training.start)
-    }))
-    .filter((training) => training.startAt.getTime() > now.getTime())
-    .sort((a, b) => a.startAt.getTime() - b.startAt.getTime())
-
-  const nextTraining = upcomingTrainings[0]
-  if (!nextTraining) return 'No upcoming'
-
-  const diffMs = nextTraining.startAt.getTime() - now.getTime()
-  const totalMinutes = Math.max(0, Math.floor(diffMs / 60000))
-  const days = Math.floor(totalMinutes / (60 * 24))
-  const hours = Math.floor((totalMinutes % (60 * 24)) / 60)
-  const minutes = totalMinutes % 60
-
-  if (days > 0) return `${days}d ${hours}h`
-  if (hours > 0) return `${hours}h ${minutes}m`
-  return `${minutes}m`
+const filteredAdminSessions = computed(() => {
+  if (!overviewQuery.value) return adminSessions.value.slice(0, 5)
+  return adminSessions.value
+    .filter((session) =>
+      [session.title, session.trainer, session.status].filter(Boolean).some((value) =>
+        value.toLowerCase().includes(overviewQuery.value)
+      )
+    )
+    .slice(0, 5)
 })
-
-const overviewStats = computed(() => [
-  { label: 'Trainings in 3 days', value: nextThreeDaysTrainings.value.length },
-  { label: 'Next training countdown', value: nextTrainingCountdown.value },
-  { label: 'Pending payments', value: pendingPayments.value },
-  { label: 'Attendance rate', value: attendanceRate.value }
-])
+const filteredAdminPayments = computed(() => {
+  if (!overviewQuery.value) return adminPayments.value.slice(0, 5)
+  return adminPayments.value
+    .filter((payment) =>
+      [payment.parent, payment.child, payment.method, payment.status].filter(Boolean).some((value) =>
+        value.toLowerCase().includes(overviewQuery.value)
+      )
+    )
+    .slice(0, 5)
+})
 
 onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
   updateViewportState()
   window.addEventListener('resize', updateViewportState)
+  loadDashboard()
+  loadNotifications()
 })
 
 watch(darkMode, (value) => {
@@ -561,54 +640,44 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateViewportState)
 })
 
-function openCreate() {
-  isEditing.value = false
-  editingId.value = null
-  newTraining.value = {
-    title: '',
-    date: '',
-    start: '',
-    end: '',
-    trainer: '',
-    description: ''
+watch(notificationsDialog, (value) => {
+  if (value) {
+    loadNotifications(true)
   }
-  dialog.value = true
-}
+})
 
-function openEdit(training) {
-  isEditing.value = true
-  editingId.value = training.id
-  newTraining.value = {
-    title: training.title,
-    date: training.date,
-    start: training.start,
-    end: training.end,
-    trainer: training.trainer,
-    description: training.description
+async function loadDashboard() {
+  loading.value = true
+
+  try {
+    const data = await dashboardApi.get()
+    dashboardMode.value = data?.mode ?? 'standard'
+    trainings.value = (data?.next_trainings ?? []).map((training) => withTrainingAvatars({
+      ...training,
+      group: training.title,
+      students: []
+    }))
+    overviewStats.value = data?.overview_stats ?? []
+    adminGroups.value = data?.latest_groups ?? []
+    adminSessions.value = data?.recent_sessions ?? []
+    adminPayments.value = data?.recent_payments ?? []
+  } finally {
+    loading.value = false
   }
-  dialog.value = true
 }
 
 function saveTraining() {
-  if (isEditing.value) {
-    const index = trainings.value.findIndex((item) => item.id === editingId.value)
-
-    if (index !== -1) {
-      trainings.value[index] = {
-        ...trainings.value[index],
-        ...newTraining.value
-      }
-    }
-  } else {
-    trainings.value.push(withTrainingAvatars({
-      id: Date.now(),
-      ...newTraining.value,
-      status: 'upcoming',
-      group: 'New Group',
-      students: []
-    }))
+  if (!newTraining.value.title) {
+    dialog.value = false
+    return
   }
 
+  trainings.value.unshift(withTrainingAvatars({
+    id: Date.now(),
+    ...newTraining.value,
+    group: newTraining.value.title,
+    students: []
+  }))
   dialog.value = false
 }
 
@@ -616,26 +685,15 @@ function parseTime(value) {
   return new Date(`1970-01-01 ${value}`).getTime()
 }
 
-function parseTrainingDateTime(date, time) {
-  return new Date(`${date}T${convertTo24Hour(time)}:00`)
-}
-
-function convertTo24Hour(value) {
-  const [time, modifier] = value.split(' ')
-  let [hours, minutes] = time.split(':')
-  let parsedHours = Number(hours)
-
-  if (modifier === 'PM' && parsedHours !== 12) parsedHours += 12
-  if (modifier === 'AM' && parsedHours === 12) parsedHours = 0
-
-  return `${String(parsedHours).padStart(2, '0')}:${minutes}`
-}
-
 function formatOverviewDate(value) {
   return new Date(value).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric'
   })
+}
+
+function formatCurrency(value) {
+  return `€${Number(value ?? 0)}`
 }
 
 function withTrainingAvatars(training) {
@@ -647,6 +705,22 @@ function withTrainingAvatars(training) {
       avatar: avatarFor(`student-${student.name}`, student.name)
     }))
   }
+}
+
+async function handleNotificationClick(item) {
+  if (item?.unread) {
+    await markNotificationRead(item.id)
+  }
+}
+
+async function handleLogout() {
+  await logout()
+  router.push('/login')
+}
+
+async function handleMobileLogout() {
+  mobileMenuOpen.value = false
+  await handleLogout()
 }
 
 function sortAZ() {
@@ -757,15 +831,32 @@ function updateViewportState() {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: auto;
+  margin-top: 12px;
   padding: 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.78);
 }
 
+.mobile-logout-btn {
+  margin-top: 12px;
+  min-height: 52px;
+  border-radius: 18px;
+  color: #111827;
+  text-transform: none;
+  letter-spacing: 0;
+  border-color: rgba(148, 163, 184, 0.26);
+  background: rgba(255, 255, 255, 0.72);
+}
+
 .dashboard-shell-dark .mobile-drawer-profile {
   background: rgba(18, 27, 43, 0.92);
   border: 1px solid rgba(74, 92, 126, 0.42);
+}
+
+.dashboard-shell-dark .mobile-logout-btn {
+  color: #eef4ff;
+  border-color: rgba(74, 92, 126, 0.42);
+  background: rgba(18, 27, 43, 0.92);
 }
 
 .sidebar-card {
@@ -1082,6 +1173,10 @@ function updateViewportState() {
   color: #1677ff;
   background: rgba(232, 242, 255, 0.96);
   border-color: rgba(22, 119, 255, 0.28);
+}
+
+.logout-btn {
+  color: #111827;
 }
 
 .dashboard-shell-dark .top-icon-btn-active {

@@ -1,51 +1,114 @@
 <template>
+  <div class="login-bg">
+    <v-container fluid class="fill-height d-flex align-center justify-center">
+      <v-card width="420" class="login-card pa-8">
+        <h1 class="login-title">Login</h1>
+        <p class="login-subtitle">to start learning</p>
 
-<div class="login-bg">
+        <v-alert
+          v-if="generalError"
+          type="error"
+          variant="tonal"
+          density="comfortable"
+          class="mb-4"
+        >
+          {{ generalError }}
+        </v-alert>
 
-<v-container fluid class="fill-height d-flex align-center justify-center">
+        <v-text-field
+          v-model="form.email"
+          label="Email"
+          variant="outlined"
+          type="email"
+          :error-messages="fieldErrors.email"
+        />
 
-<v-card width="420" class="login-card pa-8">
+        <v-text-field
+          v-model="form.password"
+          label="Password"
+          :type="showPassword ? 'text' : 'password'"
+          variant="outlined"
+          :error-messages="fieldErrors.password"
+          :append-inner-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+          @click:append-inner="showPassword = !showPassword"
+          @keyup.enter="submit"
+        />
 
-<h1 class="login-title">Login</h1>
-<p class="login-subtitle">to start learning</p>
+        <v-btn
+          color="primary"
+          size="large"
+          block
+          class="login-btn"
+          :loading="submitting"
+          @click="submit"
+        >
+          Log in →
+        </v-btn>
 
-<v-text-field
-label="Email"
-variant="outlined"
-/>
-
-<v-text-field
-label="Password"
-type="password"
-variant="outlined"
-/>
-
-<v-btn
-color="primary"
-size="large"
-block
-class="login-btn"
->
-Log in →
-</v-btn>
-
-<div class="signup">
-Don’t have an account?
-<router-link to="/register">Sign up now!</router-link>
-</div>
-
-</v-card>
-
-</v-container>
-
-</div>
-
+        <div class="signup">
+          Don’t have an account?
+          <router-link to="/register">Sign up now!</router-link>
+        </div>
+      </v-card>
+    </v-container>
+  </div>
 </template>
 
+<script setup>
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { login } from '../services/auth'
+
+const router = useRouter()
+
+const form = reactive({
+  email: '',
+  password: ''
+})
+
+const fieldErrors = reactive({
+  email: [],
+  password: []
+})
+
+const generalError = ref('')
+const submitting = ref(false)
+const showPassword = ref(false)
+
+function resetErrors() {
+  fieldErrors.email = []
+  fieldErrors.password = []
+  generalError.value = ''
+}
+
+async function submit() {
+  resetErrors()
+
+  if (!form.email) fieldErrors.email = ['Email is required.']
+  if (!form.password) fieldErrors.password = ['Password is required.']
+  if (fieldErrors.email.length || fieldErrors.password.length) return
+
+  submitting.value = true
+
+  try {
+    await login({
+      email: form.email,
+      password: form.password
+    })
+
+    router.push('/home')
+  } catch (error) {
+    const errors = error?.response?.data?.errors ?? {}
+    fieldErrors.email = errors.email ?? []
+    fieldErrors.password = errors.password ?? []
+    generalError.value = error?.response?.data?.message || 'Login failed.'
+  } finally {
+    submitting.value = false
+  }
+}
+</script>
 
 <style scoped>
-
-
 .login-bg{
 height:100vh;
 width:100%;
@@ -89,7 +152,6 @@ transform:translate(120px,80px) scale(1.2);
 }
 }
 
-
 .login-card{
 border-radius:18px;
 background:rgba(255, 255, 255, 0.74);
@@ -97,7 +159,6 @@ backdrop-filter:blur(20px);
 border:1px solid rgba(255,255,255,0.55);
 box-shadow:0 30px 60px rgba(81, 97, 128, 0.18);
 }
-
 
 .login-title{
 font-size:40px;
@@ -109,7 +170,6 @@ margin-bottom:4px;
 color:#64748b;
 margin-bottom:10px;
 }
-
 
 .login-btn{
 height:48px;
@@ -136,5 +196,4 @@ font-weight:600;
 text-decoration:none;
 color:#1d4ed8;
 }
-
 </style>

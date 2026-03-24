@@ -14,10 +14,11 @@
 
       <div class="notifications-list">
         <article
-          v-for="item in notifications"
+          v-for="item in normalizedNotifications"
           :key="item.id"
           class="notification-item"
           :class="{ 'notification-item-unread': item.unread }"
+          @click="handleNotificationClick(item)"
         >
           <div class="notification-dot" :class="{ 'notification-dot-active': item.unread }"></div>
 
@@ -27,13 +28,23 @@
             <div class="notification-time">{{ item.time }}</div>
           </div>
         </article>
+
+        <div v-if="loading" class="notifications-empty-state">
+          Loading notifications...
+        </div>
+
+        <div v-else-if="!normalizedNotifications.length" class="notifications-empty-state">
+          No notifications yet.
+        </div>
       </div>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   modelValue: {
     type: Boolean,
     default: false
@@ -41,55 +52,24 @@ defineProps({
   darkMode: {
     type: Boolean,
     default: false
+  },
+  notifications: {
+    type: Array,
+    default: () => []
+  },
+  loading: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'notification-click'])
 
-const notifications = [
-  {
-    id: 1,
-    title: 'Football training moved',
-    text: 'Tomorrow training was moved from 17:00 to 17:30.',
-    time: '10 minutes ago',
-    unread: true
-  },
-  {
-    id: 2,
-    title: 'Payment received',
-    text: 'A new successful payment was added to your recent activity.',
-    time: '45 minutes ago',
-    unread: true
-  },
-  {
-    id: 3,
-    title: 'Attendance updated',
-    text: 'Attendance for Running Club was recalculated.',
-    time: 'Today, 08:20',
-    unread: true
-  },
-  {
-    id: 4,
-    title: 'New group member',
-    text: 'One athlete joined Basketball Juniors.',
-    time: 'Yesterday, 18:40',
-    unread: false
-  },
-  {
-    id: 5,
-    title: 'Training reminder',
-    text: 'Swimming session starts in 2 hours.',
-    time: 'Yesterday, 14:15',
-    unread: false
-  },
-  {
-    id: 6,
-    title: 'Balance updated',
-    text: 'Account balance was credited after a missed training.',
-    time: 'Mar 22, 12:05',
-    unread: false
-  }
-]
+const normalizedNotifications = computed(() => props.notifications ?? [])
+
+function handleNotificationClick(item) {
+  emit('notification-click', item)
+}
 </script>
 
 <style scoped>
@@ -216,6 +196,15 @@ const notifications = [
   margin-top: 8px;
   font-size: 0.84rem;
   color: #7b8798;
+}
+
+.notifications-empty-state {
+  padding: 18px 0 8px;
+  color: #7b8798;
+}
+
+.notifications-dialog-card-dark .notifications-empty-state {
+  color: #8fa3c1;
 }
 
 @media (max-width: 560px) {

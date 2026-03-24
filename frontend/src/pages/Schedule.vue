@@ -42,11 +42,11 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
               </v-avatar>
               <div>
-                <div class="profile-name">Maksims Richards</div>
-                <div class="profile-email">maksims@sportsystem.app</div>
+                <div class="profile-name">{{ profileName }}</div>
+                <div class="profile-email">{{ profileEmail }}</div>
               </div>
             </div>
           </div>
@@ -113,7 +113,7 @@
                   <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
-                  <span class="icon-badge">6</span>
+                  <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
               </div>
             </div>
@@ -122,11 +122,11 @@
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
                   </v-avatar>
                   <div>
-                    <div class="profile-name">Maksims Richards</div>
-                    <div class="profile-email">maksims@sportsystem.app</div>
+                    <div class="profile-name">{{ profileName }}</div>
+                    <div class="profile-email">{{ profileEmail }}</div>
                   </div>
                 </div>
 
@@ -173,16 +173,16 @@
                   <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
-                  <span class="icon-badge">6</span>
+                  <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
                   </v-avatar>
                   <div>
-                    <div class="profile-name">Maksims Richards</div>
-                    <div class="profile-email">maksims@sportsystem.app</div>
+                    <div class="profile-name">{{ profileName }}</div>
+                    <div class="profile-email">{{ profileEmail }}</div>
                   </div>
                 </div>
               </div>
@@ -312,7 +312,7 @@
                     </div>
 
                     <div class="action-row">
-                      <v-btn variant="outlined" color="error" class="action-btn">
+                      <v-btn variant="outlined" color="error" class="action-btn" @click="cancelTraining(training)">
                         Cancel
                       </v-btn>
                       <v-btn
@@ -323,7 +323,7 @@
                       >
                         Edit
                       </v-btn>
-                      <v-btn color="primary" class="action-btn">
+                      <v-btn color="primary" class="action-btn" to="/attendance">
                         Attendance
                       </v-btn>
                     </div>
@@ -374,12 +374,19 @@
             </v-card-title>
 
             <v-card-text>
-              <v-text-field label="Title" v-model="newTraining.title" />
+              <v-select
+                v-model="newTraining.group_id"
+                label="Group"
+                :items="groupOptions"
+                item-title="section"
+                item-value="id"
+              />
+              <v-text-field label="Title" v-model="newTraining.title" readonly />
               <v-text-field label="Date (YYYY-MM-DD)" v-model="newTraining.date" />
               <v-text-field label="Start time" v-model="newTraining.start" />
               <v-text-field label="End time" v-model="newTraining.end" />
-              <v-text-field label="Trainer" v-model="newTraining.trainer" />
-              <v-textarea label="Description" v-model="newTraining.description" />
+              <v-text-field label="Trainer" v-model="newTraining.trainer" readonly />
+              <v-textarea label="Description" v-model="newTraining.description" readonly />
             </v-card-text>
 
             <v-card-actions>
@@ -465,7 +472,13 @@
           </v-card>
         </v-dialog>
 
-        <AppNotificationsDialog v-model="notificationsDialog" :dark-mode="darkMode" />
+        <AppNotificationsDialog
+          v-model="notificationsDialog"
+          :dark-mode="darkMode"
+          :notifications="notificationItems"
+          :loading="notificationsLoading"
+          @notification-click="handleNotificationClick"
+        />
       </div>
     </v-main>
   </v-app>
@@ -474,6 +487,9 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
+import { useNotifications } from '../composables/useNotifications'
+import { groupsApi, sessionsApi } from '../services/api'
+import { useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
 const search = ref('')
@@ -491,6 +507,7 @@ const pageSize = 6
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const darkModeStorageKey = 'app-dark-mode'
+const loading = ref(false)
 
 const tabs = [
   { value: 'upcoming', label: 'Upcoming' },
@@ -506,230 +523,25 @@ const navItems = [
 ]
 
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
-
-const trainings = ref([
-  {
-    id: 1,
-    title: 'Football Training U14',
-    description: 'Speed and coordination practice',
-    trainer: 'Jānis Ozols',
-    start: '17:00',
-    end: '18:30',
-    date: '2026-03-23',
-    group: 'Football U14',
-    avatar: 'https://i.pravatar.cc/100?img=32',
-    students: [
-      { id: 1, name: 'Anna', avatar: 'https://i.pravatar.cc/80?img=5' },
-      { id: 2, name: 'Liam', avatar: 'https://i.pravatar.cc/80?img=6' },
-      { id: 3, name: 'Noah', avatar: 'https://i.pravatar.cc/80?img=7' },
-      { id: 4, name: 'Emma', avatar: 'https://i.pravatar.cc/80?img=8' }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Basketball Training',
-    description: 'Passing combinations and finishing drills',
-    trainer: 'Alex Johnson',
-    start: '19:00',
-    end: '20:00',
-    date: '2026-03-24',
-    group: 'Basketball Juniors',
-    avatar: 'https://i.pravatar.cc/100?img=44',
-    students: [
-      { id: 5, name: 'Ethan', avatar: 'https://i.pravatar.cc/80?img=9' },
-      { id: 6, name: 'Sofia', avatar: 'https://i.pravatar.cc/80?img=10' }
-    ]
-  },
-  {
-    id: 3,
-    title: 'Running Practice',
-    description: 'Stamina blocks and sprint intervals',
-    trainer: 'Mike Smith',
-    start: '15:00',
-    end: '16:00',
-    date: '2026-03-25',
-    group: 'Running Club',
-    avatar: 'https://i.pravatar.cc/100?img=47',
-    students: [
-      { id: 7, name: 'Mia', avatar: 'https://i.pravatar.cc/80?img=11' },
-      { id: 8, name: 'Lucas', avatar: 'https://i.pravatar.cc/80?img=12' }
-    ]
-  },
-  {
-    id: 4,
-    title: 'Swimming Session',
-    description: 'Technique work and lap pacing',
-    trainer: 'Anna Petrova',
-    start: '09:20',
-    end: '11:00',
-    date: '2026-03-21',
-    group: 'Swimming Beginners',
-    avatar: 'https://i.pravatar.cc/100?img=53',
-    students: [
-      { id: 9, name: 'Oliver', avatar: 'https://i.pravatar.cc/80?img=13' },
-      { id: 10, name: 'Isabella', avatar: 'https://i.pravatar.cc/80?img=14' }
-    ]
-  },
-  {
-    id: 5,
-    title: 'Boxing Fundamentals',
-    description: 'Footwork, guard control and basic combinations',
-    trainer: 'David Brown',
-    start: '18:15',
-    end: '19:20',
-    date: '2026-03-26',
-    group: 'Boxing Teens',
-    avatar: 'https://i.pravatar.cc/100?img=15',
-    students: [
-      { id: 11, name: 'Marta', avatar: 'https://i.pravatar.cc/80?img=15' },
-      { id: 12, name: 'Artem', avatar: 'https://i.pravatar.cc/80?img=16' },
-      { id: 13, name: 'Leo', avatar: 'https://i.pravatar.cc/80?img=17' }
-    ]
-  },
-  {
-    id: 6,
-    title: 'Yoga Recovery',
-    description: 'Mobility work and post-training recovery session',
-    trainer: 'Olga Ivanova',
-    start: '10:00',
-    end: '11:00',
-    date: '2026-03-27',
-    group: 'Yoga Beginners',
-    avatar: 'https://i.pravatar.cc/100?img=18',
-    students: [
-      { id: 14, name: 'Nora', avatar: 'https://i.pravatar.cc/80?img=18' },
-      { id: 15, name: 'Elina', avatar: 'https://i.pravatar.cc/80?img=19' }
-    ]
-  },
-  {
-    id: 7,
-    title: 'Dance Cardio',
-    description: 'Rhythm drills, coordination and cardio endurance',
-    trainer: 'Anna Petrova',
-    start: '16:30',
-    end: '17:40',
-    date: '2026-03-28',
-    group: 'Dance Kids',
-    avatar: 'https://i.pravatar.cc/100?img=19',
-    students: [
-      { id: 16, name: 'Ella', avatar: 'https://i.pravatar.cc/80?img=20' },
-      { id: 17, name: 'Toms', avatar: 'https://i.pravatar.cc/80?img=21' },
-      { id: 18, name: 'Sasha', avatar: 'https://i.pravatar.cc/80?img=22' }
-    ]
-  },
-  {
-    id: 8,
-    title: 'Volleyball Practice',
-    description: 'Serve accuracy and team positioning routines',
-    trainer: 'Kristaps Bērziņš',
-    start: '12:00',
-    end: '13:30',
-    date: '2026-03-29',
-    group: 'Volleyball Juniors',
-    avatar: 'https://i.pravatar.cc/100?img=20',
-    students: [
-      { id: 19, name: 'Kate', avatar: 'https://i.pravatar.cc/80?img=23' },
-      { id: 20, name: 'Rihards', avatar: 'https://i.pravatar.cc/80?img=24' }
-    ]
-  },
-  {
-    id: 9,
-    title: 'Tennis Match Prep',
-    description: 'Reaction drills and serve-return combinations',
-    trainer: 'Laura Miller',
-    start: '14:00',
-    end: '15:10',
-    date: '2026-03-30',
-    group: 'Tennis Academy',
-    avatar: 'https://i.pravatar.cc/100?img=21',
-    students: [
-      { id: 21, name: 'Daniel', avatar: 'https://i.pravatar.cc/80?img=25' },
-      { id: 22, name: 'Alise', avatar: 'https://i.pravatar.cc/80?img=26' },
-      { id: 23, name: 'Mark', avatar: 'https://i.pravatar.cc/80?img=27' }
-    ]
-  },
-  {
-    id: 10,
-    title: 'Athletics Sprint Lab',
-    description: 'Explosive starts and acceleration mechanics',
-    trainer: 'Andrejs Kalniņš',
-    start: '08:30',
-    end: '09:45',
-    date: '2026-03-17',
-    group: 'Athletics U16',
-    avatar: 'https://i.pravatar.cc/100?img=22',
-    students: [
-      { id: 24, name: 'Ieva', avatar: 'https://i.pravatar.cc/80?img=28' },
-      { id: 25, name: 'Edgars', avatar: 'https://i.pravatar.cc/80?img=29' }
-    ]
-  },
-  {
-    id: 11,
-    title: 'Gymnastics Basics',
-    description: 'Balance, flexibility and mat technique session',
-    trainer: 'Signe Ozola',
-    start: '11:15',
-    end: '12:20',
-    date: '2026-03-16',
-    group: 'Gymnastics Starters',
-    avatar: 'https://i.pravatar.cc/100?img=23',
-    students: [
-      { id: 26, name: 'Paula', avatar: 'https://i.pravatar.cc/80?img=30' },
-      { id: 27, name: 'Lote', avatar: 'https://i.pravatar.cc/80?img=31' },
-      { id: 28, name: 'Maks', avatar: 'https://i.pravatar.cc/80?img=32' }
-    ]
-  },
-  {
-    id: 12,
-    title: 'Cycling Endurance Ride',
-    description: 'Steady pace intervals and endurance control',
-    trainer: 'Roberts Veiss',
-    start: '09:00',
-    end: '10:40',
-    date: '2026-03-15',
-    group: 'Cycling Team',
-    avatar: 'https://i.pravatar.cc/100?img=24',
-    students: [
-      { id: 29, name: 'Oskars', avatar: 'https://i.pravatar.cc/80?img=33' },
-      { id: 30, name: 'Linda', avatar: 'https://i.pravatar.cc/80?img=34' }
-    ]
-  },
-  {
-    id: 13,
-    title: 'Karate Technique',
-    description: 'Kata repetitions and defensive movement drills',
-    trainer: 'Kenji Sato',
-    start: '17:20',
-    end: '18:25',
-    date: '2026-03-14',
-    group: 'Karate Intermediate',
-    avatar: 'https://i.pravatar.cc/100?img=25',
-    students: [
-      { id: 31, name: 'Renars', avatar: 'https://i.pravatar.cc/80?img=35' },
-      { id: 32, name: 'Mia', avatar: 'https://i.pravatar.cc/80?img=36' },
-      { id: 33, name: 'Eva', avatar: 'https://i.pravatar.cc/80?img=37' }
-    ]
-  },
-  {
-    id: 14,
-    title: 'Ice Hockey Skills',
-    description: 'Stickhandling and transition play under pressure',
-    trainer: 'Mārtiņš Pētersons',
-    start: '19:30',
-    end: '21:00',
-    date: '2026-03-13',
-    group: 'Ice Hockey U18',
-    avatar: 'https://i.pravatar.cc/100?img=26',
-    students: [
-      { id: 34, name: 'Filips', avatar: 'https://i.pravatar.cc/80?img=38' },
-      { id: 35, name: 'Artis', avatar: 'https://i.pravatar.cc/80?img=39' }
-    ]
-  }
-])
-
-trainings.value = trainings.value.map(withTrainingAvatars)
+const { user } = useAuth()
+const {
+  items: notificationItems,
+  loading: notificationsLoading,
+  unreadCount,
+  loadNotifications,
+  markNotificationRead
+} = useNotifications()
+const trainings = ref([])
+const groupOptions = ref([])
+const profileName = computed(() => {
+  if (!user.value) return 'SportSystem User'
+  return `${user.value.name} ${user.value.surname}`.trim()
+})
+const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
+const profileSeed = computed(() => user.value?.email ?? profileName.value)
 
 const newTraining = ref({
+  group_id: null,
   title: '',
   date: '',
   start: '',
@@ -833,6 +645,9 @@ onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
   updateViewportState()
   window.addEventListener('resize', updateViewportState)
+  loadGroups()
+  loadSessions()
+  loadNotifications()
 })
 
 watch(darkMode, (value) => {
@@ -843,6 +658,16 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateViewportState)
 })
 
+watch(notificationsDialog, (value) => {
+  if (value) {
+    loadNotifications(true)
+  }
+})
+
+watch(() => newTraining.value.group_id, () => {
+  syncTrainingGroupDetails()
+})
+
 function toggleExpanded(id) {
   expandedId.value = expandedId.value === id ? null : id
 }
@@ -851,6 +676,7 @@ function openCreate() {
   isEditing.value = false
   editingId.value = null
   newTraining.value = {
+    group_id: groupOptions.value[0]?.id ?? null,
     title: '',
     date: '',
     start: '',
@@ -859,6 +685,7 @@ function openCreate() {
     description: '',
     group: ''
   }
+  syncTrainingGroupDetails()
   dialog.value = true
 }
 
@@ -866,6 +693,7 @@ function openEdit(training) {
   isEditing.value = true
   editingId.value = training.id
   newTraining.value = {
+    group_id: training.group_id,
     title: training.title,
     date: training.date,
     start: training.start,
@@ -877,25 +705,38 @@ function openEdit(training) {
   dialog.value = true
 }
 
-function saveTraining() {
-  if (isEditing.value) {
-    const index = trainings.value.findIndex((item) => item.id === editingId.value)
+async function loadGroups() {
+  const response = await groupsApi.list()
+  groupOptions.value = response
+}
 
-    if (index !== -1) {
-      trainings.value[index] = {
-        ...trainings.value[index],
-        ...newTraining.value
-      }
-    }
-  } else {
-    trainings.value.push(withTrainingAvatars({
-      id: Date.now(),
-      ...newTraining.value,
-      group: newTraining.value.group || 'New Group',
-      students: []
-    }))
+async function loadSessions() {
+  loading.value = true
+
+  try {
+    const response = await sessionsApi.list()
+    trainings.value = response.map(withTrainingAvatars)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function saveTraining() {
+  const payload = {
+    group_id: newTraining.value.group_id,
+    date: newTraining.value.date,
+    start_time: newTraining.value.start,
+    end_time: newTraining.value.end,
+    status: new Date(`${newTraining.value.date}T${newTraining.value.end}:00`).getTime() < Date.now() ? 'completed' : 'planned'
   }
 
+  if (isEditing.value && editingId.value) {
+    await sessionsApi.update(editingId.value, payload)
+  } else {
+    await sessionsApi.create(payload)
+  }
+
+  await loadSessions()
   dialog.value = false
 }
 
@@ -957,6 +798,16 @@ function updateViewportState() {
   isCompactNav.value = window.innerWidth <= 1024
 }
 
+function syncTrainingGroupDetails() {
+  const selectedGroup = groupOptions.value.find((group) => group.id === newTraining.value.group_id)
+  if (!selectedGroup) return
+
+  newTraining.value.title = selectedGroup.section
+  newTraining.value.trainer = selectedGroup.trainer
+  newTraining.value.description = selectedGroup.age_category || 'Training session'
+  newTraining.value.group = selectedGroup.section
+}
+
 function withTrainingAvatars(training) {
   return {
     ...training,
@@ -965,6 +816,17 @@ function withTrainingAvatars(training) {
       ...student,
       avatar: avatarFor(`student-${student.name}`, student.name)
     }))
+  }
+}
+
+async function cancelTraining(training) {
+  await sessionsApi.remove(training.id)
+  await loadSessions()
+}
+
+async function handleNotificationClick(item) {
+  if (item?.unread) {
+    await markNotificationRead(item.id)
   }
 }
 </script>

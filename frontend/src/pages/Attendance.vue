@@ -42,11 +42,11 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
               </v-avatar>
               <div>
-                <div class="profile-name">Maksims Richards</div>
-                <div class="profile-email">maksims@sportsystem.app</div>
+                <div class="profile-name">{{ profileName }}</div>
+                <div class="profile-email">{{ profileEmail }}</div>
               </div>
             </div>
           </div>
@@ -113,7 +113,7 @@
                   <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
-                  <span class="icon-badge">4</span>
+                  <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
               </div>
             </div>
@@ -122,11 +122,11 @@
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
                   </v-avatar>
                   <div>
-                    <div class="profile-name">Maksims Richards</div>
-                    <div class="profile-email">maksims@sportsystem.app</div>
+                    <div class="profile-name">{{ profileName }}</div>
+                    <div class="profile-email">{{ profileEmail }}</div>
                   </div>
                 </div>
               </div>
@@ -164,16 +164,16 @@
                   <v-btn icon variant="text" class="top-icon-btn" @click="notificationsDialog = true">
                     <v-icon>mdi-bell-outline</v-icon>
                   </v-btn>
-                  <span class="icon-badge">4</span>
+                  <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
                   </v-avatar>
                   <div>
-                    <div class="profile-name">Maksims Richards</div>
-                    <div class="profile-email">maksims@sportsystem.app</div>
+                    <div class="profile-name">{{ profileName }}</div>
+                    <div class="profile-email">{{ profileEmail }}</div>
                   </div>
                 </div>
               </div>
@@ -187,14 +187,23 @@
                     Track sessions, player presence and team workload in one view
                   </div>
                 </div>
+
+                <v-btn
+                  v-if="canManageAttendance"
+                  color="primary"
+                  prepend-icon="mdi-check-circle-outline"
+                  @click="openMarkDialog"
+                >
+                  Mark attendance
+                </v-btn>
               </div>
 
               <div class="attendance-overview">
                 <div class="coach-card">
                   <v-avatar size="76" class="coach-avatar">
-                    <img :src="avatarFor('maksims-richards', 'Maksims Richards')" alt="User avatar">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="User avatar">
                   </v-avatar>
-                  <div class="coach-name">Maksims Richards</div>
+                  <div class="coach-name">{{ profileName }}</div>
                   <div class="coach-groups">
                     <span v-for="group in memberGroups" :key="group" class="coach-group-pill">
                       {{ group }}
@@ -224,7 +233,7 @@
                           This bar shows how all scheduled sessions are split between attended and missed sessions this month.
                         </div>
                       </div>
-                      <div class="timeline-percent">72%</div>
+                      <div class="timeline-percent">{{ summary.attendance_rate ?? 0 }}%</div>
                     </div>
                     <div class="timeline-bar">
                       <div
@@ -331,7 +340,46 @@
           </section>
         </div>
 
-        <AppNotificationsDialog v-model="notificationsDialog" :dark-mode="darkMode" />
+        <v-dialog v-model="markDialog" max-width="560">
+          <v-card class="dialog-card">
+            <v-card-title>Mark Attendance</v-card-title>
+            <v-card-text>
+              <v-select
+                v-model="markForm.session_id"
+                label="Session"
+                :items="sessionOptions"
+                item-title="label"
+                item-value="id"
+              />
+              <v-select
+                v-model="markForm.user_id"
+                label="Child"
+                :items="selectedSessionChildren"
+                item-title="name"
+                item-value="id"
+              />
+              <v-select
+                v-model="markForm.status"
+                label="Status"
+                :items="attendanceStatusOptions"
+              />
+              <v-text-field v-model="markForm.comment" label="Comment" />
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer />
+              <v-btn variant="outlined" @click="markDialog = false">Cancel</v-btn>
+              <v-btn color="primary" @click="submitAttendance">Save</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
+        <AppNotificationsDialog
+          v-model="notificationsDialog"
+          :dark-mode="darkMode"
+          :notifications="notificationItems"
+          :loading="notificationsLoading"
+          @notification-click="handleNotificationClick"
+        />
       </div>
     </v-main>
   </v-app>
@@ -340,16 +388,46 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
+import { useNotifications } from '../composables/useNotifications'
+import { attendanceApi, sessionsApi } from '../services/api'
+import { useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
 const search = ref('')
 const darkMode = ref(false)
 const notificationsDialog = ref(false)
-const currentMonth = ref(new Date('2026-07-01'))
+const markDialog = ref(false)
+const currentMonth = ref(new Date())
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const darkModeStorageKey = 'app-dark-mode'
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
+const { user } = useAuth()
+const {
+  items: notificationItems,
+  loading: notificationsLoading,
+  unreadCount,
+  loadNotifications,
+  markNotificationRead
+} = useNotifications()
+const attendanceResponse = ref({
+  records: [],
+  summary: {
+    total_sessions: 0,
+    attended_sessions: 0,
+    missed_sessions: 0,
+    attendance_rate: 0,
+    total_training_time_minutes: 0
+  }
+})
+const manageableSessions = ref([])
+const markForm = ref({
+  session_id: null,
+  user_id: null,
+  status: 'present',
+  comment: ''
+})
+const attendanceStatusOptions = ['present', 'absent']
 
 const navItems = [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
@@ -359,54 +437,53 @@ const navItems = [
   { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
 ]
 
-const memberGroups = ['Football U14', 'Running Club', 'Swimming Beginners']
+const profileName = computed(() => {
+  if (!user.value) return 'SportSystem User'
+  return `${user.value.name} ${user.value.surname}`.trim()
+})
+const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
+const profileSeed = computed(() => user.value?.email ?? profileName.value)
+const records = computed(() => attendanceResponse.value.records ?? [])
+const summary = computed(() => attendanceResponse.value.summary ?? {})
+const canManageAttendance = computed(() => ['admin', 'coach'].includes(user.value?.role ?? ''))
+const memberGroups = computed(() => [...new Set(records.value.map((item) => item.training))])
 
-const stats = [
-  { label: 'Total training time', value: '12h 30m' },
-  { label: 'Total sessions', value: '18' },
-  { label: 'Attended sessions', value: '13' },
-  { label: 'Missed sessions', value: '5' }
-]
+const stats = computed(() => [
+  { label: 'Total training time', value: formatMinutes(summary.value.total_training_time_minutes ?? 0) },
+  { label: 'Total sessions', value: String(summary.value.total_sessions ?? 0) },
+  { label: 'Attended sessions', value: String(summary.value.attended_sessions ?? 0) },
+  { label: 'Missed sessions', value: String(summary.value.missed_sessions ?? 0) }
+])
 
-const timelineSegments = [
-  { label: 'Attended sessions', color: '#39b980', width: '72%' },
-  { label: 'Missed sessions', color: '#ef6b73', width: '28%' }
-]
+const timelineSegments = computed(() => {
+  const totalSessions = Number(summary.value.total_sessions ?? 0)
+  const attendedSessions = Number(summary.value.attended_sessions ?? 0)
+  const missedSessions = Number(summary.value.missed_sessions ?? 0)
+
+  if (!totalSessions) {
+    return [
+      { label: 'Attended sessions', color: '#39b980', width: '0%' },
+      { label: 'Missed sessions', color: '#ef6b73', width: '0%' }
+    ]
+  }
+
+  return [
+    { label: 'Attended sessions', color: '#39b980', width: `${Math.round((attendedSessions / totalSessions) * 100)}%` },
+    { label: 'Missed sessions', color: '#ef6b73', width: `${Math.round((missedSessions / totalSessions) * 100)}%` }
+  ]
+})
 
 const timelineLabels = ['0%', '25%', '50%', '75%', '100%']
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-const attendanceByDate = {
-  '2026-07-01': 'Present',
-  '2026-07-02': 'Present',
-  '2026-07-03': 'Absent',
-  '2026-07-06': 'Present',
-  '2026-07-07': 'Present',
-  '2026-07-08': 'Absent',
-  '2026-07-09': 'Present',
-  '2026-07-10': 'Present',
-  '2026-07-13': 'Present',
-  '2026-07-14': 'Absent',
-  '2026-07-15': 'Present',
-  '2026-07-16': 'Present',
-  '2026-07-17': 'Present',
-  '2026-07-20': 'Absent',
-  '2026-07-21': 'Present',
-  '2026-07-22': 'Present',
-  '2026-07-23': 'Present',
-  '2026-07-24': 'Absent',
-  '2026-07-27': 'Present',
-  '2026-07-28': 'Present',
-  '2026-07-29': 'Absent',
-  '2026-07-30': 'Present',
-  '2026-07-31': 'Present',
-  '2026-08-03': 'Present',
-  '2026-08-04': 'Absent',
-  '2026-08-05': 'Present',
-  '2026-08-06': 'Present',
-  '2026-08-07': 'Present'
-}
+const attendanceByDate = computed(() =>
+  records.value.reduce((map, item) => {
+    const currentValue = map[item.date]
+    const nextValue = item.status === 'present' ? 'Present' : 'Absent'
+    map[item.date] = currentValue === 'Absent' ? 'Absent' : nextValue
+    return map
+  }, {})
+)
 
 const currentMonthLabel = computed(() =>
   currentMonth.value.toLocaleDateString('en-US', {
@@ -419,6 +496,11 @@ onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
   updateViewportState()
   window.addEventListener('resize', updateViewportState)
+  loadAttendance()
+  loadNotifications()
+  if (canManageAttendance.value) {
+    loadManageableSessions()
+  }
 })
 
 watch(darkMode, (value) => {
@@ -431,6 +513,16 @@ watch(isCompactNav, (value) => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateViewportState)
+})
+
+watch(notificationsDialog, (value) => {
+  if (value) {
+    loadNotifications(true)
+  }
+})
+
+watch(() => markForm.value.session_id, () => {
+  markForm.value.user_id = selectedSessionChildren.value[0]?.id ?? null
 })
 
 const calendarWeeks = computed(() => {
@@ -452,7 +544,7 @@ const calendarWeeks = computed(() => {
     return {
       id: iso,
       day: date.getDate(),
-      status: attendanceByDate[iso] || 'No training',
+      status: attendanceByDate.value[iso] || 'No training',
       isCurrentMonth
     }
   })
@@ -473,6 +565,66 @@ function changeMonth(offset) {
 
 function updateViewportState() {
   isCompactNav.value = window.innerWidth <= 1024
+}
+
+const sessionOptions = computed(() =>
+  manageableSessions.value.map((session) => ({
+    id: session.id,
+    label: `${session.title} · ${session.date} · ${session.start}-${session.end}`
+  }))
+)
+
+const selectedSessionChildren = computed(() => {
+  const selectedSession = manageableSessions.value.find((session) => session.id === markForm.value.session_id)
+  return selectedSession?.students ?? []
+})
+
+async function loadAttendance() {
+  const data = await attendanceApi.list()
+  attendanceResponse.value = data
+
+  const firstRecordDate = data?.records?.[0]?.date
+  if (firstRecordDate) {
+    currentMonth.value = new Date(`${firstRecordDate}T00:00:00`)
+  }
+}
+
+async function loadManageableSessions() {
+  manageableSessions.value = await sessionsApi.list()
+}
+
+function openMarkDialog() {
+  markForm.value = {
+    session_id: manageableSessions.value[0]?.id ?? null,
+    user_id: manageableSessions.value[0]?.students?.[0]?.id ?? null,
+    status: 'present',
+    comment: ''
+  }
+  markDialog.value = true
+}
+
+async function submitAttendance() {
+  await attendanceApi.create({
+    session_id: markForm.value.session_id,
+    user_id: markForm.value.user_id,
+    status: markForm.value.status,
+    comment: markForm.value.comment
+  })
+
+  await loadAttendance()
+  markDialog.value = false
+}
+
+async function handleNotificationClick(item) {
+  if (item?.unread) {
+    await markNotificationRead(item.id)
+  }
+}
+
+function formatMinutes(totalMinutes) {
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return `${hours}h ${String(minutes).padStart(2, '0')}m`
 }
 </script>
 
