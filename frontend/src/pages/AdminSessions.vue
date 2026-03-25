@@ -397,6 +397,14 @@
 
                   <div class="session-card-actions">
                     <v-btn
+                      variant="outlined"
+                      class="action-btn"
+                      prepend-icon="mdi-account-plus-outline"
+                      @click="openChildrenDialog(session)"
+                    >
+                      Manage children
+                    </v-btn>
+                    <v-btn
                       color="primary"
                       class="action-btn action-btn-edit"
                       prepend-icon="mdi-flag-outline"
@@ -647,6 +655,113 @@
           </v-card>
         </v-dialog>
 
+        <v-dialog v-model="sessionChildrenDialog" max-width="760">
+          <v-card class="dialog-card create-dialog-card">
+            <div class="create-dialog-header">
+              <div>
+                <div class="create-dialog-title">Manage Session Children</div>
+                <div class="create-dialog-subtitle">
+                  Add a child only to this dated session without changing the whole group membership.
+                </div>
+              </div>
+
+              <v-btn icon variant="text" @click="closeChildrenDialog">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </div>
+
+            <v-card-text class="create-dialog-content">
+              <v-alert
+                v-if="sessionChildrenError"
+                type="error"
+                variant="tonal"
+                border="start"
+                class="dialog-alert"
+              >
+                {{ sessionChildrenError }}
+              </v-alert>
+
+              <div class="status-instance-summary session-children-summary">
+                <div class="payment-name">{{ selectedChildrenSession?.title || 'Session instance' }}</div>
+                <div class="payment-meta">{{ selectedChildrenSession?.group || 'Group not set' }}</div>
+                <div class="payment-secondary">
+                  {{ selectedChildrenSession?.date ? `${formatDate(selectedChildrenSession.date)} · ${selectedChildrenSession.start}-${selectedChildrenSession.end}` : '' }}
+                </div>
+              </div>
+
+              <div class="session-children-add-row">
+                <v-autocomplete
+                  v-model="sessionChildForm.child_id"
+                  :items="availableSessionChildOptions"
+                  item-title="label"
+                  item-value="value"
+                  label="Add child to this session"
+                  variant="outlined"
+                  class="create-field"
+                  :menu-props="selectMenuProps"
+                  placeholder="Search and select child"
+                  clearable
+                />
+
+                <v-btn
+                  color="primary"
+                  class="apply-filter-btn session-children-add-btn"
+                  prepend-icon="mdi-plus"
+                  :loading="childAssignmentSaving"
+                  @click="addChildToSession"
+                >
+                  Add child
+                </v-btn>
+              </div>
+
+              <div class="session-children-list">
+                <article
+                  v-for="student in selectedChildrenSession?.students || []"
+                  :key="`session-child-${student.id}`"
+                  class="session-child-item"
+                >
+                  <div class="session-child-main">
+                    <v-avatar size="42">
+                      <img :src="avatarFor(`session-child-${student.id}`, student.name)" :alt="student.name">
+                    </v-avatar>
+                    <div>
+                      <div class="session-child-name">{{ student.name }}</div>
+                      <div class="session-child-meta">
+                        {{ student.is_session_specific ? 'Added only for this date' : 'Comes from group roster' }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="session-child-actions">
+                    <v-chip
+                      size="small"
+                      class="session-child-chip"
+                      :class="{ 'session-child-chip-extra': student.is_session_specific }"
+                    >
+                      {{ student.is_session_specific ? 'One-time child' : 'Group child' }}
+                    </v-chip>
+
+                    <v-btn
+                      v-if="student.is_session_specific"
+                      variant="text"
+                      color="error"
+                      class="session-child-remove-btn"
+                      @click="removeChildFromSession(student)"
+                    >
+                      Remove
+                    </v-btn>
+                  </div>
+                </article>
+              </div>
+            </v-card-text>
+
+            <v-card-actions class="create-dialog-actions">
+              <v-spacer></v-spacer>
+              <v-btn variant="text" class="reset-filter-btn" @click="closeChildrenDialog">Close</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
         <AppNotificationsDialog
           v-model="notificationsDialog"
           :dark-mode="darkMode"
@@ -664,7 +779,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import { useNotifications } from '../composables/useNotifications'
-import { groupsApi, sessionsApi } from '../services/api'
+import { groupsApi, sessionsApi, usersApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
@@ -679,17 +794,21 @@ const sessionDatesSort = ref('date-asc')
 const sessionDatesFilterDialog = ref(false)
 const sessionDialog = ref(false)
 const statusDialog = ref(false)
+const sessionChildrenDialog = ref(false)
 const notificationsDialog = ref(false)
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const loading = ref(false)
 const saving = ref(false)
 const statusSaving = ref(false)
+const childAssignmentSaving = ref(false)
 const errorMessage = ref('')
 const formError = ref('')
 const statusError = ref('')
+const sessionChildrenError = ref('')
 const editingSessionId = ref(null)
 const selectedInstanceId = ref(null)
+const selectedChildrenSessionId = ref(null)
 const darkModeStorageKey = 'app-dark-mode'
 
 const navItems = [
@@ -748,8 +867,12 @@ const {
 
 const sessions = ref([])
 const groups = ref([])
+const users = ref([])
 const form = ref(getDefaultForm())
 const statusForm = ref(getDefaultStatusForm())
+const sessionChildForm = ref({
+  child_id: null
+})
 
 const profileName = computed(() => {
   if (!user.value) return 'Admin User'
@@ -764,6 +887,15 @@ const groupOptions = computed(() =>
     value: group.id,
     price: Number(group.price ?? 0)
   }))
+)
+
+const childOptions = computed(() =>
+  users.value
+    .filter((item) => item.role === 'child')
+    .map((item) => ({
+      label: item.full_name ?? `${item.name} ${item.surname}`.trim(),
+      value: item.id
+    }))
 )
 
 const resolvedDateHint = computed(() => {
@@ -843,6 +975,16 @@ const filteredSessionDates = computed(() => {
 const selectedInstanceSession = computed(() =>
   sessions.value.find((item) => item.id === selectedInstanceId.value) ?? null
 )
+
+const selectedChildrenSession = computed(() =>
+  sessions.value.find((item) => item.id === selectedChildrenSessionId.value) ?? null
+)
+
+const availableSessionChildOptions = computed(() => {
+  const currentIds = new Set((selectedChildrenSession.value?.students ?? []).map((student) => student.id))
+
+  return childOptions.value.filter((item) => !currentIds.has(item.value))
+})
 
 const overviewStats = computed(() => [
   { label: 'Total sessions', value: sessions.value.length },
@@ -989,6 +1131,15 @@ function closeStatusDialog() {
   statusForm.value = getDefaultStatusForm()
 }
 
+function closeChildrenDialog() {
+  sessionChildrenDialog.value = false
+  selectedChildrenSessionId.value = null
+  sessionChildrenError.value = ''
+  sessionChildForm.value = {
+    child_id: null
+  }
+}
+
 function openCreateDialog() {
   editingSessionId.value = null
   formError.value = ''
@@ -1020,6 +1171,15 @@ function openStatusDialog(session) {
   statusDialog.value = true
 }
 
+function openChildrenDialog(session) {
+  selectedChildrenSessionId.value = session.id
+  sessionChildrenError.value = ''
+  sessionChildForm.value = {
+    child_id: null
+  }
+  sessionChildrenDialog.value = true
+}
+
 function extractErrorMessage(error, fallback) {
   const validationErrors = error?.response?.data?.errors
 
@@ -1036,18 +1196,24 @@ async function initializePage() {
   errorMessage.value = ''
 
   try {
-    const [sessionsResponse, groupsResponse] = await Promise.all([
+    const [sessionsResponse, groupsResponse, usersResponse] = await Promise.all([
       sessionsApi.list(),
-      groupsApi.list()
+      groupsApi.list(),
+      usersApi.list()
     ])
 
     sessions.value = sessionsResponse
     groups.value = groupsResponse
+    users.value = usersResponse
   } catch (error) {
     errorMessage.value = extractErrorMessage(error, 'Failed to load sessions.')
   } finally {
     loading.value = false
   }
+}
+
+async function refreshSessions() {
+  sessions.value = await sessionsApi.list()
 }
 
 function buildPayload() {
@@ -1140,6 +1306,53 @@ async function saveInstanceStatus() {
     statusError.value = extractErrorMessage(error, 'Failed to update session status.')
   } finally {
     statusSaving.value = false
+  }
+}
+
+async function addChildToSession() {
+  childAssignmentSaving.value = true
+  sessionChildrenError.value = ''
+
+  try {
+    if (!selectedChildrenSessionId.value) {
+      sessionChildrenError.value = 'Please choose a specific dated session.'
+      return
+    }
+
+    if (!sessionChildForm.value.child_id) {
+      sessionChildrenError.value = 'Please select a child to add.'
+      return
+    }
+
+    await sessionsApi.addChild(selectedChildrenSessionId.value, {
+      child_id: sessionChildForm.value.child_id
+    })
+
+    await refreshSessions()
+    sessionChildForm.value.child_id = null
+  } catch (error) {
+    sessionChildrenError.value = extractErrorMessage(error, 'Failed to add child to session.')
+  } finally {
+    childAssignmentSaving.value = false
+  }
+}
+
+async function removeChildFromSession(student) {
+  childAssignmentSaving.value = true
+  sessionChildrenError.value = ''
+
+  try {
+    if (!selectedChildrenSessionId.value) {
+      sessionChildrenError.value = 'Please choose a specific dated session.'
+      return
+    }
+
+    await sessionsApi.removeChild(selectedChildrenSessionId.value, student.id)
+    await refreshSessions()
+  } catch (error) {
+    sessionChildrenError.value = extractErrorMessage(error, 'Failed to remove child from session.')
+  } finally {
+    childAssignmentSaving.value = false
   }
 }
 
@@ -1966,6 +2179,80 @@ async function handleMobileLogout() {
   background: rgba(17, 25, 40, 0.56);
 }
 
+.session-children-summary {
+  margin-bottom: 18px;
+}
+
+.session-children-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.session-children-add-btn {
+  min-width: 150px;
+}
+
+.session-children-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.session-child-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(223, 232, 246, 0.95);
+  background: rgba(241, 246, 255, 0.8);
+}
+
+.admin-sessions-shell-dark .session-child-item {
+  background: rgba(17, 25, 40, 0.88);
+  border-color: rgba(58, 75, 108, 0.62);
+}
+
+.session-child-main,
+.session-child-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.session-child-name {
+  font-weight: 700;
+  color: #172033;
+}
+
+.admin-sessions-shell-dark .session-child-name {
+  color: #f3f7ff;
+}
+
+.session-child-meta {
+  margin-top: 4px;
+  color: #7b8798;
+}
+
+.admin-sessions-shell-dark .session-child-meta {
+  color: #94a6c4;
+}
+
+.session-child-chip {
+  font-weight: 700;
+  color: #52718f;
+  background: rgba(226, 234, 245, 0.9);
+}
+
+.session-child-chip-extra {
+  color: #0f5fe3;
+  background: rgba(194, 225, 255, 0.5);
+}
+
 .dialog-card {
   border-radius: 28px;
   overflow: hidden;
@@ -2354,6 +2641,19 @@ async function handleMobileLogout() {
   .session-card-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .session-children-add-row {
+    grid-template-columns: 1fr;
+  }
+
+  .session-child-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .session-child-actions {
+    justify-content: space-between;
   }
 
   .status-chip {

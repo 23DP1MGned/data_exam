@@ -60,14 +60,18 @@ class AttendanceController extends Controller
     public function bulkStore(StoreBulkAttendanceRequest $request)
     {
         $session = TrainingSession::query()
-            ->with(['group.children', 'group.coach'])
+            ->with(['group.children', 'extraChildren', 'group.coach'])
             ->findOrFail($request->integer('session_id'));
 
         if (! $this->canManageSession($request->user(), $session)) {
             return $this->error('Forbidden.', [], 403);
         }
 
-        $allowedChildIds = $session->group->children->pluck('id')->all();
+        if ($session->status === 'cancelled') {
+            return $this->error('Attendance cannot be marked for cancelled sessions.', [], 422);
+        }
+
+        $allowedChildIds = $session->effectiveChildren()->pluck('id')->all();
         $records = collect($request->validated('records'))
             ->map(function (array $record) use ($allowedChildIds, $session) {
                 if (! in_array($record['user_id'], $allowedChildIds, true)) {
@@ -100,6 +104,22 @@ class AttendanceController extends Controller
 
     public function store(StoreAttendanceRequest $request)
     {
+        $session = TrainingSession::query()
+            ->with(['group.children', 'extraChildren', 'group.coach'])
+            ->findOrFail($request->integer('session_id'));
+
+        if (! $this->canManageSession($request->user(), $session)) {
+            return $this->error('Forbidden.', [], 403);
+        }
+
+        if ($session->status === 'cancelled') {
+            return $this->error('Attendance cannot be marked for cancelled sessions.', [], 422);
+        }
+
+        if (! $session->effectiveChildren()->contains('id', $request->integer('user_id'))) {
+            return $this->error('Selected child does not belong to this training group.', [], 422);
+        }
+
         $attendance = Attendance::updateOrCreate(
             [
                 'session_id' => $request->validated('session_id'),
@@ -113,6 +133,16 @@ class AttendanceController extends Controller
 
     public function update(UpdateAttendanceRequest $request, Attendance $attendance)
     {
+        $attendance->loadMissing(['session.group.children', 'session.extraChildren', 'session.group.coach']);
+
+        if (! $this->canManageSession($request->user(), $attendance->session)) {
+            return $this->error('Forbidden.', [], 403);
+        }
+
+        if ($attendance->session->status === 'cancelled') {
+            return $this->error('Attendance cannot be marked for cancelled sessions.', [], 422);
+        }
+
         $attendance->update($request->validated());
 
         return $this->success($this->formatAttendance($attendance->fresh()->load(['session.group', 'user'])), 'Attendance updated.');

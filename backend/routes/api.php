@@ -22,6 +22,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('groups', GroupController::class);
     Route::patch('/sessions/{session}/status', [SessionController::class, 'updateStatus'])->middleware('role:admin,coach');
+    Route::post('/sessions/{session}/children', [SessionController::class, 'attachChild'])->middleware('role:admin,coach');
+    Route::delete('/sessions/{session}/children/{child}', [SessionController::class, 'detachChild'])->middleware('role:admin,coach');
     Route::apiResource('sessions', SessionController::class);
     Route::get('/attendance', [AttendanceController::class, 'index']);
     Route::post('/attendance/bulk', [AttendanceController::class, 'bulkStore'])->middleware('role:admin,coach');

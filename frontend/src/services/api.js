@@ -54,6 +54,12 @@ export const sessionsApi = {
   updateStatus(id, payload) {
     return unwrap(apiClient.patch(`/sessions/${id}/status`, payload))
   },
+  addChild(id, payload) {
+    return unwrap(apiClient.post(`/sessions/${id}/children`, payload))
+  },
+  removeChild(id, childId) {
+    return unwrap(apiClient.delete(`/sessions/${id}/children/${childId}`))
+  },
   remove(id) {
     return unwrap(apiClient.delete(`/sessions/${id}`))
   }

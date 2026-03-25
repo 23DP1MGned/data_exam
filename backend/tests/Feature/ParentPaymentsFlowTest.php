@@ -258,6 +258,80 @@ class ParentPaymentsFlowTest extends TestCase
         $this->assertSame(260.0, (float) $parent->fresh()->parentProfile->account_balance);
     }
 
+    public function test_parent_can_pay_single_session_for_child_added_only_to_one_session_date(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-28 12:00:00'));
+
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+        ]);
+
+        $coach = User::factory()->create([
+            'role' => User::ROLE_COACH,
+        ]);
+
+        $group = Group::query()->create([
+            'name' => 'Guest Session Group',
+            'group_number' => 11,
+            'age_category' => '10-12',
+            'price' => 60,
+            'coach_id' => $coach->id,
+        ]);
+
+        $parent = User::factory()->create([
+            'role' => User::ROLE_PARENT,
+        ]);
+
+        ParentProfile::query()->create([
+            'user_id' => $parent->id,
+            'account_balance' => 200,
+        ]);
+
+        $child = User::factory()->create([
+            'role' => User::ROLE_CHILD,
+        ]);
+
+        $parent->children()->attach($child->id);
+
+        $session = TrainingSession::query()->create([
+            'group_id' => $group->id,
+            'title' => 'Guest Session',
+            'date' => '2026-04-03',
+            'start_time' => '18:00',
+            'end_time' => '19:00',
+            'price' => 35,
+            'status' => 'planned',
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson("/api/sessions/{$session->id}/children", [
+            'child_id' => $child->id,
+        ])->assertOk();
+
+        Sanctum::actingAs($parent);
+
+        $listing = $this->getJson('/api/payments')->assertOk();
+
+        $visibleDue = collect($listing->json('data.due_trainings'))
+            ->firstWhere('session_id', $session->id);
+
+        $this->assertNotNull($visibleDue);
+        $this->assertSame($child->id, $visibleDue['child_id']);
+
+        $this->postJson('/api/payments', [
+            'child_id' => $child->id,
+            'method' => 'Card',
+            'items' => [
+                [
+                    'type' => 'session',
+                    'session_id' => $session->id,
+                ],
+            ],
+        ])->assertCreated()
+            ->assertJsonPath('data.items.0.session_id', $session->id);
+    }
+
     private function createLinkedFamily(): array
     {
         $coach = User::factory()->create([

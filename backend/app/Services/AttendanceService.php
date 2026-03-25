@@ -9,7 +9,7 @@ class AttendanceService
 {
     public function ensureCompletedSessionAttendance(TrainingSession $session): void
     {
-        $session->loadMissing(['group.children', 'attendanceRecords']);
+        $session->loadMissing(['group.children', 'extraChildren', 'attendanceRecords']);
 
         if ($session->status !== 'completed') {
             return;
@@ -17,7 +17,7 @@ class AttendanceService
 
         $existingChildIds = $session->attendanceRecords->pluck('user_id')->all();
 
-        $session->group->children
+        $session->effectiveChildren()
             ->reject(fn ($child) => in_array($child->id, $existingChildIds, true))
             ->each(function ($child) use ($session) {
                 Attendance::query()->firstOrCreate(
@@ -36,7 +36,7 @@ class AttendanceService
     public function backfillCompletedSessionsAttendance(): void
     {
         TrainingSession::query()
-            ->with(['group.children', 'attendanceRecords'])
+            ->with(['group.children', 'extraChildren', 'attendanceRecords'])
             ->where('status', 'completed')
             ->get()
             ->each(fn (TrainingSession $session) => $this->ensureCompletedSessionAttendance($session));

@@ -28,7 +28,7 @@ class SessionController extends Controller
         $this->sessionTemplateService->ensureUpcomingSessionsGenerated();
 
         $user = $request->user();
-        $query = TrainingSession::query()->with(['group.coach', 'group.children', 'sessionTemplate']);
+        $query = TrainingSession::query()->with(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate']);
 
         if ($request->filled('group_id')) {
             $query->where('group_id', $request->integer('group_id'));
@@ -38,9 +38,17 @@ class SessionController extends Controller
             $query->whereHas('group', fn ($builder) => $builder->where('coach_id', $user->id));
         } elseif ($user->role === User::ROLE_PARENT) {
             $childIds = $user->children()->pluck('users.id');
-            $query->whereHas('group.children', fn ($builder) => $builder->whereIn('users.id', $childIds));
+            $query->where(function ($builder) use ($childIds) {
+                $builder
+                    ->whereHas('group.children', fn ($relation) => $relation->whereIn('users.id', $childIds))
+                    ->orWhereHas('extraChildren', fn ($relation) => $relation->whereIn('users.id', $childIds));
+            });
         } elseif ($user->role === User::ROLE_CHILD) {
-            $query->whereHas('group.children', fn ($builder) => $builder->where('users.id', $user->id));
+            $query->where(function ($builder) use ($user) {
+                $builder
+                    ->whereHas('group.children', fn ($relation) => $relation->where('users.id', $user->id))
+                    ->orWhereHas('extraChildren', fn ($relation) => $relation->where('users.id', $user->id));
+            });
         }
 
         return $this->success($query->get()->map(fn (TrainingSession $session) => $this->formatSession($session))->values());
@@ -66,7 +74,7 @@ class SessionController extends Controller
 
         $session = TrainingSession::create($validated);
 
-        return $this->success($this->formatSession($session->load(['group.coach', 'group.children', 'sessionTemplate'])), 'Session created.', 201);
+        return $this->success($this->formatSession($session->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate'])), 'Session created.', 201);
     }
 
     public function show(Request $request, TrainingSession $session)
@@ -75,7 +83,7 @@ class SessionController extends Controller
             return $this->error('Forbidden.', [], 403);
         }
 
-        return $this->success($this->formatSession($session->load(['group.coach', 'group.children', 'sessionTemplate'])));
+        return $this->success($this->formatSession($session->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate'])));
     }
 
     public function update(UpdateSessionRequest $request, TrainingSession $session)
@@ -103,7 +111,7 @@ class SessionController extends Controller
 
         $session->update($validated);
 
-        return $this->success($this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'sessionTemplate'])), 'Session updated.');
+        return $this->success($this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate'])), 'Session updated.');
     }
 
     public function destroy(Request $request, TrainingSession $session)
@@ -132,18 +140,77 @@ class SessionController extends Controller
         ]);
 
         if ($validated['status'] === 'cancelled') {
-            $this->paymentService->creditCancelledSession($session->fresh()->load(['group.children.parents', 'paymentItems.payment.parent']));
+            $this->paymentService->creditCancelledSession($session->fresh()->load(['group.children.parents', 'extraChildren.parents', 'paymentItems.payment.parent']));
         }
 
         if ($validated['status'] === 'completed') {
             $this->attendanceService->ensureCompletedSessionAttendance(
-                $session->fresh(['group.children', 'attendanceRecords'])
+                $session->fresh(['group.children', 'extraChildren', 'attendanceRecords'])
             );
         }
 
         return $this->success(
-            $this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'sessionTemplate'])),
+            $this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate'])),
             'Session status updated.'
+        );
+    }
+
+    public function attachChild(Request $request, TrainingSession $session)
+    {
+        if (! $this->canManageSessionGroup($request->user(), $session->group)) {
+            return $this->error('Forbidden.', [], 403);
+        }
+
+        $validated = $request->validate([
+            'child_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        $child = User::query()->findOrFail($validated['child_id']);
+
+        if ($child->role !== User::ROLE_CHILD) {
+            return $this->error('Only child accounts can be assigned to a session.', [], 422);
+        }
+
+        if ($session->group->children()->where('users.id', $child->id)->exists()) {
+            return $this->error('This child already belongs to the session group.', [], 422);
+        }
+
+        if ($session->extraChildren()->where('users.id', $child->id)->exists()) {
+            return $this->error('This child is already assigned to the selected session.', [], 422);
+        }
+
+        $session->extraChildren()->attach($child->id);
+
+        return $this->success(
+            $this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate'])),
+            'Child added to session.'
+        );
+    }
+
+    public function detachChild(Request $request, TrainingSession $session, User $child)
+    {
+        if (! $this->canManageSessionGroup($request->user(), $session->group)) {
+            return $this->error('Forbidden.', [], 403);
+        }
+
+        if (! $session->extraChildren()->where('users.id', $child->id)->exists()) {
+            return $this->error('This child is not assigned separately to the selected session.', [], 422);
+        }
+
+        $hasAttendance = $session->attendanceRecords()->where('user_id', $child->id)->exists();
+        $hasPayments = $session->paymentItems()
+            ->whereHas('payment', fn ($builder) => $builder->where('child_id', $child->id))
+            ->exists();
+
+        if ($hasAttendance || $hasPayments) {
+            return $this->error('This child can no longer be removed because the session already has attendance or payment history.', [], 422);
+        }
+
+        $session->extraChildren()->detach($child->id);
+
+        return $this->success(
+            $this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate'])),
+            'Child removed from session.'
         );
     }
 
@@ -157,9 +224,15 @@ class SessionController extends Controller
     {
         if ($user->role === User::ROLE_ADMIN) return true;
         if ($user->role === User::ROLE_COACH) return $session->group->coach_id === $user->id;
-        if ($user->role === User::ROLE_CHILD) return $session->group->children()->where('users.id', $user->id)->exists();
+        if ($user->role === User::ROLE_CHILD) {
+            return $session->group->children()->where('users.id', $user->id)->exists()
+                || $session->extraChildren()->where('users.id', $user->id)->exists();
+        }
         if ($user->role === User::ROLE_PARENT) {
-            return $session->group->children()->whereIn('users.id', $user->children()->pluck('users.id'))->exists();
+            $childIds = $user->children()->pluck('users.id');
+
+            return $session->group->children()->whereIn('users.id', $childIds)->exists()
+                || $session->extraChildren()->whereIn('users.id', $childIds)->exists();
         }
 
         return false;
@@ -167,6 +240,17 @@ class SessionController extends Controller
 
     private function formatSession(TrainingSession $session): array
     {
+        $students = $session->effectiveChildren()->map(function (User $child) use ($session) {
+            $isSessionSpecific = ! $session->group->children->contains('id', $child->id)
+                && $session->extraChildren->contains('id', $child->id);
+
+            return [
+                'id' => $child->id,
+                'name' => trim($child->name.' '.$child->surname),
+                'is_session_specific' => $isSessionSpecific,
+            ];
+        })->values();
+
         return [
             'id' => $session->id,
             'group_id' => $session->group_id,
@@ -182,10 +266,7 @@ class SessionController extends Controller
             'date' => $session->date->toDateString(),
             'status' => $session->status,
             'group' => $session->group->display_name,
-            'students' => $session->group->children->map(fn (User $child) => [
-                'id' => $child->id,
-                'name' => trim($child->name.' '.$child->surname),
-            ])->values(),
+            'students' => $students,
         ];
     }
 }

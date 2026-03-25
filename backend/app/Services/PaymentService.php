@@ -134,9 +134,9 @@ class PaymentService
         }
 
         DB::transaction(function () use ($session) {
-            $session->loadMissing(['group.children.parents', 'paymentItems.payment', 'paymentItems.payment.parent']);
+            $session->loadMissing(['group.children.parents', 'extraChildren.parents', 'paymentItems.payment', 'paymentItems.payment.parent']);
 
-            foreach ($session->group->children as $child) {
+            foreach ($session->effectiveChildren() as $child) {
                 if (SessionCancellationCredit::query()
                     ->where('session_id', $session->id)
                     ->where('child_id', $child->id)
@@ -252,7 +252,7 @@ class PaymentService
             ->values();
 
         $sessions = TrainingSession::query()
-            ->with(['group.children'])
+            ->with(['group.children', 'extraChildren'])
             ->whereIn('id', $sessionIds)
             ->get()
             ->keyBy('id');
@@ -273,9 +273,9 @@ class PaymentService
                 ]);
             }
 
-            if (! $session->group->children->contains('id', $childId)) {
+            if (! $session->effectiveChildren()->contains('id', $childId)) {
                 throw ValidationException::withMessages([
-                    'items' => ['The selected child is not linked to this training group.'],
+                    'items' => ['The selected child is not assigned to this training session.'],
                 ]);
             }
 

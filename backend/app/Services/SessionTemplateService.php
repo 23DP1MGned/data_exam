@@ -42,7 +42,7 @@ class SessionTemplateService
                 ]);
 
                 $this->attendanceService->ensureCompletedSessionAttendance(
-                    $session->fresh(['group.children', 'attendanceRecords'])
+                    $session->fresh(['group.children', 'extraChildren', 'attendanceRecords'])
                 );
             });
 
@@ -117,7 +117,7 @@ class SessionTemplateService
             }
 
             return $template->sessions()
-                ->with('group.coach', 'group.children', 'sessionTemplate')
+                ->with('group.coach', 'group.children', 'extraChildren', 'sessionTemplate')
                 ->whereDate('date', '>=', now()->startOfDay()->toDateString())
                 ->whereDate('date', '<=', now()->copy()->addMonth()->endOfDay()->toDateString())
                 ->orderBy('date')
@@ -207,7 +207,7 @@ class SessionTemplateService
             ->delete();
 
         return $template->sessions()
-            ->with('group.coach', 'group.children', 'sessionTemplate')
+            ->with('group.coach', 'group.children', 'extraChildren', 'sessionTemplate')
             ->whereDate('date', '>=', $rangeStart)
             ->whereDate('date', '<=', $rangeEnd)
             ->orderBy('date')

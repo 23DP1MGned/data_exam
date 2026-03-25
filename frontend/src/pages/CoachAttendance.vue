@@ -255,50 +255,12 @@
                 </div>
 
                 <div class="workbench-grid">
-                  <section class="workbench-card requires-card">
-                    <div class="section-head">
-                      <div>
-                        <div class="section-title">Requires attendance</div>
-                        <div class="section-caption">
-                          Sessions from this group that still need marking.
-                        </div>
-                      </div>
-                      <div class="section-chip">{{ requiresAttendanceSessions.length }}</div>
-                    </div>
-
-                    <div v-if="requiresAttendanceSessions.length" class="requires-list">
-                      <button
-                        v-for="session in requiresAttendanceSessions"
-                        :key="session.id"
-                        type="button"
-                        class="requires-item"
-                        @click="openSessionFromList(session)"
-                      >
-                        <div class="requires-item-main">
-                          <div class="requires-item-title">{{ session.title }}</div>
-                          <div class="requires-item-meta">
-                            {{ formatPrettyDate(session.date) }} · {{ session.start }}-{{ session.end }}
-                          </div>
-                        </div>
-                        <div class="requires-item-side">
-                          <div class="requires-item-progress">
-                            {{ sessionMetaById[session.id]?.markedCount || 0 }}/{{ session.students.length }} marked
-                          </div>
-                          <div class="requires-item-open">Open</div>
-                        </div>
-                      </button>
-                    </div>
-                    <div v-else class="empty-block">
-                      All available sessions are already marked for this group.
-                    </div>
-                  </section>
-
-                  <section class="workbench-card roster-card">
+                  <section class="workbench-card sessions-card">
                     <div class="section-head">
                       <div>
                         <div class="section-title">Sessions on {{ selectedDateLabel }}</div>
                         <div class="section-caption">
-                          Click a day in the calendar to switch the roster below.
+                          Click a day in the calendar to switch the training selector below.
                         </div>
                       </div>
                     </div>
@@ -340,7 +302,32 @@
                           </div>
                         </div>
                       </div>
+                    </template>
+                  </section>
 
+                  <section class="workbench-card roster-card">
+                    <div class="section-head">
+                      <div>
+                        <div class="section-title">Students roster</div>
+                        <div class="section-caption">Mark the selected training.</div>
+                      </div>
+                      <div class="roster-head-tools">
+                        <div v-if="selectedSession" class="section-chip">{{ selectedSession.students.length }}</div>
+                        <div class="roster-search-shell">
+                          <v-icon size="18" class="roster-search-icon">mdi-magnify</v-icon>
+                          <v-text-field
+                            v-model="rosterSearch"
+                            placeholder="Search student"
+                            variant="plain"
+                            hide-details
+                            density="comfortable"
+                            class="roster-search-field"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <template v-if="selectedSession">
                       <div v-if="selectedSession.status === 'cancelled'" class="state-wrap roster-state">
                         This session is cancelled. Attendance marking is disabled.
                       </div>
@@ -385,46 +372,54 @@
                           </v-btn>
                         </div>
 
-                        <div class="roster-list">
-                          <article
-                            v-for="student in selectedSession.students"
-                            :key="student.id"
-                            class="roster-item"
-                          >
-                            <div class="roster-student">
-                              <v-avatar size="42">
-                                <img :src="avatarFor(`student-${student.id}`, student.name)" :alt="student.name">
-                              </v-avatar>
-                              <div>
-                                <div class="roster-student-name">{{ student.name }}</div>
-                                <div class="roster-student-meta">
-                                  {{ selectedGroup?.section }}
+                        <div class="roster-scroll">
+                          <div class="roster-list">
+                            <article
+                              v-for="student in filteredRosterStudents"
+                              :key="student.id"
+                              class="roster-item"
+                            >
+                              <div class="roster-student">
+                                <v-avatar size="42">
+                                  <img :src="avatarFor(`student-${student.id}`, student.name)" :alt="student.name">
+                                </v-avatar>
+                                <div>
+                                  <div class="roster-student-name">{{ student.name }}</div>
+                                  <div class="roster-student-meta">
+                                    {{ selectedGroup?.section }}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
 
-                            <div class="status-toggle">
-                              <button
-                                type="button"
-                                class="status-option"
-                                :class="{ 'status-option-active status-option-present': sessionDraft[student.id] === 'present' }"
-                                @click="setStudentStatus(student.id, 'present')"
-                              >
-                                Present
-                              </button>
-                              <button
-                                type="button"
-                                class="status-option"
-                                :class="{ 'status-option-active status-option-absent': sessionDraft[student.id] === 'absent' }"
-                                @click="setStudentStatus(student.id, 'absent')"
-                              >
-                                Absent
-                              </button>
-                            </div>
-                          </article>
+                              <div class="status-toggle">
+                                <button
+                                  type="button"
+                                  class="status-option"
+                                  :class="{ 'status-option-active status-option-present': sessionDraft[student.id] === 'present' }"
+                                  @click="setStudentStatus(student.id, 'present')"
+                                >
+                                  Present
+                                </button>
+                                <button
+                                  type="button"
+                                  class="status-option"
+                                  :class="{ 'status-option-active status-option-absent': sessionDraft[student.id] === 'absent' }"
+                                  @click="setStudentStatus(student.id, 'absent')"
+                                >
+                                  Absent
+                                </button>
+                              </div>
+                            </article>
+                          </div>
+                        </div>
+                        <div v-if="!filteredRosterStudents.length" class="empty-block roster-empty">
+                          No students found for the current search.
                         </div>
                       </template>
                     </template>
+                    <div v-else class="empty-block">
+                      Select a training on the left to open the full roster.
+                    </div>
                   </section>
                 </div>
 
@@ -548,6 +543,7 @@ const saving = ref(false)
 const errorMessage = ref('')
 const saveError = ref('')
 const saveSuccess = ref('')
+const rosterSearch = ref('')
 const currentMonth = ref(new Date())
 const selectedDate = ref(formatDateKey(new Date()))
 const selectedSessionId = ref(null)
@@ -678,6 +674,21 @@ const sessionDraft = computed(() =>
     ? (sessionDrafts.value[selectedSession.value.id] ?? {})
     : {}
 )
+
+const filteredRosterStudents = computed(() => {
+  if (!selectedSession.value) return []
+
+  const sortedStudents = [...selectedSession.value.students].sort((first, second) =>
+    first.name.localeCompare(second.name, 'en', { sensitivity: 'base' })
+  )
+
+  const query = rosterSearch.value.trim().toLowerCase()
+  if (!query) return sortedStudents
+
+  return sortedStudents.filter((student) =>
+    student.name.toLowerCase().includes(query)
+  )
+})
 
 const overviewStats = computed(() => {
   const markedRecords = attendanceRecords.value.length
@@ -1658,13 +1669,27 @@ async function handleMobileLogout() {
 
 .workbench-grid {
   display: grid;
-  grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1.22fr);
   gap: 18px;
   margin-bottom: 22px;
+  align-items: stretch;
 }
 
 .workbench-card {
   padding: 20px;
+}
+
+.roster-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.roster-head-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
 }
 
 .section-title {
@@ -1685,7 +1710,6 @@ async function handleMobileLogout() {
   background: rgba(194, 225, 255, 0.5);
 }
 
-.requires-list,
 .roster-list {
   display: flex;
   flex-direction: column;
@@ -1804,6 +1828,92 @@ async function handleMobileLogout() {
 .roster-toolbar {
   margin-top: 18px;
   align-items: center;
+}
+
+.roster-search-shell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 210px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: rgba(241, 246, 255, 0.8);
+  border: 1px solid rgba(223, 232, 246, 0.95);
+}
+
+.coach-attendance-shell-dark .roster-search-shell {
+  background: rgba(17, 25, 40, 0.88);
+  border-color: rgba(58, 75, 108, 0.62);
+}
+
+.roster-search-icon {
+  color: #6f7f96;
+}
+
+.coach-attendance-shell-dark .roster-search-icon {
+  color: #9eb1cf;
+}
+
+.roster-search-field {
+  flex: 1;
+}
+
+.roster-search-field :deep(.v-field__input) {
+  min-height: auto;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.roster-search-field :deep(input) {
+  color: #172033;
+  opacity: 1;
+}
+
+.coach-attendance-shell-dark .roster-search-field :deep(input) {
+  color: #eef4ff;
+}
+
+.roster-search-field :deep(input::placeholder) {
+  color: #7b8798;
+  opacity: 1;
+}
+
+.coach-attendance-shell-dark .roster-search-field :deep(input::placeholder) {
+  color: #94a6c4;
+}
+
+.roster-scroll {
+  margin-top: 18px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.roster-scroll .roster-list {
+  margin-top: 0;
+}
+
+.roster-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.roster-scroll::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(203, 213, 225, 0.16);
+}
+
+.roster-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(89, 133, 255, 0.36);
+}
+
+.coach-attendance-shell-dark .roster-scroll::-webkit-scrollbar-track {
+  background: rgba(36, 52, 79, 0.68);
+}
+
+.coach-attendance-shell-dark .roster-scroll::-webkit-scrollbar-thumb {
+  background: rgba(97, 155, 255, 0.42);
 }
 
 .roster-item {
@@ -2080,6 +2190,10 @@ async function handleMobileLogout() {
   min-height: 120px;
 }
 
+.roster-empty {
+  margin-top: 14px;
+}
+
 @media (max-width: 1180px) {
   .coach-stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2087,6 +2201,10 @@ async function handleMobileLogout() {
 
   .workbench-grid {
     grid-template-columns: 1fr;
+  }
+
+  .roster-scroll {
+    max-height: 240px;
   }
 }
 
@@ -2136,6 +2254,22 @@ async function handleMobileLogout() {
   .roster-item {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .section-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .roster-head-tools {
+    margin-left: 0;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .roster-search-shell {
+    min-width: 0;
+    width: 100%;
   }
 
   .coach-stats-grid {

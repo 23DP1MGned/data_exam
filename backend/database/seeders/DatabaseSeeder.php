@@ -334,7 +334,12 @@ class DatabaseSeeder extends Seeder
             'paid',
             'Account balance',
             [
-                ['type' => 'month', 'month' => $now->format('Y-m'), 'price' => 128],
+                [
+                    'type' => 'month',
+                    'group_id' => $groups['athletics']->id,
+                    'month' => $now->format('Y-m'),
+                    'price' => (float) $groups['athletics']->price,
+                ],
             ],
             $now->copy()->subDays(4)->setTime(9, 30)
         );
@@ -356,7 +361,12 @@ class DatabaseSeeder extends Seeder
             'pending',
             'Card',
             [
-                ['type' => 'month', 'month' => $now->format('Y-m'), 'price' => 82],
+                [
+                    'type' => 'month',
+                    'group_id' => $groups['dance']->id,
+                    'month' => $now->format('Y-m'),
+                    'price' => (float) $groups['dance']->price,
+                ],
             ],
             $now->copy()->subDay()->setTime(10, 45)
         );
@@ -367,7 +377,12 @@ class DatabaseSeeder extends Seeder
             'failed',
             'Card',
             [
-                ['type' => 'month', 'month' => $now->format('Y-m'), 'price' => 90],
+                [
+                    'type' => 'month',
+                    'group_id' => $groups['basketball']->id,
+                    'month' => $now->format('Y-m'),
+                    'price' => (float) $groups['basketball']->price,
+                ],
             ],
             $now->copy()->subDays(3)->setTime(8, 20)
         );
@@ -569,7 +584,7 @@ class DatabaseSeeder extends Seeder
             'amount' => $amount,
             'status' => $status,
             'method' => $method,
-            'transaction_id' => $status === 'pending' ? null : $this->nextTransactionId(),
+            'transaction_id' => in_array($status, ['pending', 'failed'], true) ? null : $this->nextTransactionId(),
         ]);
 
         $payment->forceFill([
@@ -578,11 +593,40 @@ class DatabaseSeeder extends Seeder
         ])->save();
 
         foreach ($items as $item) {
-            $payment->items()->create([
+            $paymentItem = $payment->items()->create([
                 'type' => $item['type'],
                 'session_id' => $item['session_id'] ?? null,
                 'month' => $item['month'] ?? null,
                 'price' => $item['price'],
+            ]);
+
+            if (($item['type'] ?? null) !== 'month') {
+                continue;
+            }
+
+            $groupId = (int) ($item['group_id'] ?? 0);
+            $month = (string) ($item['month'] ?? '');
+
+            if (! $groupId || ! $month) {
+                continue;
+            }
+
+            $monthStart = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+            $monthEnd = $monthStart->copy()->endOfMonth();
+
+            $coveredSessionsCount = TrainingSession::query()
+                ->where('group_id', $groupId)
+                ->whereIn('status', ['planned', 'completed'])
+                ->whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()])
+                ->count();
+
+            $payment->monthCoverages()->create([
+                'payment_item_id' => $paymentItem->id,
+                'child_id' => $child->id,
+                'group_id' => $groupId,
+                'month' => $month,
+                'covered_sessions_count' => $coveredSessionsCount,
+                'amount' => $item['price'],
             ]);
         }
 

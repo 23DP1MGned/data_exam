@@ -245,9 +245,13 @@ class PaymentController extends Controller
     private function buildSessionDueItems($relevantChildIds, array $paidSessionKeys, array $paidMonthlyCoverageKeys)
     {
         return TrainingSession::query()
-            ->with(['group.coach', 'group.children.parents'])
+            ->with(['group.coach', 'group.children.parents', 'extraChildren.parents'])
             ->whereIn('status', ['planned', 'completed'])
-            ->whereHas('group.children', fn ($builder) => $builder->whereIn('users.id', $relevantChildIds))
+            ->where(function ($builder) use ($relevantChildIds) {
+                $builder
+                    ->whereHas('group.children', fn ($relation) => $relation->whereIn('users.id', $relevantChildIds))
+                    ->orWhereHas('extraChildren', fn ($relation) => $relation->whereIn('users.id', $relevantChildIds));
+            })
             ->get()
             ->flatMap(function (TrainingSession $session) use ($relevantChildIds, $paidSessionKeys, $paidMonthlyCoverageKeys) {
                 if (! $this->shouldDisplayDueTraining($session)) {
@@ -257,7 +261,7 @@ class PaymentController extends Controller
                 $deadline = $this->resolvePaymentDeadline($session);
                 $visibleFrom = $this->resolvePendingVisibleFrom($session);
 
-                return $session->group->children
+                return $session->effectiveChildren()
                     ->whereIn('id', $relevantChildIds)
                     ->reject(function ($child) use ($session, $paidSessionKeys, $paidMonthlyCoverageKeys) {
                         $sessionKey = $this->makeSessionPaymentKey($session->id, $child->id);

@@ -95,7 +95,7 @@ class DashboardController extends Controller
             ]);
         }
 
-        $sessions = TrainingSession::query()->with(['group.coach', 'group.children'])->get();
+        $sessions = TrainingSession::query()->with(['group.coach', 'group.children', 'extraChildren'])->get();
         $attendanceQuery = \App\Models\Attendance::query();
         $linkedChildren = collect();
         $childIds = collect();
@@ -109,11 +109,11 @@ class DashboardController extends Controller
                 ->orderBy('users.surname')
                 ->get(['users.id', 'users.name', 'users.surname', 'users.email']);
             $childIds = $linkedChildren->pluck('id');
-            $sessions = $sessions->filter(fn ($session) => $session->group->children->whereIn('id', $childIds)->isNotEmpty())->values();
+            $sessions = $sessions->filter(fn ($session) => $session->effectiveChildren()->whereIn('id', $childIds)->isNotEmpty())->values();
             $attendanceQuery->whereIn('user_id', $childIds);
         } elseif ($user->role === User::ROLE_CHILD) {
             $childIds = collect([$user->id]);
-            $sessions = $sessions->filter(fn ($session) => $session->group->children->contains('id', $user->id))->values();
+            $sessions = $sessions->filter(fn ($session) => $session->effectiveChildren()->contains('id', $user->id))->values();
             $attendanceQuery->where('user_id', $user->id);
         }
 
@@ -144,7 +144,7 @@ class DashboardController extends Controller
                 'date' => $session->date->toDateString(),
                 'start' => substr($session->start_time, 0, 5),
                 'end' => substr($session->end_time, 0, 5),
-                'child_ids' => $session->group->children
+                'child_ids' => $session->effectiveChildren()
                     ->whereIn('id', $childIds)
                     ->pluck('id')
                     ->map(fn ($id) => (int) $id)

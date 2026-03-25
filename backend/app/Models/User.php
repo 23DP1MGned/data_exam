@@ -83,6 +83,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Group::class, 'group_users', 'user_id', 'group_id');
     }
 
+    public function sessionAssignments(): BelongsToMany
+    {
+        return $this->belongsToMany(TrainingSession::class, 'session_children', 'user_id', 'session_id');
+    }
+
     public function children(): BelongsToMany
     {
         return $this->belongsToMany(self::class, 'parent_child', 'parent_id', 'child_id');
