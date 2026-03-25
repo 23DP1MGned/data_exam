@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Attendance\StoreBulkAttendanceRequest;
 use App\Http\Requests\Attendance\StoreAttendanceRequest;
 use App\Http\Requests\Attendance\UpdateAttendanceRequest;
 use App\Models\Attendance;
+use App\Models\TrainingSession;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AttendanceController extends Controller
 {
@@ -18,6 +21,10 @@ class AttendanceController extends Controller
 
         if ($request->filled('session_id')) {
             $query->where('session_id', $request->integer('session_id'));
+        }
+
+        if ($request->filled('group_id')) {
+            $query->whereHas('session', fn ($builder) => $builder->where('group_id', $request->integer('group_id')));
         }
 
         if ($user->role === User::ROLE_COACH) {
@@ -50,6 +57,47 @@ class AttendanceController extends Controller
         ]);
     }
 
+    public function bulkStore(StoreBulkAttendanceRequest $request)
+    {
+        $session = TrainingSession::query()
+            ->with(['group.children', 'group.coach'])
+            ->findOrFail($request->integer('session_id'));
+
+        if (! $this->canManageSession($request->user(), $session)) {
+            return $this->error('Forbidden.', [], 403);
+        }
+
+        $allowedChildIds = $session->group->children->pluck('id')->all();
+        $records = collect($request->validated('records'))
+            ->map(function (array $record) use ($allowedChildIds, $session) {
+                if (! in_array($record['user_id'], $allowedChildIds, true)) {
+                    throw ValidationException::withMessages([
+                        'records' => ['Selected child does not belong to this training group.'],
+                    ]);
+                }
+
+                return Attendance::updateOrCreate(
+                    [
+                        'session_id' => $session->id,
+                        'user_id' => $record['user_id'],
+                    ],
+                    [
+                        'session_id' => $session->id,
+                        'user_id' => $record['user_id'],
+                        'status' => $record['status'],
+                        'comment' => $record['comment'] ?? null,
+                    ]
+                );
+            })
+            ->map(fn (Attendance $attendance) => $this->formatAttendance($attendance->load(['session.group.coach', 'user'])))
+            ->values();
+
+        return $this->success([
+            'session_id' => $session->id,
+            'records' => $records,
+        ], 'Attendance saved.');
+    }
+
     public function store(StoreAttendanceRequest $request)
     {
         $attendance = Attendance::updateOrCreate(
@@ -75,14 +123,23 @@ class AttendanceController extends Controller
         return [
             'id' => $attendance->id,
             'session_id' => $attendance->session_id,
+            'group_id' => $attendance->session->group_id,
             'user_id' => $attendance->user_id,
             'child_name' => trim($attendance->user->name.' '.$attendance->user->surname),
             'training' => $attendance->session->title ?: $attendance->session->group->display_name,
+            'group' => $attendance->session->group->display_name,
+            'trainer' => trim(($attendance->session->group->coach->name ?? '').' '.($attendance->session->group->coach->surname ?? '')),
             'date' => $attendance->session->date->toDateString(),
             'start_time' => substr((string) $attendance->session->start_time, 0, 5),
             'end_time' => substr((string) $attendance->session->end_time, 0, 5),
             'status' => $attendance->status,
             'comment' => $attendance->comment,
         ];
+    }
+
+    private function canManageSession(User $user, TrainingSession $session): bool
+    {
+        return $user->role === User::ROLE_ADMIN
+            || ($user->role === User::ROLE_COACH && $session->group->coach_id === $user->id);
     }
 }

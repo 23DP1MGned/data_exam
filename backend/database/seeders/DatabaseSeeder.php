@@ -276,6 +276,8 @@ class DatabaseSeeder extends Seeder
 
             'dance_completed_old' => $this->createSession($groups['dance'], 'Rhythm Foundations', $now->copy()->subDays(7), '16:45', '17:45', 'completed', 41),
             'dance_completed_recent' => $this->createSession($groups['dance'], 'Floor Pattern Session', $now->copy()->subDays(2), '16:45', '17:45', 'completed', 41),
+            'dance_double_marked' => $this->createSession($groups['dance'], 'Musicality Focus', $now->copy()->subDay(), '15:30', '16:25', 'completed', 41),
+            'dance_double_unmarked' => $this->createSession($groups['dance'], 'Improvisation Lab', $now->copy()->subDay(), '17:30', '18:25', 'completed', 41),
             'dance_overdue' => $this->createSession($groups['dance'], 'Turn Technique Lab', $now->copy()->subDays(4), '16:45', '17:45', 'planned', 41),
             'dance_future' => $this->createSession($groups['dance'], 'Stage Presence Workshop', $now->copy()->addDays(6), '16:45', '17:45', 'planned', 44),
             'dance_cancelled' => $this->createSession($groups['dance'], 'Duet Rehearsal', $now->copy()->addDays(12), '16:45', '17:45', 'cancelled', 41),
@@ -534,6 +536,7 @@ class DatabaseSeeder extends Seeder
             'athletics_completed_recent',
             'dance_completed_old',
             'dance_completed_recent',
+            'dance_double_marked',
         ];
 
         foreach ($completedKeys as $index => $sessionKey) {

@@ -8,6 +8,7 @@ use App\Http\Requests\Sessions\UpdateSessionRequest;
 use App\Models\Group;
 use App\Models\TrainingSession;
 use App\Models\User;
+use App\Services\AttendanceService;
 use App\Services\PaymentService;
 use App\Services\SessionTemplateService;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ class SessionController extends Controller
 {
     public function __construct(
         private readonly SessionTemplateService $sessionTemplateService,
+        private readonly AttendanceService $attendanceService,
         private readonly PaymentService $paymentService,
     )
     {
@@ -131,6 +133,12 @@ class SessionController extends Controller
 
         if ($validated['status'] === 'cancelled') {
             $this->paymentService->creditCancelledSession($session->fresh()->load(['group.children.parents', 'paymentItems.payment.parent']));
+        }
+
+        if ($validated['status'] === 'completed') {
+            $this->attendanceService->ensureCompletedSessionAttendance(
+                $session->fresh(['group.children', 'attendanceRecords'])
+            );
         }
 
         return $this->success(

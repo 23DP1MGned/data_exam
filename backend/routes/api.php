@@ -24,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/sessions/{session}/status', [SessionController::class, 'updateStatus'])->middleware('role:admin,coach');
     Route::apiResource('sessions', SessionController::class);
     Route::get('/attendance', [AttendanceController::class, 'index']);
+    Route::post('/attendance/bulk', [AttendanceController::class, 'bulkStore'])->middleware('role:admin,coach');
     Route::post('/attendance', [AttendanceController::class, 'store'])->middleware('role:admin,coach');
     Route::put('/attendance/{attendance}', [AttendanceController::class, 'update'])->middleware('role:admin,coach');
 

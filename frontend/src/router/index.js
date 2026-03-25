@@ -8,6 +8,7 @@ import Groups from '../pages/Groups.vue'
 import Schedule from '../pages/Schedule.vue'
 import Payments from '../pages/Payments.vue'
 import Attendance from '../pages/Attendance.vue'
+import CoachAttendance from '../pages/CoachAttendance.vue'
 import AdminUsers from '../pages/AdminUsers.vue'
 import AdminGroups from '../pages/AdminGroups.vue'
 import AdminSessions from '../pages/AdminSessions.vue'
@@ -58,6 +59,11 @@ const routes = [
     path: '/attendance',
     component: Attendance,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/coach-attendance',
+    component: CoachAttendance,
+    meta: { requiresAuth: true, coachOnly: true }
   },
   {
     path: '/admin-users',
@@ -115,6 +121,14 @@ router.beforeEach(async (to) => {
 
   if (to.meta?.parentOnly && user.value?.role !== 'parent') {
     return '/home'
+  }
+
+  if (to.meta?.coachOnly && user.value?.role !== 'coach') {
+    return '/home'
+  }
+
+  if (user.value?.role === 'coach' && to.path === '/attendance') {
+    return '/coach-attendance'
   }
 
   if (

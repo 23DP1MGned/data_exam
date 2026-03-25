@@ -63,6 +63,9 @@ export const attendanceApi = {
   list(params = {}) {
     return unwrap(apiClient.get('/attendance', { params }))
   },
+  bulkSave(payload) {
+    return unwrap(apiClient.post('/attendance/bulk', payload))
+  },
   create(payload) {
     return unwrap(apiClient.post('/attendance', payload))
   },

@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\DB;
 
 class SessionTemplateService
 {
+    public function __construct(
+        private readonly AttendanceService $attendanceService,
+    )
+    {
+    }
+
     public function ensureUpcomingSessionsGenerated(?Carbon $through = null): void
     {
         $this->syncAutomaticSessionStatuses();
@@ -34,7 +40,13 @@ class SessionTemplateService
                 $session->update([
                     'status' => 'completed',
                 ]);
+
+                $this->attendanceService->ensureCompletedSessionAttendance(
+                    $session->fresh(['group.children', 'attendanceRecords'])
+                );
             });
+
+        $this->attendanceService->backfillCompletedSessionsAttendance();
     }
 
     public function createRecurring(array $validated): EloquentCollection
