@@ -149,6 +149,115 @@ class ParentPaymentsFlowTest extends TestCase
         $listing->assertJsonCount(0, 'data.due_monthly_payments');
     }
 
+    public function test_cancelled_paid_single_session_is_credited_back_to_parent_balance_once(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-28 12:00:00'));
+
+        [$parent, $child, $group] = $this->createLinkedFamily();
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+        ]);
+
+        $session = TrainingSession::query()->create([
+            'group_id' => $group->id,
+            'title' => 'Paid Single Session',
+            'date' => '2026-04-03',
+            'start_time' => '18:00',
+            'end_time' => '19:00',
+            'price' => 35,
+            'status' => 'planned',
+        ]);
+
+        Sanctum::actingAs($parent);
+
+        $this->postJson('/api/payments', [
+            'child_id' => $child->id,
+            'method' => 'Card',
+            'items' => [
+                [
+                    'type' => 'session',
+                    'session_id' => $session->id,
+                ],
+            ],
+        ])->assertCreated();
+
+        $this->assertSame(200.0, (float) $parent->fresh()->parentProfile->account_balance);
+
+        Sanctum::actingAs($admin);
+
+        $this->patchJson("/api/sessions/{$session->id}/status", [
+            'status' => 'cancelled',
+        ])->assertOk();
+
+        $this->assertSame(235.0, (float) $parent->fresh()->parentProfile->account_balance);
+
+        $this->patchJson("/api/sessions/{$session->id}/status", [
+            'status' => 'cancelled',
+        ])->assertOk();
+
+        $this->assertSame(235.0, (float) $parent->fresh()->parentProfile->account_balance);
+    }
+
+    public function test_cancelled_session_inside_paid_month_returns_only_one_session_share_to_parent_balance(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-28 12:00:00'));
+
+        [$parent, $child, $group] = $this->createLinkedFamily();
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+        ]);
+
+        $firstSession = TrainingSession::query()->create([
+            'group_id' => $group->id,
+            'title' => 'April Session One',
+            'date' => '2026-04-03',
+            'start_time' => '18:00',
+            'end_time' => '19:00',
+            'price' => 35,
+            'status' => 'planned',
+        ]);
+
+        TrainingSession::query()->create([
+            'group_id' => $group->id,
+            'title' => 'April Session Two',
+            'date' => '2026-04-10',
+            'start_time' => '18:00',
+            'end_time' => '19:00',
+            'price' => 35,
+            'status' => 'planned',
+        ]);
+
+        Sanctum::actingAs($parent);
+
+        $this->postJson('/api/payments', [
+            'child_id' => $child->id,
+            'method' => 'Card',
+            'items' => [
+                [
+                    'type' => 'month',
+                    'group_id' => $group->id,
+                    'month' => '2026-04',
+                ],
+            ],
+        ])->assertCreated();
+
+        $this->assertSame(200.0, (float) $parent->fresh()->parentProfile->account_balance);
+
+        Sanctum::actingAs($admin);
+
+        $this->patchJson("/api/sessions/{$firstSession->id}/status", [
+            'status' => 'cancelled',
+        ])->assertOk();
+
+        $this->assertSame(260.0, (float) $parent->fresh()->parentProfile->account_balance);
+
+        $this->patchJson("/api/sessions/{$firstSession->id}/status", [
+            'status' => 'cancelled',
+        ])->assertOk();
+
+        $this->assertSame(260.0, (float) $parent->fresh()->parentProfile->account_balance);
+    }
+
     private function createLinkedFamily(): array
     {
         $coach = User::factory()->create([

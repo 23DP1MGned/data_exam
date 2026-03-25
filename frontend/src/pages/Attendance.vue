@@ -49,6 +49,15 @@
                 <div class="profile-email">{{ profileEmail }}</div>
               </div>
             </div>
+
+            <v-btn
+              variant="outlined"
+              class="mobile-logout-btn"
+              prepend-icon="mdi-logout"
+              @click="handleMobileLogout"
+            >
+              Log out
+            </v-btn>
           </div>
         </v-navigation-drawer>
 
@@ -153,6 +162,15 @@
                   <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
 
+                <v-btn
+                  icon
+                  variant="text"
+                  class="top-icon-btn logout-btn"
+                  @click="handleLogout"
+                >
+                  <v-icon>mdi-logout</v-icon>
+                </v-btn>
+
                 <div class="profile-pill">
                   <v-avatar size="48">
                     <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
@@ -187,9 +205,9 @@
               <div class="attendance-overview">
                 <div class="coach-card">
                   <v-avatar size="76" class="coach-avatar">
-                    <img :src="avatarFor(profileSeed, profileName)" alt="User avatar">
+                    <img :src="avatarFor(overviewProfileSeed, overviewProfileName)" alt="User avatar">
                   </v-avatar>
-                  <div class="coach-name">{{ profileName }}</div>
+                  <div class="coach-name">{{ overviewProfileName }}</div>
                   <div class="coach-groups">
                     <span v-for="group in memberGroups" :key="group" class="coach-group-pill">
                       {{ group }}
@@ -280,6 +298,10 @@
                       Absent
                     </span>
                     <span class="legend-item">
+                      <span class="legend-dot legend-dot-blue"></span>
+                      Planned
+                    </span>
+                    <span class="legend-item">
                       <span class="legend-dot legend-dot-gray"></span>
                       No training
                     </span>
@@ -297,26 +319,40 @@
                       :key="day.id"
                       class="calendar-cell"
                       :class="{
-                        'calendar-cell-muted': day.status === 'No training',
-                        'calendar-cell-empty': !day.status,
-                        'calendar-cell-present': day.status === 'Present',
-                        'calendar-cell-absent': day.status === 'Absent',
-                        'calendar-cell-no-training': day.status === 'No training',
+                        'calendar-cell-muted': day.statusType === 'no-training',
+                        'calendar-cell-empty': !day.hasSessions,
+                        'calendar-cell-planned': day.statusType === 'planned',
+                        'calendar-cell-present': day.statusType === 'present',
+                        'calendar-cell-absent': day.statusType === 'absent',
+                        'calendar-cell-mixed': day.statusType === 'mixed',
+                        'calendar-cell-no-training': day.statusType === 'no-training',
                         'calendar-cell-outside': !day.isCurrentMonth
                       }"
+                      :style="day.cellStyle"
                     >
                       <div class="cell-date">{{ day.day }}</div>
 
-                      <div v-if="day.status" class="cell-status">
-                        <span
-                          class="cell-dot"
-                          :class="{
-                            'cell-dot-green': day.status === 'Present',
-                            'cell-dot-red': day.status === 'Absent',
-                            'cell-dot-gray': day.status === 'No training'
-                          }"
-                        ></span>
-                        {{ day.status }}
+                      <div v-if="day.hasSessions" class="cell-sessions">
+                        <div
+                          v-for="session in day.sessions"
+                          :key="session.id"
+                          class="cell-session-item"
+                        >
+                          <span
+                            class="cell-dot"
+                            :class="{
+                              'cell-dot-green': session.statusType === 'present',
+                              'cell-dot-red': session.statusType === 'absent',
+                              'cell-dot-blue': session.statusType === 'planned' || session.statusType === 'mixed'
+                            }"
+                          ></span>
+                          <span class="cell-session-name">{{ session.training }}</span>
+                        </div>
+                      </div>
+
+                      <div v-else class="cell-status">
+                        <span class="cell-dot cell-dot-gray"></span>
+                        No training
                       </div>
                     </div>
                   </div>
@@ -373,12 +409,15 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import { useNotifications } from '../composables/useNotifications'
+import { useSelectedChild } from '../composables/useSelectedChild'
 import { attendanceApi, sessionsApi } from '../services/api'
-import { useAuth } from '../services/auth'
+import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
+const router = useRouter()
 const darkMode = ref(false)
 const notificationsDialog = ref(false)
 const markDialog = ref(false)
@@ -395,6 +434,7 @@ const {
   loadNotifications,
   markNotificationRead
 } = useNotifications()
+const { selectedChildId, syncSelectedChild } = useSelectedChild()
 const attendanceResponse = ref({
   records: [],
   summary: {
@@ -405,6 +445,7 @@ const attendanceResponse = ref({
     total_training_time_minutes: 0
   }
 })
+const calendarSessions = ref([])
 const manageableSessions = ref([])
 const markForm = ref({
   session_id: null,
@@ -423,16 +464,79 @@ const navItems = computed(() => [
   { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
   { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
-  ...(user.value?.role === 'child'
-    ? []
-    : [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }])
+  ...(user.value?.role === 'parent'
+    ? [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }]
+    : [])
 ])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
-const records = computed(() => attendanceResponse.value.records ?? [])
-const summary = computed(() => attendanceResponse.value.summary ?? {})
+const isParent = computed(() => user.value?.role === 'parent')
+const attendanceChildren = computed(() =>
+  Array.from(
+    new Map(
+      (attendanceResponse.value.records ?? []).map((record) => [
+        record.user_id,
+        {
+          id: record.user_id,
+          name: record.child_name,
+        }
+      ])
+    ).values()
+  )
+)
+const selectedAttendanceChild = computed(() =>
+  attendanceChildren.value.find((child) => child.id === selectedChildId.value) ?? null
+)
+const overviewProfileName = computed(() =>
+  isParent.value && selectedAttendanceChild.value
+    ? selectedAttendanceChild.value.name
+    : profileName.value
+)
+const overviewProfileSeed = computed(() =>
+  isParent.value && selectedAttendanceChild.value
+    ? `child-${selectedAttendanceChild.value.id}-${selectedAttendanceChild.value.name}`
+    : profileSeed.value
+)
+const records = computed(() =>
+  (attendanceResponse.value.records ?? []).filter((record) =>
+    !isParent.value || !selectedChildId.value || record.user_id === selectedChildId.value
+  )
+)
+const summary = computed(() => {
+  const totalSessions = records.value.length
+  const attendedSessions = records.value.filter((item) => item.status === 'present').length
+  const missedSessions = records.value.filter((item) => item.status === 'absent').length
+  const totalTrainingTimeMinutes = records.value.reduce((total, item) => {
+    if (item.status !== 'present') return total
+
+    const start = Date.parse(`1970-01-01T${item.start_time}:00`)
+    const end = Date.parse(`1970-01-01T${item.end_time}:00`)
+    return total + (Number.isFinite(start) && Number.isFinite(end) && end > start ? Math.round((end - start) / 60000) : 0)
+  }, 0)
+
+  return {
+    total_sessions: totalSessions,
+    attended_sessions: attendedSessions,
+    missed_sessions: missedSessions,
+    attendance_rate: totalSessions > 0 ? Math.round((attendedSessions / totalSessions) * 100) : 0,
+    total_training_time_minutes: totalTrainingTimeMinutes,
+  }
+})
 const canManageAttendance = computed(() => ['admin', 'coach'].includes(user.value?.role ?? ''))
 const memberGroups = computed(() => [...new Set(records.value.map((item) => item.training))])
+const scopedCalendarSessions = computed(() =>
+  calendarSessions.value.filter((session) => {
+    if (user.value?.role === 'child') {
+      return session.students?.some((student) => student.id === user.value?.id)
+    }
+
+    if (isParent.value) {
+      return !selectedChildId.value || session.students?.some((student) => student.id === selectedChildId.value)
+    }
+
+    return true
+  })
+)
 
 const stats = computed(() => [
   { label: 'Total training time', value: formatMinutes(summary.value.total_training_time_minutes ?? 0) },
@@ -462,11 +566,41 @@ const timelineSegments = computed(() => {
 const timelineLabels = ['0%', '25%', '50%', '75%', '100%']
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const attendanceByDate = computed(() =>
+const attendanceStatusBySession = computed(() =>
   records.value.reduce((map, item) => {
-    const currentValue = map[item.date]
-    const nextValue = item.status === 'present' ? 'Present' : 'Absent'
-    map[item.date] = currentValue === 'Absent' ? 'Absent' : nextValue
+    if (!map[item.session_id]) {
+      map[item.session_id] = []
+    }
+
+    map[item.session_id].push(item.status)
+    return map
+  }, {})
+)
+
+const calendarEntriesByDate = computed(() =>
+  scopedCalendarSessions.value.reduce((map, session) => {
+    const sessionStatuses = attendanceStatusBySession.value[session.id] ?? []
+    const uniqueStatuses = [...new Set(sessionStatuses)]
+
+    let statusType = 'planned'
+    if (uniqueStatuses.length > 1) {
+      statusType = 'mixed'
+    } else if (uniqueStatuses[0] === 'present') {
+      statusType = 'present'
+    } else if (uniqueStatuses[0] === 'absent') {
+      statusType = 'absent'
+    }
+
+    if (!map[session.date]) {
+      map[session.date] = []
+    }
+
+    map[session.date].push({
+      id: session.id,
+      training: session.title,
+      statusType,
+    })
+
     return map
   }, {})
 )
@@ -482,11 +616,9 @@ onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
   updateViewportState()
   window.addEventListener('resize', updateViewportState)
+  loadCalendarSessions()
   loadAttendance()
   loadNotifications()
-  if (canManageAttendance.value) {
-    loadManageableSessions()
-  }
 })
 
 watch(darkMode, (value) => {
@@ -511,6 +643,22 @@ watch(() => markForm.value.session_id, () => {
   markForm.value.user_id = selectedSessionChildren.value[0]?.id ?? null
 })
 
+watch(records, (value) => {
+  const firstRecordDate = value[0]?.date
+  if (firstRecordDate) {
+    currentMonth.value = new Date(`${firstRecordDate}T00:00:00`)
+  }
+}, { immediate: true })
+
+watch(scopedCalendarSessions, (value) => {
+  if (records.value.length) return
+
+  const firstSessionDate = value[0]?.date
+  if (firstSessionDate) {
+    currentMonth.value = new Date(`${firstSessionDate}T00:00:00`)
+  }
+}, { immediate: true })
+
 const calendarWeeks = computed(() => {
   const startOfMonth = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth(), 1)
   const endOfMonth = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() + 1, 0)
@@ -526,11 +674,21 @@ const calendarWeeks = computed(() => {
 
     const iso = date.toISOString().slice(0, 10)
     const isCurrentMonth = date.getMonth() === currentMonth.value.getMonth()
+    const sessions = calendarEntriesByDate.value[iso] ?? []
+    const statusSignature = sessions.length
+      ? [...new Set(sessions.map((session) => session.statusType))].sort().join(',')
+      : 'no-training'
+    const statusType = sessions.length > 0
+      ? (statusSignature.includes(',') ? 'mixed' : sessions[0].statusType)
+      : 'no-training'
 
     return {
       id: iso,
       day: date.getDate(),
-      status: attendanceByDate.value[iso] || 'No training',
+      hasSessions: sessions.length > 0,
+      sessions,
+      statusType,
+      cellStyle: buildCalendarCellStyle(statusSignature),
       isCurrentMonth
     }
   })
@@ -568,15 +726,18 @@ const selectedSessionChildren = computed(() => {
 async function loadAttendance() {
   const data = await attendanceApi.list()
   attendanceResponse.value = data
-
-  const firstRecordDate = data?.records?.[0]?.date
-  if (firstRecordDate) {
-    currentMonth.value = new Date(`${firstRecordDate}T00:00:00`)
+  if (isParent.value) {
+    syncSelectedChild((data?.records ?? []).map((record) => record.user_id), { preserveExisting: true })
   }
 }
 
-async function loadManageableSessions() {
-  manageableSessions.value = await sessionsApi.list()
+async function loadCalendarSessions() {
+  const sessions = await sessionsApi.list()
+  calendarSessions.value = sessions
+
+  if (canManageAttendance.value) {
+    manageableSessions.value = sessions
+  }
 }
 
 function openMarkDialog() {
@@ -607,10 +768,67 @@ async function handleNotificationClick(item) {
   }
 }
 
+async function handleLogout() {
+  await logout()
+  router.push('/login')
+}
+
+async function handleMobileLogout() {
+  mobileMenuOpen.value = false
+  await handleLogout()
+}
+
 function formatMinutes(totalMinutes) {
   const hours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
   return `${hours}h ${String(minutes).padStart(2, '0')}m`
+}
+
+function buildCalendarCellStyle(statusSignature) {
+  const styles = {
+    present: {
+      '--calendar-cell-fill': 'rgba(87, 214, 156, 0.16)',
+      '--calendar-cell-border': 'rgba(57, 185, 128, 0.22)',
+      '--calendar-cell-shadow': '0 12px 24px rgba(57, 185, 128, 0.12)',
+    },
+    absent: {
+      '--calendar-cell-fill': 'rgba(255, 133, 140, 0.15)',
+      '--calendar-cell-border': 'rgba(239, 107, 115, 0.22)',
+      '--calendar-cell-shadow': '0 12px 24px rgba(239, 107, 115, 0.1)',
+    },
+    planned: {
+      '--calendar-cell-fill': 'rgba(89, 133, 255, 0.15)',
+      '--calendar-cell-border': 'rgba(89, 133, 255, 0.24)',
+      '--calendar-cell-shadow': '0 12px 24px rgba(89, 133, 255, 0.12)',
+    },
+    'absent,present': {
+      '--calendar-cell-fill': 'linear-gradient(135deg, rgba(87, 214, 156, 0.16) 0%, rgba(87, 214, 156, 0.16) 49%, rgba(255, 133, 140, 0.15) 51%, rgba(255, 133, 140, 0.15) 100%)',
+      '--calendar-cell-border': 'rgba(171, 180, 202, 0.26)',
+      '--calendar-cell-shadow': '0 12px 24px rgba(148, 163, 184, 0.12)',
+    },
+    'planned,present': {
+      '--calendar-cell-fill': 'linear-gradient(135deg, rgba(89, 133, 255, 0.15) 0%, rgba(89, 133, 255, 0.15) 49%, rgba(87, 214, 156, 0.16) 51%, rgba(87, 214, 156, 0.16) 100%)',
+      '--calendar-cell-border': 'rgba(140, 171, 232, 0.28)',
+      '--calendar-cell-shadow': '0 12px 24px rgba(120, 156, 236, 0.12)',
+    },
+    'absent,planned': {
+      '--calendar-cell-fill': 'linear-gradient(135deg, rgba(89, 133, 255, 0.15) 0%, rgba(89, 133, 255, 0.15) 49%, rgba(255, 133, 140, 0.15) 51%, rgba(255, 133, 140, 0.15) 100%)',
+      '--calendar-cell-border': 'rgba(156, 161, 226, 0.28)',
+      '--calendar-cell-shadow': '0 12px 24px rgba(132, 145, 223, 0.12)',
+    },
+    'absent,planned,present': {
+      '--calendar-cell-fill': 'linear-gradient(135deg, rgba(89, 133, 255, 0.15) 0%, rgba(89, 133, 255, 0.15) 33%, rgba(87, 214, 156, 0.16) 33%, rgba(87, 214, 156, 0.16) 66%, rgba(255, 133, 140, 0.15) 66%, rgba(255, 133, 140, 0.15) 100%)',
+      '--calendar-cell-border': 'rgba(171, 180, 202, 0.3)',
+      '--calendar-cell-shadow': '0 12px 24px rgba(148, 163, 184, 0.14)',
+    },
+    'no-training': {
+      '--calendar-cell-fill': 'rgba(203, 213, 225, 0.16)',
+      '--calendar-cell-border': 'rgba(148, 163, 184, 0.2)',
+      '--calendar-cell-shadow': '0 12px 24px rgba(148, 163, 184, 0.08)',
+    },
+  }
+
+  return styles[statusSignature] ?? styles['no-training']
 }
 </script>
 
@@ -692,9 +910,23 @@ function formatMinutes(totalMinutes) {
   background: rgba(255, 255, 255, 0.78);
 }
 
+.mobile-logout-btn {
+  justify-content: flex-start;
+  margin-top: 12px;
+  min-height: 56px;
+  border-radius: 18px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
 .attendance-shell-dark .mobile-drawer-profile {
   background: rgba(18, 27, 43, 0.92);
   border: 1px solid rgba(74, 92, 126, 0.42);
+}
+
+.attendance-shell-dark .mobile-logout-btn {
+  color: #eef4ff;
 }
 
 .sidebar-card {
@@ -931,6 +1163,14 @@ function formatMinutes(totalMinutes) {
   color: #dce6f7;
   background: rgba(18, 27, 43, 0.92);
   border-color: rgba(74, 92, 126, 0.46);
+}
+
+.logout-btn {
+  color: #111827;
+}
+
+.attendance-shell-dark .logout-btn {
+  color: #dce6f7;
 }
 
 .top-icon-btn-active {
@@ -1330,6 +1570,11 @@ function formatMinutes(totalMinutes) {
   background: #ef6b73;
 }
 
+.legend-dot-blue,
+.cell-dot-blue {
+  background: #5985ff;
+}
+
 .legend-dot-gray,
 .cell-dot-gray {
   background: #94a3b8;
@@ -1368,9 +1613,9 @@ function formatMinutes(totalMinutes) {
   position: absolute;
   inset: 6px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.44);
-  border: 1px solid rgba(255, 255, 255, 0.48);
-  box-shadow: 0 10px 22px rgba(148, 163, 184, 0.08);
+  background: var(--calendar-cell-fill, rgba(255, 255, 255, 0.44));
+  border: 1px solid var(--calendar-cell-border, rgba(255, 255, 255, 0.48));
+  box-shadow: var(--calendar-cell-shadow, 0 10px 22px rgba(148, 163, 184, 0.08));
   backdrop-filter: blur(8px);
   opacity: 0;
   transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
@@ -1378,9 +1623,9 @@ function formatMinutes(totalMinutes) {
 }
 
 .attendance-shell-dark .calendar-cell::before {
-  background: rgba(12, 19, 32, 0.46);
-  border-color: rgba(63, 80, 114, 0.4);
-  box-shadow: 0 10px 22px rgba(4, 10, 24, 0.18);
+  background: var(--calendar-cell-fill, rgba(12, 19, 32, 0.46));
+  border-color: var(--calendar-cell-border, rgba(63, 80, 114, 0.4));
+  box-shadow: var(--calendar-cell-shadow, 0 10px 22px rgba(4, 10, 24, 0.18));
 }
 
 .calendar-cell > * {
@@ -1400,7 +1645,15 @@ function formatMinutes(totalMinutes) {
   background: transparent;
 }
 
+.calendar-cell-planned {
+  background: transparent;
+}
+
 .calendar-cell-absent {
+  background: transparent;
+}
+
+.calendar-cell-mixed {
   background: transparent;
 }
 
@@ -1414,23 +1667,22 @@ function formatMinutes(totalMinutes) {
 
 .calendar-cell-present::before {
   opacity: 1;
-  background: rgba(87, 214, 156, 0.16);
-  border-color: rgba(57, 185, 128, 0.22);
-  box-shadow: 0 12px 24px rgba(57, 185, 128, 0.12);
+}
+
+.calendar-cell-planned::before {
+  opacity: 1;
 }
 
 .calendar-cell-absent::before {
   opacity: 1;
-  background: rgba(255, 133, 140, 0.15);
-  border-color: rgba(239, 107, 115, 0.22);
-  box-shadow: 0 12px 24px rgba(239, 107, 115, 0.1);
+}
+
+.calendar-cell-mixed::before {
+  opacity: 1;
 }
 
 .calendar-cell-no-training::before {
   opacity: 1;
-  background: rgba(203, 213, 225, 0.16);
-  border-color: rgba(148, 163, 184, 0.2);
-  box-shadow: 0 12px 24px rgba(148, 163, 184, 0.08);
 }
 
 .cell-date {
@@ -1445,6 +1697,35 @@ function formatMinutes(totalMinutes) {
   margin-top: 10px;
   color: #64748b;
   font-size: 0.82rem;
+}
+
+.cell-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.cell-session-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.attendance-shell-dark .cell-session-item,
+.attendance-shell-dark .cell-status {
+  color: #a8b7cf;
+}
+
+.cell-session-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 1280px) {

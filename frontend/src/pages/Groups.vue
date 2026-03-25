@@ -49,6 +49,15 @@
                 <div class="profile-email">{{ profileEmail }}</div>
               </div>
             </div>
+
+            <v-btn
+              variant="outlined"
+              class="mobile-logout-btn"
+              prepend-icon="mdi-logout"
+              @click="handleMobileLogout"
+            >
+              Log out
+            </v-btn>
           </div>
         </v-navigation-drawer>
 
@@ -166,6 +175,15 @@
                   </v-btn>
                   <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
+
+                <v-btn
+                  icon
+                  variant="text"
+                  class="top-icon-btn logout-btn"
+                  @click="handleLogout"
+                >
+                  <v-icon>mdi-logout</v-icon>
+                </v-btn>
 
                 <div class="profile-pill">
                   <v-avatar size="48">
@@ -328,12 +346,15 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import { useNotifications } from '../composables/useNotifications'
+import { useSelectedChild } from '../composables/useSelectedChild'
 import { groupsApi } from '../services/api'
-import { useAuth } from '../services/auth'
+import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
+const router = useRouter()
 const search = ref('')
 const darkMode = ref(false)
 const filterDialog = ref(false)
@@ -353,27 +374,30 @@ const {
   loadNotifications,
   markNotificationRead
 } = useNotifications()
+const { selectedChildId, syncSelectedChild } = useSelectedChild()
 const groups = ref([])
 const profileName = computed(() => {
   if (!user.value) return 'SportSystem User'
   return `${user.value.name} ${user.value.surname}`.trim()
 })
 const isChild = computed(() => user.value?.role === 'child')
+const isParent = computed(() => user.value?.role === 'parent')
 const navItems = computed(() => [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
   { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
   { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
-  ...(user.value?.role === 'child'
-    ? []
-    : [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }])
+  ...(user.value?.role === 'parent'
+    ? [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }]
+    : [])
 ])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
 
 const filteredGroups = computed(() =>
   groups.value.filter((group) =>
-    [group.section, String(group.group_number ?? ''), group.trainer, group.days].some((value) =>
+    (!isParent.value || !selectedChildId.value || group.child_ids?.includes(selectedChildId.value))
+    && [group.section, String(group.group_number ?? ''), group.trainer, group.days].some((value) =>
       value.toLowerCase().includes(search.value.toLowerCase())
     )
   )
@@ -419,6 +443,9 @@ async function loadGroups() {
   try {
     const response = await groupsApi.list()
     groups.value = response.map(withGroupAvatar)
+    if (isParent.value) {
+      syncSelectedChild(groups.value.flatMap((group) => group.child_ids || []), { preserveExisting: true })
+    }
     if (selectedSort.value === 'az') sortAZ()
     if (selectedSort.value === 'za') sortZA()
   } finally {
@@ -461,6 +488,16 @@ async function handleNotificationClick(item) {
   if (item?.unread) {
     await markNotificationRead(item.id)
   }
+}
+
+async function handleLogout() {
+  await logout()
+  router.push('/login')
+}
+
+async function handleMobileLogout() {
+  mobileMenuOpen.value = false
+  await handleLogout()
 }
 </script>
 
@@ -544,9 +581,23 @@ async function handleNotificationClick(item) {
   background: rgba(255, 255, 255, 0.78);
 }
 
+.mobile-logout-btn {
+  justify-content: flex-start;
+  margin-top: 12px;
+  min-height: 56px;
+  border-radius: 18px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
 .groups-shell-dark .mobile-drawer-profile {
   background: rgba(18, 27, 43, 0.92);
   border: 1px solid rgba(74, 92, 126, 0.42);
+}
+
+.groups-shell-dark .mobile-logout-btn {
+  color: #eef4ff;
 }
 
 .sidebar-card {
@@ -859,6 +910,14 @@ async function handleNotificationClick(item) {
   color: #dce6f7;
   background: rgba(18, 27, 43, 0.92);
   border-color: rgba(74, 92, 126, 0.46);
+}
+
+.logout-btn {
+  color: #111827;
+}
+
+.groups-shell-dark .logout-btn {
+  color: #dce6f7;
 }
 
 .top-icon-btn-active {

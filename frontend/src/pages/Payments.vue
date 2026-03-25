@@ -49,6 +49,15 @@
                 <div class="profile-email">{{ profileEmail }}</div>
               </div>
             </div>
+
+            <v-btn
+              variant="outlined"
+              class="mobile-logout-btn"
+              prepend-icon="mdi-logout"
+              @click="handleMobileLogout"
+            >
+              Log out
+            </v-btn>
           </div>
         </v-navigation-drawer>
 
@@ -167,6 +176,15 @@
                   <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
 
+                <v-btn
+                  icon
+                  variant="text"
+                  class="top-icon-btn logout-btn"
+                  @click="handleLogout"
+                >
+                  <v-icon>mdi-logout</v-icon>
+                </v-btn>
+
                 <div class="profile-pill">
                   <v-avatar size="48">
                     <img :src="avatarFor(profileSeed, profileName)" alt="Parent profile">
@@ -205,14 +223,86 @@
                   <div class="feature-text">
                     This balance is credited for missed trainings and can be used to pay for other upcoming sessions.
                   </div>
+
+                  <div class="balance-source-card">
+                    <div class="balance-source-header">
+                      <div class="balance-source-title">Balance source</div>
+                      <button
+                        v-if="balanceSources.length > 3"
+                        type="button"
+                        class="show-all-btn"
+                        @click="balanceSourcesDialog = true"
+                      >
+                        Show all
+                      </button>
+                    </div>
+
+                    <div v-if="previewBalanceSources.length" class="balance-source-list">
+                      <div
+                        v-for="item in previewBalanceSources"
+                        :key="item.id"
+                        class="balance-source-item"
+                      >
+                        <div class="balance-source-copy">
+                          <div class="balance-source-name">{{ item.label }}</div>
+                          <div class="balance-source-meta">{{ item.meta }}</div>
+                        </div>
+                        <div class="balance-source-amount">+{{ formatCurrency(item.amount) }}</div>
+                      </div>
+                    </div>
+
+                    <div v-else class="balance-source-empty">
+                      No recent credits have been added to the balance yet.
+                    </div>
+                  </div>
                 </section>
 
                 <section class="feature-card">
-                  <div class="feature-title">Payment chart</div>
+                  <div class="chart-card-header">
+                    <div>
+                      <div class="feature-title">Payment chart</div>
+                      <div class="feature-text">Paid amounts by month for the selected half-year.</div>
+                    </div>
+
+                    <div class="chart-period-switch">
+                      <v-btn
+                        icon
+                        variant="text"
+                        class="chart-period-btn"
+                        @click="changeChartHalfYear(-1)"
+                      >
+                        <v-icon>mdi-chevron-left</v-icon>
+                      </v-btn>
+
+                      <div class="chart-period-label">{{ chartPeriodLabel }}</div>
+
+                      <v-btn
+                        icon
+                        variant="text"
+                        class="chart-period-btn"
+                        :disabled="chartHalfYearOffset === 0"
+                        @click="changeChartHalfYear(1)"
+                      >
+                        <v-icon>mdi-chevron-right</v-icon>
+                      </v-btn>
+                    </div>
+                  </div>
+
+                  <div class="chart-summary-row">
+                    <div class="chart-summary-pill">
+                      <span>Paid this half-year</span>
+                      <strong>{{ formatCurrency(chartPeriodTotal) }}</strong>
+                    </div>
+                    <div class="chart-summary-pill">
+                      <span>Peak month</span>
+                      <strong>{{ formatCompactCurrency(chartPeriodPeak) }}</strong>
+                    </div>
+                  </div>
+
                   <div class="chart-placeholder">
                     <svg
                       class="payment-chart"
-                      viewBox="0 0 360 180"
+                      viewBox="0 0 360 150"
                       preserveAspectRatio="none"
                       aria-label="Payment chart"
                     >
@@ -238,16 +328,18 @@
 
                       <circle
                         v-for="point in chartPoints"
-                        :key="point.label"
+                        :key="point.key"
                         :cx="point.x"
                         :cy="point.y"
                         r="4.5"
                         class="chart-point"
-                      />
+                      >
+                        <title>{{ `${point.label}: ${formatCurrency(point.value)}` }}</title>
+                      </circle>
                     </svg>
 
                     <div class="chart-labels">
-                      <span v-for="point in chartPoints" :key="`${point.label}-label`">{{ point.label }}</span>
+                      <span v-for="point in chartPoints" :key="`${point.key}-label`">{{ point.label }}</span>
                     </div>
                   </div>
                 </section>
@@ -636,6 +728,42 @@
           </v-card>
         </v-dialog>
 
+        <v-dialog v-model="balanceSourcesDialog" max-width="680">
+          <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
+            <div class="list-dialog-header">
+              <div>
+                <div class="list-dialog-title">All Balance Sources</div>
+                <div class="list-dialog-subtitle">All credits currently contributing to the parent account balance.</div>
+              </div>
+
+              <v-btn icon variant="text" @click="balanceSourcesDialog = false">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </div>
+
+            <div v-if="balanceSources.length" class="dialog-list-wrap">
+              <article
+                v-for="item in balanceSources"
+                :key="`balance-source-${item.id}`"
+                class="payment-item"
+              >
+                <div class="payment-main">
+                  <div class="payment-name">{{ item.label }}</div>
+                  <div class="payment-meta">{{ item.meta }}</div>
+                </div>
+
+                <div class="payment-side">
+                  <div class="payment-amount balance-source-dialog-amount">+{{ formatCurrency(item.amount) }}</div>
+                </div>
+              </article>
+            </div>
+
+            <div v-else class="empty-state">
+              No recent credits have been added to the balance yet.
+            </div>
+          </v-card>
+        </v-dialog>
+
         <v-dialog v-model="payDialog" max-width="620">
           <v-card class="dialog-card list-dialog-card pay-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
@@ -811,18 +939,22 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import { useNotifications } from '../composables/useNotifications'
+import { useSelectedChild } from '../composables/useSelectedChild'
 import { paymentsApi } from '../services/api'
-import { useAuth } from '../services/auth'
+import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
+const router = useRouter()
 const search = ref('')
 const darkMode = ref(false)
 const transactionsDialog = ref(false)
 const dueTrainingsDialog = ref(false)
 const monthlyPaymentsDialog = ref(false)
 const historyDialog = ref(false)
+const balanceSourcesDialog = ref(false)
 const payDialog = ref(false)
 const receiptDialog = ref(false)
 const notificationsDialog = ref(false)
@@ -846,6 +978,7 @@ const {
   loadNotifications,
   markNotificationRead
 } = useNotifications()
+const { selectedChildId, syncSelectedChild } = useSelectedChild()
 const paymentsData = ref({
   summary: {
     total_paid: 0,
@@ -860,38 +993,68 @@ const paymentsData = ref({
   payments: []
 })
 
-const chartGridLines = [32, 72, 112, 152]
+const chartHalfYearOffset = ref(0)
+const chartGridLines = [20, 50, 80, 110]
+const chartStartX = 28
+const chartEndX = 332
+const chartTopY = 16
+const chartBottomY = 118
 const profileName = computed(() => {
   if (!user.value) return 'SportSystem User'
   return `${user.value.name} ${user.value.surname}`.trim()
 })
+const isParent = computed(() => user.value?.role === 'parent')
 const navItems = computed(() => [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
   { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
   { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
-  ...(user.value?.role === 'child'
-    ? []
-    : [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }])
+  ...(user.value?.role === 'parent'
+    ? [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }]
+    : [])
 ])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
-const dueTrainings = computed(() => paymentsData.value.due_trainings ?? [])
-const monthlyDuePayments = computed(() => paymentsData.value.due_monthly_payments ?? [])
-const paymentRecords = computed(() => paymentsData.value.payments ?? [])
+const dueTrainings = computed(() =>
+  (paymentsData.value.due_trainings ?? []).filter((item) =>
+    !isParent.value || !selectedChildId.value || item.child_id === selectedChildId.value
+  )
+)
+const monthlyDuePayments = computed(() =>
+  (paymentsData.value.due_monthly_payments ?? []).filter((item) =>
+    !isParent.value || !selectedChildId.value || item.child_id === selectedChildId.value
+  )
+)
+const paymentRecords = computed(() =>
+  (paymentsData.value.payments ?? []).filter((item) =>
+    !isParent.value || !selectedChildId.value || item.child_id === selectedChildId.value
+  )
+)
 const accountBalance = computed(() => Number(paymentsData.value.account_balance ?? 0))
-const chartPoints = computed(() => {
-  const monthLabels = []
+const chartPeriod = computed(() => {
   const now = new Date()
+  const currentHalfStartMonth = now.getMonth() < 6 ? 0 : 6
+  const start = new Date(now.getFullYear(), currentHalfStartMonth + (chartHalfYearOffset.value * 6), 1)
+  const half = start.getMonth() < 6 ? 1 : 2
 
-  for (let offset = 6; offset >= 0; offset -= 1) {
-    const month = new Date(now.getFullYear(), now.getMonth() - offset, 1)
-    monthLabels.push({
+  return {
+    start,
+    half,
+    label: `H${half} ${start.getFullYear()}`
+  }
+})
+const chartPeriodLabel = computed(() => chartPeriod.value.label)
+const chartMonths = computed(() =>
+  Array.from({ length: 6 }, (_, index) => {
+    const month = new Date(chartPeriod.value.start.getFullYear(), chartPeriod.value.start.getMonth() + index, 1)
+
+    return {
       key: `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`,
       label: month.toLocaleDateString('en-US', { month: 'short' })
-    })
-  }
-
+    }
+  })
+)
+const chartMonthlyTotals = computed(() => {
   const totals = paymentRecords.value.reduce((acc, payment) => {
     if (payment.status !== 'paid' || !payment.created_at) return acc
     const date = new Date(payment.created_at)
@@ -900,13 +1063,29 @@ const chartPoints = computed(() => {
     return acc
   }, {})
 
-  const values = monthLabels.map((month) => totals[month.key] || 0)
+  return chartMonths.value.map((month) => ({
+    ...month,
+    value: totals[month.key] || 0
+  }))
+})
+const chartPeriodTotal = computed(() =>
+  chartMonthlyTotals.value.reduce((sum, month) => sum + Number(month.value || 0), 0)
+)
+const chartPeriodPeak = computed(() =>
+  Math.max(...chartMonthlyTotals.value.map((month) => Number(month.value || 0)), 0)
+)
+const chartPoints = computed(() => {
+  const values = chartMonthlyTotals.value.map((month) => Number(month.value || 0))
   const maxValue = Math.max(...values, 1)
+  const step = (chartEndX - chartStartX) / Math.max(chartMonthlyTotals.value.length - 1, 1)
+  const chartHeight = chartBottomY - chartTopY
 
-  return monthLabels.map((month, index) => ({
+  return chartMonthlyTotals.value.map((month, index) => ({
+    key: month.key,
     label: month.label,
-    x: 24 + index * 48,
-    y: 150 - ((values[index] / maxValue) * 90)
+    x: chartStartX + index * step,
+    y: chartBottomY - ((values[index] / maxValue) * chartHeight),
+    value: values[index]
   }))
 })
 
@@ -919,22 +1098,72 @@ const chartAreaPath = computed(() => {
   const lastPoint = chartPoints.value[chartPoints.value.length - 1]
   const firstPoint = chartPoints.value[0]
 
-  return `${line} L ${lastPoint.x} 160 L ${firstPoint.x} 160 Z`
+  return `${line} L ${lastPoint.x} 128 L ${firstPoint.x} 128 Z`
 })
 
 const normalizedSearch = computed(() => search.value.trim().toLowerCase())
 const summaryCards = computed(() => [
-  { label: 'Total Paid', value: formatCurrency(paymentsData.value.summary?.total_paid ?? 0) },
-  { label: 'Pending', value: formatCurrency(paymentsData.value.summary?.pending ?? 0) },
-  { label: 'Overdue', value: formatCurrency(paymentsData.value.summary?.overdue ?? 0) }
+  {
+    label: 'Total Paid',
+    value: formatCurrency(paymentRecords.value.filter((item) => item.status === 'paid').reduce((sum, item) => sum + Number(item.amount || 0), 0))
+  },
+  {
+    label: 'Pending',
+    value: formatCurrency(
+      dueTrainings.value.filter((item) => item.status === 'Pending').reduce((sum, item) => sum + Number(item.amount || 0), 0)
+      + monthlyDuePayments.value.filter((item) => item.status === 'Pending').reduce((sum, item) => sum + Number(item.amount || 0), 0)
+    )
+  },
+  {
+    label: 'Overdue',
+    value: formatCurrency(
+      dueTrainings.value.filter((item) => item.status === 'Overdue').reduce((sum, item) => sum + Number(item.amount || 0), 0)
+      + monthlyDuePayments.value.filter((item) => item.status === 'Overdue').reduce((sum, item) => sum + Number(item.amount || 0), 0)
+    )
+  }
 ])
 
-const recentActivity = computed(() => paymentsData.value.recent_activity ?? [])
+const recentActivity = computed(() =>
+  (paymentsData.value.recent_activity ?? []).filter((item) =>
+    !isParent.value || !selectedChildId.value || item.child_id === selectedChildId.value
+  )
+)
 const paymentHistory = computed(() =>
   paymentRecords.value
     .filter((item) => ['paid', 'failed', 'refunded', 'pending'].includes(String(item.status || '').toLowerCase()))
     .sort((left, right) => new Date(right.updated_at || right.created_at || 0) - new Date(left.updated_at || left.created_at || 0))
 )
+const balanceSources = computed(() => {
+  const refundedCredits = paymentHistory.value
+    .filter((item) => String(item.status || '').toLowerCase() === 'refunded')
+    .map((item) => ({
+      id: `refund-${item.id}`,
+      label: formatHistoryItemName(item),
+      meta: `Refunded · ${item.updated_at ? formatDateTime(item.updated_at) : formatDateTime(item.created_at)}`,
+      amount: Number(item.amount || 0),
+    }))
+    .filter((item) => item.amount > 0)
+
+  const refundedTotal = refundedCredits.reduce((sum, item) => sum + item.amount, 0)
+  const carryoverAmount = Math.max(0, Number(accountBalance.value || 0) - refundedTotal)
+
+  if (carryoverAmount > 0) {
+    refundedCredits.push({
+      id: 'carryover-credit',
+      label: 'Carryover credit',
+      meta: 'Existing balance from previous training credits',
+      amount: carryoverAmount,
+    })
+  }
+
+  return refundedCredits
+    .sort((left, right) => {
+      if (left.id === 'carryover-credit') return 1
+      if (right.id === 'carryover-credit') return -1
+      return right.amount - left.amount
+    })
+})
+const previewBalanceSources = computed(() => balanceSources.value.slice(0, 3))
 
 const filteredRecentActivity = computed(() => {
   if (!normalizedSearch.value) return recentActivity.value
@@ -1066,6 +1295,12 @@ watch(notificationsDialog, (value) => {
   }
 })
 
+watch(selectedChildId, () => {
+  selectedSingleDueIds.value = []
+  selectedMonthlyDueId.value = null
+  selectedPaymentRecordId.value = null
+})
+
 function updateViewportState() {
   isCompactNav.value = window.innerWidth <= 1024
 }
@@ -1076,6 +1311,21 @@ function formatCurrency(amount) {
     currency: 'EUR',
     maximumFractionDigits: 0
   }).format(Number(amount || 0))
+}
+
+function formatCompactCurrency(amount) {
+  return new Intl.NumberFormat('en-IE', {
+    style: 'currency',
+    currency: 'EUR',
+    notation: 'compact',
+    maximumFractionDigits: 0
+  }).format(Number(amount || 0))
+}
+
+function changeChartHalfYear(direction) {
+  const nextOffset = chartHalfYearOffset.value + direction
+  if (nextOffset > 0) return
+  chartHalfYearOffset.value = nextOffset
 }
 
 function formatDateTime(value) {
@@ -1093,7 +1343,15 @@ async function loadPayments() {
   loading.value = true
 
   try {
-    paymentsData.value = await paymentsApi.list()
+    const data = await paymentsApi.list()
+    paymentsData.value = data
+    if (isParent.value) {
+      syncSelectedChild([
+        ...(data?.due_trainings ?? []).map((item) => item.child_id),
+        ...(data?.due_monthly_payments ?? []).map((item) => item.child_id),
+        ...(data?.payments ?? []).map((item) => item.child_id),
+      ].filter(Boolean), { preserveExisting: true })
+    }
   } finally {
     loading.value = false
   }
@@ -1350,6 +1608,16 @@ async function handleNotificationClick(item) {
     await markNotificationRead(item.id)
   }
 }
+
+async function handleLogout() {
+  await logout()
+  router.push('/login')
+}
+
+async function handleMobileLogout() {
+  mobileMenuOpen.value = false
+  await handleLogout()
+}
 </script>
 
 <style scoped>
@@ -1432,9 +1700,23 @@ async function handleNotificationClick(item) {
   background: rgba(255, 255, 255, 0.78);
 }
 
+.mobile-logout-btn {
+  justify-content: flex-start;
+  margin-top: 12px;
+  min-height: 56px;
+  border-radius: 18px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
 .payments-shell-dark .mobile-drawer-profile {
   background: rgba(18, 27, 43, 0.92);
   border: 1px solid rgba(74, 92, 126, 0.42);
+}
+
+.payments-shell-dark .mobile-logout-btn {
+  color: #eef4ff;
 }
 
 .sidebar-card {
@@ -1737,6 +2019,14 @@ async function handleNotificationClick(item) {
   border-color: rgba(74, 92, 126, 0.46);
 }
 
+.logout-btn {
+  color: #111827;
+}
+
+.payments-shell-dark .logout-btn {
+  color: #dce6f7;
+}
+
 .top-icon-btn-active {
   color: #1677ff;
   background: rgba(232, 242, 255, 0.96);
@@ -1988,6 +2278,88 @@ async function handleNotificationClick(item) {
   color: #8fa3c1;
 }
 
+.balance-source-card {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(240, 246, 255, 0.92);
+  border: 1px solid rgba(216, 228, 247, 0.96);
+}
+
+.payments-shell-dark .balance-source-card {
+  background: rgba(22, 31, 48, 0.94);
+  border-color: rgba(74, 92, 126, 0.42);
+}
+
+.balance-source-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.balance-source-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #172033;
+}
+
+.payments-shell-dark .balance-source-title {
+  color: #eef4ff;
+}
+
+.balance-source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.balance-source-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.balance-source-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.balance-source-name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #172033;
+}
+
+.payments-shell-dark .balance-source-name {
+  color: #eef4ff;
+}
+
+.balance-source-meta,
+.balance-source-empty {
+  margin-top: 3px;
+  font-size: 0.78rem;
+  color: #7b8798;
+  line-height: 1.45;
+}
+
+.payments-shell-dark .balance-source-meta,
+.payments-shell-dark .balance-source-empty {
+  color: #8fa3c1;
+}
+
+.balance-source-amount {
+  flex-shrink: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1677ff;
+}
+
+.balance-source-dialog-amount {
+  color: #1677ff;
+}
+
 .feature-btn {
   min-height: 46px;
   border-radius: 16px;
@@ -1995,22 +2367,123 @@ async function handleNotificationClick(item) {
   letter-spacing: 0;
 }
 
+.chart-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.chart-card-header .feature-text {
+  max-width: 340px;
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.chart-period-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 16px;
+  background: rgba(231, 238, 255, 0.82);
+  border: 1px solid rgba(205, 220, 245, 0.94);
+}
+
+.payments-shell-dark .chart-period-switch {
+  background: rgba(27, 39, 61, 0.9);
+  border-color: rgba(74, 92, 126, 0.42);
+}
+
+.chart-period-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  color: #2a3a55;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.chart-period-btn:disabled {
+  opacity: 0.42;
+}
+
+.payments-shell-dark .chart-period-btn {
+  color: #eef4ff;
+  background: rgba(18, 27, 43, 0.92);
+}
+
+.chart-period-label {
+  min-width: 88px;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #172033;
+}
+
+.payments-shell-dark .chart-period-label {
+  color: #eef4ff;
+}
+
+.chart-summary-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.chart-summary-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(240, 246, 255, 0.95);
+  border: 1px solid rgba(216, 228, 247, 0.96);
+  color: #6c7c93;
+  font-size: 0.8rem;
+}
+
+.chart-summary-pill strong {
+  color: #172033;
+  font-size: 0.9rem;
+}
+
+.payments-shell-dark .chart-summary-pill {
+  background: rgba(22, 31, 48, 0.94);
+  border-color: rgba(74, 92, 126, 0.42);
+  color: #8fa3c1;
+}
+
+.payments-shell-dark .chart-summary-pill strong {
+  color: #eef4ff;
+}
+
 .chart-placeholder {
-  height: 184px;
-  padding: 14px 14px 10px;
+  height: 186px;
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
   border-radius: 20px;
-  background: linear-gradient(135deg, #e7eeff, #f8fbff);
+  background:
+    radial-gradient(circle at top right, rgba(128, 178, 255, 0.2), transparent 28%),
+    linear-gradient(180deg, rgba(232, 239, 255, 0.98), rgba(245, 249, 255, 0.95));
   border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
 }
 
 .payments-shell-dark .chart-placeholder {
-  background: linear-gradient(135deg, rgba(18, 27, 43, 0.96), rgba(27, 39, 61, 0.92));
+  background:
+    radial-gradient(circle at top right, rgba(47, 95, 201, 0.22), transparent 28%),
+    linear-gradient(180deg, rgba(18, 27, 43, 0.96), rgba(27, 39, 61, 0.92));
   border-color: rgba(74, 92, 126, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .payment-chart {
   width: 100%;
-  height: 148px;
+  height: 136px;
 }
 
 .chart-grid-line {
@@ -2038,14 +2511,17 @@ async function handleNotificationClick(item) {
   fill: white;
   stroke: #1677ff;
   stroke-width: 3;
+  filter: drop-shadow(0 4px 10px rgba(22, 119, 255, 0.16));
 }
 
 .chart-labels {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  margin-top: 6px;
+  grid-template-columns: repeat(6, 1fr);
+  margin-top: 2px;
   color: #7b8798;
   font-size: 0.78rem;
+  line-height: 1;
+  text-align: center;
 }
 
 .lists-grid {
@@ -2740,6 +3216,15 @@ async function handleNotificationClick(item) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .chart-card-header,
+  .chart-summary-row {
+    flex-direction: column;
+  }
+
+  .chart-period-switch {
+    align-self: flex-start;
+  }
+
   .pay-section-actions {
     width: 100%;
     justify-content: space-between;
@@ -2785,11 +3270,11 @@ async function handleNotificationClick(item) {
 
   .chart-placeholder {
     height: 168px;
-    padding: 12px 12px 10px;
+    padding: 12px 12px 12px;
   }
 
   .payment-chart {
-    height: 132px;
+    height: 118px;
   }
 
   .chart-labels {
@@ -2874,6 +3359,15 @@ async function handleNotificationClick(item) {
   .feature-grid,
   .lists-grid {
     grid-template-columns: 1fr;
+  }
+
+  .chart-period-switch {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .chart-period-label {
+    flex: 1;
   }
 
   .payment-view-tabs {
@@ -2969,11 +3463,11 @@ async function handleNotificationClick(item) {
 
   .chart-placeholder {
     height: 156px;
-    padding: 10px 10px 8px;
+    padding: 10px 10px 10px;
   }
 
   .payment-chart {
-    height: 122px;
+    height: 108px;
   }
 
   .list-dialog-card {

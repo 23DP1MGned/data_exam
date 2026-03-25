@@ -29,7 +29,7 @@ class PaymentController extends Controller
 
         $user = $request->user();
 
-        if ($user->role === User::ROLE_CHILD) {
+        if (! in_array($user->role, [User::ROLE_ADMIN, User::ROLE_PARENT], true)) {
             return $this->error('Forbidden.', [], 403);
         }
 
@@ -68,6 +68,7 @@ class PaymentController extends Controller
 
             return [
                 'id' => 'due-'.$item['id'],
+                'child_id' => $item['child_id'] ?? null,
                 'name' => $item['child_name'] ?: ($item['type'] === 'month' ? $item['group'] : $item['name']),
                 'date' => $item['date'],
                 'amount' => (float) $item['amount'],
@@ -102,6 +103,7 @@ class PaymentController extends Controller
 
             return [
                 'id' => 'payment-'.$payment->id,
+                'child_id' => $payment->child_id,
                 'name' => $childName ?: $parentName ?: $itemLabel,
                 'date' => $activityTimestamp?->format('d M') ?? now()->format('d M'),
                 'amount' => (float) $payment->amount,
@@ -185,7 +187,7 @@ class PaymentController extends Controller
     {
         $user = $request->user();
 
-        if ($user->role === User::ROLE_CHILD) {
+        if (! in_array($user->role, [User::ROLE_ADMIN, User::ROLE_PARENT], true)) {
             return $this->error('Forbidden.', [], 403);
         }
 

@@ -29,7 +29,7 @@ class AttendanceController extends Controller
         }
 
         $records = $query->get();
-        $totalMinutes = $records->sum(function (Attendance $attendance) {
+        $totalMinutes = $records->where('status', 'present')->sum(function (Attendance $attendance) {
             $start = strtotime((string) $attendance->session->start_time);
             $end = strtotime((string) $attendance->session->end_time);
 
@@ -77,7 +77,7 @@ class AttendanceController extends Controller
             'session_id' => $attendance->session_id,
             'user_id' => $attendance->user_id,
             'child_name' => trim($attendance->user->name.' '.$attendance->user->surname),
-            'training' => $attendance->session->group->name,
+            'training' => $attendance->session->title ?: $attendance->session->group->display_name,
             'date' => $attendance->session->date->toDateString(),
             'start_time' => substr((string) $attendance->session->start_time, 0, 5),
             'end_time' => substr((string) $attendance->session->end_time, 0, 5),

@@ -7,6 +7,7 @@ use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\PaymentItem;
 use App\Models\PaymentMonthCoverage;
+use App\Models\SessionCancellationCredit;
 use App\Models\TrainingSession;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -123,6 +124,96 @@ class PaymentService
             ]);
 
             return $payment->fresh()->load(['parent', 'child', 'items.session.group', 'items.monthCoverage.group', 'monthCoverages.group']);
+        });
+    }
+
+    public function creditCancelledSession(TrainingSession $session): void
+    {
+        if ($session->status !== 'cancelled') {
+            return;
+        }
+
+        DB::transaction(function () use ($session) {
+            $session->loadMissing(['group.children.parents', 'paymentItems.payment', 'paymentItems.payment.parent']);
+
+            foreach ($session->group->children as $child) {
+                if (SessionCancellationCredit::query()
+                    ->where('session_id', $session->id)
+                    ->where('child_id', $child->id)
+                    ->exists()) {
+                    continue;
+                }
+
+                $singlePaymentItem = PaymentItem::query()
+                    ->with(['payment.parent'])
+                    ->where('type', 'session')
+                    ->where('session_id', $session->id)
+                    ->whereHas('payment', function ($builder) use ($child) {
+                        $builder
+                            ->where('status', 'paid')
+                            ->where('child_id', $child->id);
+                    })
+                    ->latest('id')
+                    ->first();
+
+                if ($singlePaymentItem?->payment?->parent) {
+                    $this->createCancellationCredit(
+                        session: $session,
+                        parent: $singlePaymentItem->payment->parent,
+                        child: $child,
+                        amount: (float) $singlePaymentItem->price,
+                        sourceType: 'session',
+                        payment: $singlePaymentItem->payment,
+                        paymentItem: $singlePaymentItem,
+                    );
+                    continue;
+                }
+
+                $monthKey = $session->date->format('Y-m');
+                $coverage = PaymentMonthCoverage::query()
+                    ->with(['payment.parent', 'paymentItem'])
+                    ->where('child_id', $child->id)
+                    ->where('group_id', $session->group_id)
+                    ->where('month', $monthKey)
+                    ->whereHas('payment', fn ($builder) => $builder->where('status', 'paid'))
+                    ->latest('id')
+                    ->first();
+
+                if (! $coverage?->payment?->parent) {
+                    continue;
+                }
+
+                $coverageCredits = SessionCancellationCredit::query()
+                    ->where('payment_month_coverage_id', $coverage->id)
+                    ->orderBy('id')
+                    ->get();
+
+                if ($coverageCredits->count() >= $coverage->covered_sessions_count) {
+                    continue;
+                }
+
+                $refundedSoFar = (float) $coverageCredits->sum('amount');
+                $baseAmount = round((float) $coverage->amount / max(1, (int) $coverage->covered_sessions_count), 2);
+                $isLastCoverageRefund = $coverageCredits->count() + 1 >= (int) $coverage->covered_sessions_count;
+                $amount = $isLastCoverageRefund
+                    ? round(max(0, (float) $coverage->amount - $refundedSoFar), 2)
+                    : $baseAmount;
+
+                if ($amount <= 0) {
+                    continue;
+                }
+
+                $this->createCancellationCredit(
+                    session: $session,
+                    parent: $coverage->payment->parent,
+                    child: $child,
+                    amount: $amount,
+                    sourceType: 'month',
+                    payment: $coverage->payment,
+                    paymentItem: $coverage->paymentItem,
+                    monthCoverage: $coverage,
+                );
+            }
         });
     }
 
@@ -347,5 +438,52 @@ class PaymentService
                     ->where('child_id', $childId);
             })
             ->exists();
+    }
+
+    private function createCancellationCredit(
+        TrainingSession $session,
+        User $parent,
+        User $child,
+        float $amount,
+        string $sourceType,
+        Payment $payment,
+        ?PaymentItem $paymentItem = null,
+        ?PaymentMonthCoverage $monthCoverage = null,
+    ): void {
+        if ($amount <= 0) {
+            return;
+        }
+
+        SessionCancellationCredit::query()->create([
+            'session_id' => $session->id,
+            'parent_id' => $parent->id,
+            'child_id' => $child->id,
+            'payment_id' => $payment->id,
+            'payment_item_id' => $paymentItem?->id,
+            'payment_month_coverage_id' => $monthCoverage?->id,
+            'source_type' => $sourceType,
+            'amount' => $amount,
+        ]);
+
+        $parent->loadMissing('parentProfile');
+        if ($parent->parentProfile) {
+            $parent->parentProfile->increment('account_balance', $amount);
+        }
+
+        Notification::create([
+            'user_id' => $parent->id,
+            'title' => 'Cancelled training credit added',
+            'message' => 'A cancelled training was credited back to your account balance.',
+            'type' => 'payment',
+            'is_read' => false,
+        ]);
+
+        Notification::create([
+            'user_id' => $child->id,
+            'title' => 'Cancelled training refunded',
+            'message' => 'A cancelled training was credited back to your parent account balance.',
+            'type' => 'payment',
+            'is_read' => false,
+        ]);
     }
 }

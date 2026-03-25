@@ -3,6 +3,7 @@ import { authApi } from './api'
 
 const TOKEN_KEY = 'app-auth-token'
 const USER_KEY = 'app-auth-user'
+const SELECTED_CHILD_KEY = 'app-selected-child-id'
 
 const parseStoredUser = () => {
   const raw = localStorage.getItem(USER_KEY)
@@ -41,12 +42,14 @@ const persistAuth = () => {
 export const setAuth = ({ token, user }) => {
   state.token = token
   state.user = user
+  localStorage.removeItem(SELECTED_CHILD_KEY)
   persistAuth()
 }
 
 export const clearAuth = () => {
   state.token = ''
   state.user = null
+  localStorage.removeItem(SELECTED_CHILD_KEY)
   persistAuth()
 }
 
@@ -104,4 +107,3 @@ export const useAuth = () => ({
   isAuthenticated: computed(() => Boolean(state.token)),
   ready: computed(() => state.ready)
 })
-

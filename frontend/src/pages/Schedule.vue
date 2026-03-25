@@ -49,6 +49,15 @@
                 <div class="profile-email">{{ profileEmail }}</div>
               </div>
             </div>
+
+            <v-btn
+              variant="outlined"
+              class="mobile-logout-btn"
+              prepend-icon="mdi-logout"
+              @click="handleMobileLogout"
+            >
+              Log out
+            </v-btn>
           </div>
         </v-navigation-drawer>
 
@@ -177,6 +186,15 @@
                   <span class="icon-badge">{{ unreadCount }}</span>
                 </div>
 
+                <v-btn
+                  icon
+                  variant="text"
+                  class="top-icon-btn logout-btn"
+                  @click="handleLogout"
+                >
+                  <v-icon>mdi-logout</v-icon>
+                </v-btn>
+
                 <div class="profile-pill">
                   <v-avatar size="48">
                     <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
@@ -243,7 +261,10 @@
                   v-for="training in group.items"
                   :key="training.id"
                   class="schedule-item"
-                  :class="{ 'schedule-item-expanded': expandedId === training.id }"
+                  :class="{
+                    'schedule-item-expanded': expandedId === training.id,
+                    'schedule-item-cancelled': isCancelledTraining(training.status)
+                  }"
                 >
                   <div class="schedule-grid">
                     <div class="schedule-meta-grid">
@@ -265,7 +286,16 @@
 
                     <div class="course-block">
                       <div class="meta-label">Training</div>
-                      <div class="course-title">{{ training.title }}</div>
+                      <div class="course-header-row">
+                        <div class="course-title">{{ training.title }}</div>
+                        <v-chip
+                          v-if="isCancelledTraining(training.status)"
+                          size="small"
+                          class="status-chip status-chip-cancelled"
+                        >
+                          Cancelled
+                        </v-chip>
+                      </div>
 
                       <template v-if="expandedId === training.id && canManageTrainingActions">
                         <div class="meta-label section-gap">Age</div>
@@ -520,12 +550,15 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import { useNotifications } from '../composables/useNotifications'
+import { useSelectedChild } from '../composables/useSelectedChild'
 import { groupsApi, sessionsApi } from '../services/api'
-import { useAuth } from '../services/auth'
+import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
+const router = useRouter()
 const search = ref('')
 const tab = ref('upcoming')
 const dialog = ref(false)
@@ -557,22 +590,24 @@ const {
   loadNotifications,
   markNotificationRead
 } = useNotifications()
+const { selectedChildId, syncSelectedChild } = useSelectedChild()
 const trainings = ref([])
 const groupOptions = ref([])
 const profileName = computed(() => {
   if (!user.value) return 'SportSystem User'
   return `${user.value.name} ${user.value.surname}`.trim()
 })
-const canCreateTraining = computed(() => user.value?.role !== 'child')
-const canManageTrainingActions = computed(() => user.value?.role !== 'child')
+const isParent = computed(() => user.value?.role === 'parent')
+const canCreateTraining = computed(() => ['admin', 'coach'].includes(user.value?.role ?? ''))
+const canManageTrainingActions = computed(() => ['admin', 'coach'].includes(user.value?.role ?? ''))
 const navItems = computed(() => [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
   { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
   { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
-  ...(user.value?.role === 'child'
-    ? []
-    : [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }])
+  ...(user.value?.role === 'parent'
+    ? [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }]
+    : [])
 ])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
@@ -597,10 +632,15 @@ const filteredTrainings = computed(() => {
   const query = search.value.trim().toLowerCase()
 
   return trainings.value.filter((training) => {
+    const matchesSelectedChild = !isParent.value
+      || !selectedChildId.value
+      || training.students?.some((student) => student.id === selectedChildId.value)
+
     const matchesTab = tab.value === 'upcoming'
       ? !isPastTraining(training)
       : isPastTraining(training)
 
+    if (!matchesSelectedChild) return false
     if (!matchesTab) return false
     if (!query) return true
 
@@ -755,6 +795,12 @@ async function loadSessions() {
   try {
     const response = await sessionsApi.list()
     trainings.value = response.map(withTrainingAvatars)
+    if (isParent.value) {
+      syncSelectedChild(
+        trainings.value.flatMap((training) => (training.students || []).map((student) => student.id)),
+        { preserveExisting: true }
+      )
+    }
   } finally {
     loading.value = false
   }
@@ -833,6 +879,10 @@ function formatTrainingStatus(status) {
   return status ? `${status.charAt(0).toUpperCase()}${status.slice(1)}` : 'Planned'
 }
 
+function isCancelledTraining(status) {
+  return String(status || '').toLowerCase() === 'cancelled'
+}
+
 function sortAZ() {
   trainings.value.sort((a, b) => a.title.localeCompare(b.title))
 }
@@ -892,6 +942,16 @@ async function handleNotificationClick(item) {
   if (item?.unread) {
     await markNotificationRead(item.id)
   }
+}
+
+async function handleLogout() {
+  await logout()
+  router.push('/login')
+}
+
+async function handleMobileLogout() {
+  mobileMenuOpen.value = false
+  await handleLogout()
 }
 </script>
 
@@ -978,9 +1038,23 @@ async function handleNotificationClick(item) {
   background: rgba(255, 255, 255, 0.78);
 }
 
+.mobile-logout-btn {
+  justify-content: flex-start;
+  margin-top: 12px;
+  min-height: 56px;
+  border-radius: 18px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+
 .schedule-shell-dark .mobile-drawer-profile {
   background: rgba(18, 27, 43, 0.92);
   border: 1px solid rgba(74, 92, 126, 0.42);
+}
+
+.schedule-shell-dark .mobile-logout-btn {
+  color: #eef4ff;
 }
 
 .sidebar-card {
@@ -1295,6 +1369,14 @@ async function handleNotificationClick(item) {
   border-color: rgba(74, 92, 126, 0.46);
 }
 
+.logout-btn {
+  color: #111827;
+}
+
+.schedule-shell-dark .logout-btn {
+  color: #dce6f7;
+}
+
 .top-icon-btn-active {
   color: #1677ff;
   background: rgba(232, 242, 255, 0.96);
@@ -1550,14 +1632,31 @@ async function handleNotificationClick(item) {
   box-shadow: 0 12px 28px rgba(110, 136, 173, 0.08);
 }
 
+.schedule-item-cancelled {
+  border-color: rgba(239, 107, 115, 0.48);
+  background: linear-gradient(180deg, rgba(255, 247, 247, 0.98), rgba(255, 255, 255, 0.92));
+  box-shadow: 0 16px 34px rgba(239, 107, 115, 0.08);
+}
+
 .schedule-shell-dark .schedule-item {
   background: rgba(18, 27, 43, 0.9);
   box-shadow: 0 18px 38px rgba(4, 10, 24, 0.26);
 }
 
+.schedule-shell-dark .schedule-item-cancelled {
+  border-color: rgba(239, 107, 115, 0.38);
+  background: linear-gradient(180deg, rgba(57, 24, 31, 0.84), rgba(18, 27, 43, 0.9));
+  box-shadow: 0 18px 38px rgba(90, 18, 30, 0.24);
+}
+
 .schedule-item-expanded {
   border-color: rgba(22, 119, 255, 0.7);
   box-shadow: 0 18px 36px rgba(22, 119, 255, 0.1);
+}
+
+.schedule-item-expanded.schedule-item-cancelled {
+  border-color: rgba(239, 107, 115, 0.7);
+  box-shadow: 0 18px 36px rgba(239, 107, 115, 0.16);
 }
 
 .schedule-grid {
@@ -1634,6 +1733,13 @@ async function handleNotificationClick(item) {
   font-size: 1.1rem;
 }
 
+.course-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .course-subtitle,
 .meeting-link {
   color: #172033;
@@ -1643,6 +1749,23 @@ async function handleNotificationClick(item) {
 
 .meeting-link {
   word-break: break-word;
+}
+
+.status-chip {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.status-chip-cancelled {
+  color: #c93f4c;
+  background: rgba(255, 223, 226, 0.92);
+  border: 1px solid rgba(239, 107, 115, 0.34);
+}
+
+.schedule-shell-dark .status-chip-cancelled {
+  color: #ffd9dd;
+  background: rgba(126, 37, 49, 0.56);
+  border-color: rgba(239, 107, 115, 0.34);
 }
 
 .section-gap {

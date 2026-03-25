@@ -169,7 +169,7 @@
                     <v-list-item
                       v-for="child in linkedChildren"
                       :key="child.id"
-                      @click="selectedChildId = child.id"
+                      @click="setSelectedChildId(child.id)"
                     >
                       <template #prepend>
                         <v-avatar size="36">
@@ -277,7 +277,7 @@
                     <v-list-item
                       v-for="child in linkedChildren"
                       :key="child.id"
-                      @click="selectedChildId = child.id"
+                      @click="setSelectedChildId(child.id)"
                     >
                       <template #prepend>
                         <v-avatar size="36">
@@ -587,6 +587,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import { useNotifications } from '../composables/useNotifications'
+import { useSelectedChild } from '../composables/useSelectedChild'
 import { dashboardApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
@@ -620,9 +621,9 @@ const navItems = computed(() => {
     { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
     { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
     { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
-    ...(user.value?.role === 'child'
-      ? []
-      : [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }])
+    ...(user.value?.role === 'parent'
+      ? [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }]
+      : [])
   ]
 })
 
@@ -635,6 +636,11 @@ const {
   loadNotifications,
   markNotificationRead
 } = useNotifications()
+const {
+  selectedChildId,
+  setSelectedChildId,
+  syncSelectedChild
+} = useSelectedChild()
 
 const trainings = ref([])
 const overviewStats = ref([])
@@ -642,7 +648,6 @@ const adminGroups = ref([])
 const adminSessions = ref([])
 const adminPayments = ref([])
 const linkedChildren = ref([])
-const selectedChildId = ref(null)
 const newTraining = ref({
   title: '',
   date: '',
@@ -716,10 +721,7 @@ async function loadDashboard() {
     }))
     linkedChildren.value = data?.linked_children ?? []
     if (isParent.value) {
-      const currentChildExists = linkedChildren.value.some((child) => child.id === selectedChildId.value)
-      selectedChildId.value = currentChildExists
-        ? selectedChildId.value
-        : linkedChildren.value[0]?.id ?? null
+      syncSelectedChild(linkedChildren.value.map((child) => child.id))
     }
     overviewStats.value = data?.overview_stats ?? []
     adminGroups.value = data?.latest_groups ?? []
