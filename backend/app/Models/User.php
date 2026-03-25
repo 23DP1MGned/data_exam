@@ -108,6 +108,11 @@ class User extends Authenticatable
         return $this->hasMany(Payment::class, 'child_id');
     }
 
+    public function monthCoverages(): HasMany
+    {
+        return $this->hasMany(PaymentMonthCoverage::class, 'child_id');
+    }
+
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);

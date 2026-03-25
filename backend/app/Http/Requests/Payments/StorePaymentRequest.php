@@ -20,6 +20,14 @@ class StorePaymentRequest extends FormRequest
             'status' => ['nullable', Rule::in(['pending', 'paid', 'failed'])],
             'items' => ['required', 'array', 'min:1'],
             'items.*.type' => ['required', Rule::in(['session', 'month'])],
+            'items.*.group_id' => [
+                'nullable',
+                'integer',
+                'exists:groups,id',
+                Rule::requiredIf(fn () => collect($this->input('items', []))->contains(
+                    fn ($item) => ($item['type'] ?? null) === 'month' && empty($item['group_id'])
+                )),
+            ],
             'items.*.session_id' => [
                 'nullable',
                 'integer',
@@ -31,12 +39,13 @@ class StorePaymentRequest extends FormRequest
             'items.*.month' => [
                 'nullable',
                 'string',
-                'max:20',
+                'size:7',
+                'regex:/^\d{4}-\d{2}$/',
                 Rule::requiredIf(fn () => collect($this->input('items', []))->contains(
                     fn ($item) => ($item['type'] ?? null) === 'month' && empty($item['month'])
                 )),
             ],
-            'items.*.price' => ['required', 'numeric', 'min:0'],
+            'items.*.price' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }

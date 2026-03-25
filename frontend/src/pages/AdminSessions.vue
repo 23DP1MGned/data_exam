@@ -610,6 +610,18 @@
                 />
 
                 <v-select
+                  v-model="sessionDatesPeriod"
+                  :items="sessionDatePeriodOptions"
+                  item-title="label"
+                  item-value="value"
+                  label="Session period"
+                  variant="outlined"
+                  hide-details
+                  class="create-field session-date-filter-field session-date-filter-full"
+                  :menu-props="selectMenuProps"
+                />
+
+                <v-select
                   v-model="sessionDatesSort"
                   :items="sessionDateSortOptions"
                   item-title="label"
@@ -662,6 +674,7 @@ const darkMode = ref(false)
 const activeView = ref('plans')
 const sessionDateFrom = ref('')
 const sessionDateTo = ref('')
+const sessionDatesPeriod = ref('all')
 const sessionDatesSort = ref('date-asc')
 const sessionDatesFilterDialog = ref(false)
 const sessionDialog = ref(false)
@@ -700,6 +713,12 @@ const sessionDateSortOptions = [
   { label: 'Alphabet: Z-A', value: 'alpha-desc' },
   { label: 'Time: earliest first', value: 'time-asc' },
   { label: 'Time: latest first', value: 'time-desc' }
+]
+
+const sessionDatePeriodOptions = [
+  { label: 'All sessions', value: 'all' },
+  { label: 'Past sessions', value: 'past' },
+  { label: 'Upcoming sessions', value: 'upcoming' }
 ]
 
 const weekdayOptions = [
@@ -781,12 +800,17 @@ const filteredSessions = computed(() => {
 const filteredSessionDates = computed(() => {
   const from = sessionDateFrom.value ? new Date(sessionDateFrom.value) : null
   const to = sessionDateTo.value ? new Date(sessionDateTo.value) : null
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
   const filtered = filteredSessions.value.filter((session) => {
     const sessionDate = new Date(session.date)
+    sessionDate.setHours(0, 0, 0, 0)
 
     if (from && sessionDate < from) return false
     if (to && sessionDate > to) return false
+    if (sessionDatesPeriod.value === 'past' && sessionDate >= today) return false
+    if (sessionDatesPeriod.value === 'upcoming' && sessionDate < today) return false
 
     return true
   })
@@ -936,6 +960,7 @@ function formatSessionWeekdays(session) {
 function resetSessionDateFilters() {
   sessionDateFrom.value = ''
   sessionDateTo.value = ''
+  sessionDatesPeriod.value = 'all'
   sessionDatesSort.value = 'date-asc'
 }
 
@@ -2018,9 +2043,27 @@ async function handleMobileLogout() {
   border: 1px solid rgba(223, 232, 246, 0.95);
 }
 
+.status-instance-summary .payment-name {
+  color: #172033;
+}
+
+.status-instance-summary .payment-meta,
+.status-instance-summary .payment-secondary {
+  color: #6f7f96;
+}
+
 .admin-sessions-shell-dark .status-instance-summary {
   background: rgba(17, 25, 40, 0.88);
   border-color: rgba(58, 75, 108, 0.62);
+}
+
+.admin-sessions-shell-dark .status-instance-summary .payment-name {
+  color: #eef4ff;
+}
+
+.admin-sessions-shell-dark .status-instance-summary .payment-meta,
+.admin-sessions-shell-dark .status-instance-summary .payment-secondary {
+  color: #94a6c4;
 }
 
 .create-fields-grid {

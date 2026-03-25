@@ -234,7 +234,7 @@
                 <div class="lists-grid">
                   <section class="list-card">
                     <div class="list-header">
-                      <div class="list-title">Upcoming Trainings To Pay</div>
+                      <div class="list-title">Upcoming Payments To Collect</div>
                       <button type="button" class="show-all-btn" @click="dueDialog = true">
                         Show all
                       </button>
@@ -247,11 +247,12 @@
                         class="payment-item"
                       >
                         <div class="payment-main">
-                          <div class="payment-name">{{ item.name }}</div>
-                          <div class="payment-meta">{{ item.date }} · {{ item.group }}</div>
+                          <div class="payment-name">{{ formatDueItemTitle(item) }}</div>
+                          <div class="payment-meta">{{ formatDueItemMeta(item) }}</div>
                           <div class="payment-secondary">{{ item.child_name }}</div>
                           <div v-if="item.parent_name" class="payment-secondary">Parent: {{ item.parent_name }}</div>
-                          <div class="payment-deadline">Deadline: {{ item.deadline }}</div>
+                          <div class="payment-secondary">{{ formatDueItemSecondary(item) }}</div>
+                          <div class="payment-deadline">{{ formatDueItemDeadlineLabel(item) }}: {{ item.deadline }}</div>
                         </div>
 
                         <div class="payment-side">
@@ -262,7 +263,7 @@
                         </div>
                       </article>
                     </div>
-                    <div v-else class="empty-state">No upcoming unpaid trainings.</div>
+                    <div v-else class="empty-state">No upcoming unpaid payments.</div>
                   </section>
 
                   <section class="list-card">
@@ -283,6 +284,7 @@
                           <div class="payment-name">{{ item.child_name }}</div>
                           <div v-if="item.parent_name" class="payment-meta">Parent: {{ item.parent_name }}</div>
                           <div class="payment-secondary">{{ item.overdue_count }} overdue trainings</div>
+                          <div class="payment-secondary">Since {{ formatSinceDate(item.oldest_deadline_at) }}</div>
                           <div class="payment-deadline">Oldest debt: {{ formatOverdueAge(item.max_overdue_days) }}</div>
                         </div>
 
@@ -426,8 +428,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Trainings To Pay</div>
-                <div class="list-dialog-subtitle">Upcoming unpaid trainings across the system.</div>
+                <div class="list-dialog-title">All Upcoming Payments To Collect</div>
+                <div class="list-dialog-subtitle">Pending individual and monthly payments across the system.</div>
               </div>
               <v-btn icon variant="text" @click="dueDialog = false">
                 <v-icon>mdi-close</v-icon>
@@ -437,11 +439,12 @@
             <div class="dialog-list-wrap">
               <article v-for="item in filteredDueTrainings" :key="`dialog-due-${item.id}`" class="payment-item">
                 <div class="payment-main">
-                  <div class="payment-name">{{ item.name }}</div>
-                  <div class="payment-meta">{{ item.date }} · {{ item.group }}</div>
+                  <div class="payment-name">{{ formatDueItemTitle(item) }}</div>
+                  <div class="payment-meta">{{ formatDueItemMeta(item) }}</div>
                   <div class="payment-secondary">{{ item.child_name }}</div>
                   <div v-if="item.parent_name" class="payment-secondary">Parent: {{ item.parent_name }}</div>
-                  <div class="payment-deadline">Deadline: {{ item.deadline }}</div>
+                  <div class="payment-secondary">{{ formatDueItemSecondary(item) }}</div>
+                  <div class="payment-deadline">{{ formatDueItemDeadlineLabel(item) }}: {{ item.deadline }}</div>
                 </div>
 
                 <div class="payment-side">
@@ -518,13 +521,14 @@
             </div>
 
             <div class="dialog-list-wrap">
-              <article v-for="item in personDueTrainings" :key="`person-due-dialog-${item.id}`" class="payment-item">
+              <article v-for="item in personDueItems" :key="`person-due-dialog-${item.id}`" class="payment-item">
                 <div class="payment-main">
-                  <div class="payment-name">{{ item.name }}</div>
-                  <div class="payment-meta">{{ item.date }} · {{ item.group }}</div>
+                  <div class="payment-name">{{ formatDueItemTitle(item) }}</div>
+                  <div class="payment-meta">{{ formatDueItemMeta(item) }}</div>
                   <div class="payment-secondary">{{ item.child_name }}</div>
                   <div v-if="item.parent_name" class="payment-secondary">Parent: {{ item.parent_name }}</div>
-                  <div class="payment-deadline">Deadline: {{ item.deadline }}</div>
+                  <div class="payment-secondary">{{ formatDueItemSecondary(item) }}</div>
+                  <div class="payment-deadline">{{ formatDueItemDeadlineLabel(item) }}: {{ item.deadline }}</div>
                 </div>
 
                 <div class="payment-side">
@@ -616,7 +620,7 @@
               <div v-if="selectedPersonOption" class="person-ledger-summary">
                 <div class="payment-name">{{ selectedPersonOption.label }}</div>
                 <div class="payment-meta">
-                  {{ personDueTrainings.length }} debts · {{ personPaymentRecords.length }} transactions
+                  {{ personDueItems.length }} debts · {{ personPaymentRecords.length }} transactions
                 </div>
               </div>
 
@@ -625,7 +629,7 @@
                   <div class="list-header">
                     <div class="list-title">Debts</div>
                     <button
-                      v-if="selectedPersonFilter && personDueTrainings.length"
+                      v-if="selectedPersonFilter && personDueItems.length"
                       type="button"
                       class="show-all-btn"
                       @click="personDueDialog = true"
@@ -634,18 +638,19 @@
                     </button>
                   </div>
 
-                  <div v-if="personDueTrainings.length" class="dialog-list-wrap person-dialog-list">
+                  <div v-if="personDueItems.length" class="dialog-list-wrap person-dialog-list">
                     <article
-                      v-for="item in personDueTrainings"
+                      v-for="item in personDueItems"
                       :key="`person-due-${item.id}`"
                       class="payment-item"
                     >
                       <div class="payment-main">
-                        <div class="payment-name">{{ item.name }}</div>
-                        <div class="payment-meta">{{ item.date }} · {{ item.group }}</div>
+                        <div class="payment-name">{{ formatDueItemTitle(item) }}</div>
+                        <div class="payment-meta">{{ formatDueItemMeta(item) }}</div>
                         <div class="payment-secondary">{{ item.child_name }}</div>
                         <div v-if="item.parent_name" class="payment-secondary">Parent: {{ item.parent_name }}</div>
-                        <div class="payment-deadline">Deadline: {{ item.deadline }}</div>
+                        <div class="payment-secondary">{{ formatDueItemSecondary(item) }}</div>
+                        <div class="payment-deadline">{{ formatDueItemDeadlineLabel(item) }}: {{ item.deadline }}</div>
                       </div>
 
                       <div class="payment-side">
@@ -742,6 +747,7 @@
                   <div class="payment-name">{{ item.child_name }}</div>
                   <div v-if="item.parent_name" class="payment-meta">Parent: {{ item.parent_name }}</div>
                   <div class="payment-secondary">{{ item.overdue_count }} overdue trainings</div>
+                  <div class="payment-secondary">Since {{ formatSinceDate(item.oldest_deadline_at) }}</div>
                   <div class="payment-deadline">Oldest debt: {{ formatOverdueAge(item.max_overdue_days) }}</div>
                 </div>
 
@@ -899,6 +905,7 @@ const paymentsData = ref({
     overdue: 0,
   },
   due_trainings: [],
+  due_monthly_payments: [],
   recent_activity: [],
   spending_breakdown: [],
   payments: [],
@@ -921,14 +928,38 @@ const profileName = computed(() => {
 const profileEmail = computed(() => user.value?.email ?? 'admin@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
 const normalizedSearch = computed(() => search.value.trim().toLowerCase())
+const previewItemsLimit = 3
 const dueTrainings = computed(() => paymentsData.value.due_trainings ?? [])
+const monthlyDuePayments = computed(() => paymentsData.value.due_monthly_payments ?? [])
+const dueItems = computed(() => [...dueTrainings.value, ...monthlyDuePayments.value])
+const upcomingDueTrainings = computed(() => dueItems.value.filter((item) => item.status === 'Pending'))
 const recentActivity = computed(() => paymentsData.value.recent_activity ?? [])
-const paymentRecords = computed(() => paymentsData.value.payments ?? [])
+const paymentRecords = computed(() =>
+  (paymentsData.value.payments ?? []).filter((item) => item.status !== 'pending')
+)
 const selectedPaymentRecord = computed(() => paymentRecords.value.find((item) => item.id === selectedPaymentId.value) ?? null)
 const selectedPersonOption = computed(() => personOptions.value.find((item) => item.value === selectedPersonFilter.value) ?? null)
 const personOptions = computed(() => {
   const options = []
   const seen = new Set()
+
+  dueItems.value.forEach((item) => {
+    if (item.parent_id && item.parent_name) {
+      const key = `parent:${item.parent_id}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        options.push({ label: `${item.parent_name} · Parent`, value: key })
+      }
+    }
+
+    if (item.child_id && item.child_name) {
+      const key = `child:${item.child_id}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        options.push({ label: `${item.child_name} · Child`, value: key })
+      }
+    }
+  })
 
   paymentRecords.value.forEach((item) => {
     if (item.parent_id && item.parent_name) {
@@ -969,10 +1000,10 @@ const filteredRecentActivity = computed(() => {
 })
 
 const filteredDueTrainings = computed(() => {
-  if (!normalizedSearch.value) return dueTrainings.value
+  if (!normalizedSearch.value) return upcomingDueTrainings.value
 
-  return dueTrainings.value.filter((item) =>
-    [item.name, item.date, item.group, item.trainer, item.child_name, item.status]
+  return upcomingDueTrainings.value.filter((item) =>
+    [item.name, item.date, item.group, item.trainer, item.child_name, item.status, item.month_label]
       .filter(Boolean)
       .some((value) => value.toLowerCase().includes(normalizedSearch.value))
   )
@@ -988,9 +1019,9 @@ const filteredPaymentRecords = computed(() => {
   )
 })
 
-const personDueTrainings = computed(() => {
+const personDueItems = computed(() => {
   if (!selectedPersonFilter.value) return []
-  return dueTrainings.value.filter((item) => matchesPersonFilter(item) && item.status === 'Overdue')
+  return dueItems.value.filter((item) => matchesPersonFilter(item) && item.status === 'Overdue')
 })
 
 const personPaymentRecords = computed(() => {
@@ -1001,7 +1032,7 @@ const personPaymentRecords = computed(() => {
 const overdueDebtors = computed(() => {
   const grouped = new Map()
 
-  dueTrainings.value
+  dueItems.value
     .filter((item) => item.status === 'Overdue')
     .forEach((item) => {
       const key = item.parent_id
@@ -1018,6 +1049,7 @@ const overdueDebtors = computed(() => {
           overdue_count: 0,
           total_amount: 0,
           max_overdue_days: 0,
+          oldest_deadline_at: item.deadline_at ?? null,
         })
       }
 
@@ -1025,6 +1057,10 @@ const overdueDebtors = computed(() => {
       debtor.overdue_count += 1
       debtor.total_amount += Number(item.amount ?? 0)
       debtor.max_overdue_days = Math.max(debtor.max_overdue_days, Number(item.overdue_days ?? 0))
+
+      if (item.deadline_at && (!debtor.oldest_deadline_at || new Date(item.deadline_at) < new Date(debtor.oldest_deadline_at))) {
+        debtor.oldest_deadline_at = item.deadline_at
+      }
     })
 
   return Array.from(grouped.values()).sort((left, right) => {
@@ -1036,10 +1072,10 @@ const overdueDebtors = computed(() => {
   })
 })
 
-const previewDueTrainings = computed(() => filteredDueTrainings.value.slice(0, 4))
-const previewRecentActivity = computed(() => filteredRecentActivity.value.slice(0, 4))
-const previewPaymentRecords = computed(() => filteredPaymentRecords.value.slice(0, 4))
-const previewOverdueDebtors = computed(() => overdueDebtors.value.slice(0, 4))
+const previewDueTrainings = computed(() => filteredDueTrainings.value.slice(0, previewItemsLimit))
+const previewRecentActivity = computed(() => filteredRecentActivity.value.slice(0, previewItemsLimit))
+const previewPaymentRecords = computed(() => filteredPaymentRecords.value.slice(0, previewItemsLimit))
+const previewOverdueDebtors = computed(() => overdueDebtors.value.slice(0, previewItemsLimit))
 
 const getStatusColor = (status) => {
   if (status === 'Paid') return 'green'
@@ -1111,9 +1147,38 @@ function formatDateTime(value) {
   })
 }
 
+function formatSinceDate(value) {
+  if (!value) return 'unknown date'
+
+  return new Date(value).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 function capitalize(value) {
   if (!value) return ''
   return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+function formatDueItemTitle(item) {
+  return item.type === 'month' ? (item.group || 'Monthly payment') : item.name
+}
+
+function formatDueItemMeta(item) {
+  return item.type === 'month'
+    ? `${item.month_label} · ${item.group}`
+    : `${item.date} · ${item.group}`
+}
+
+function formatDueItemSecondary(item) {
+  return item.type === 'month'
+    ? `${item.covered_sessions_count} trainings included`
+    : `Coach: ${item.trainer}`
+}
+
+function formatDueItemDeadlineLabel(item) {
+  return item.type === 'month' ? 'Monthly deadline' : 'Deadline'
 }
 
 function matchesPersonFilter(item) {

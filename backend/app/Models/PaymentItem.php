@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class PaymentItem extends Model
 {
@@ -23,5 +24,10 @@ class PaymentItem extends Model
     public function session(): BelongsTo
     {
         return $this->belongsTo(TrainingSession::class, 'session_id');
+    }
+
+    public function monthCoverage(): HasOne
+    {
+        return $this->hasOne(PaymentMonthCoverage::class);
     }
 }

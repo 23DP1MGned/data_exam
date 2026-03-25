@@ -12,12 +12,29 @@ class SessionTemplateService
 {
     public function ensureUpcomingSessionsGenerated(?Carbon $through = null): void
     {
+        $this->syncAutomaticSessionStatuses();
+
         $rangeEnd = ($through ?: now()->copy()->addMonth())->endOfDay();
 
         SessionTemplate::query()
             ->where('is_active', true)
             ->get()
             ->each(fn (SessionTemplate $template) => $this->syncTemplateSessions($template, now()->startOfDay(), $rangeEnd));
+    }
+
+    public function syncAutomaticSessionStatuses(): void
+    {
+        $now = now();
+
+        TrainingSession::query()
+            ->where('status', 'planned')
+            ->get()
+            ->filter(fn (TrainingSession $session) => $this->sessionHasFinished($session, $now))
+            ->each(function (TrainingSession $session) {
+                $session->update([
+                    'status' => 'completed',
+                ]);
+            });
     }
 
     public function createRecurring(array $validated): EloquentCollection
@@ -260,5 +277,26 @@ class SessionTemplateService
             && $date->gte(now()->startOfDay())
             && ! $session->attendanceRecords()->exists()
             && ! $session->paymentItems()->exists();
+    }
+
+    private function sessionHasFinished(TrainingSession $session, Carbon $now): bool
+    {
+        $sessionDate = $session->date instanceof Carbon
+            ? $session->date->copy()
+            : Carbon::parse($session->date);
+
+        $sessionEnd = $sessionDate->copy()->startOfDay();
+
+        if ($session->end_time) {
+            [$hours, $minutes, $seconds] = array_pad(explode(':', $session->end_time), 3, '0');
+            $sessionEnd->setTime((int) $hours, (int) $minutes, (int) $seconds);
+        } elseif ($session->start_time) {
+            [$hours, $minutes, $seconds] = array_pad(explode(':', $session->start_time), 3, '0');
+            $sessionEnd->setTime((int) $hours, (int) $minutes, (int) $seconds);
+        } else {
+            $sessionEnd->endOfDay();
+        }
+
+        return $now->gte($sessionEnd);
     }
 }

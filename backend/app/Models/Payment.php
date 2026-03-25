@@ -31,4 +31,9 @@ class Payment extends Model
     {
         return $this->hasMany(PaymentItem::class);
     }
+
+    public function monthCoverages(): HasMany
+    {
+        return $this->hasMany(PaymentMonthCoverage::class);
+    }
 }

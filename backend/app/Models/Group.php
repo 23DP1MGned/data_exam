@@ -44,6 +44,11 @@ class Group extends Model
         return $this->hasMany(SessionTemplate::class, 'group_id');
     }
 
+    public function monthCoverages(): HasMany
+    {
+        return $this->hasMany(PaymentMonthCoverage::class, 'group_id');
+    }
+
     public function getGroupCodeAttribute(): string
     {
         $number = (int) ($this->group_number ?? $this->id ?? 0);
