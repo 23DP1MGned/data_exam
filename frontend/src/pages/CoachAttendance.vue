@@ -525,7 +525,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedCoachGroup } from '../composables/useSelectedCoachGroup'
@@ -534,6 +534,7 @@ import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
 const router = useRouter()
+const route = useRoute()
 const darkMode = ref(false)
 const notificationsDialog = ref(false)
 const mobileMenuOpen = ref(false)
@@ -692,6 +693,21 @@ const filteredRosterStudents = computed(() => {
 
 const overviewStats = computed(() => {
   const markedRecords = attendanceRecords.value.length
+  const monthlySessionIds = new Set(
+    selectedGroupSessions.value
+      .filter((session) =>
+        session.status !== 'cancelled'
+        && (() => {
+          const sessionDate = new Date(`${session.date}T00:00:00`)
+          return sessionDate.getMonth() === currentMonth.value.getMonth()
+            && sessionDate.getFullYear() === currentMonth.value.getFullYear()
+        })()
+      )
+      .map((session) => session.id)
+  )
+  const markedRecordsThisMonth = attendanceRecords.value.filter((record) =>
+    monthlySessionIds.has(record.session_id)
+  ).length
   const presentRecords = attendanceRecords.value.filter((record) => record.status === 'present').length
   const averageAttendanceRate = markedRecords ? Math.round((presentRecords / markedRecords) * 100) : 0
   const sessionsThisMonth = selectedGroupSessions.value.filter((session) => {
@@ -700,12 +716,18 @@ const overviewStats = computed(() => {
       && sessionDate.getFullYear() === currentMonth.value.getFullYear()
       && session.status !== 'cancelled'
   }).length
+  const cancelledThisMonth = selectedGroupSessions.value.filter((session) => {
+    const sessionDate = new Date(`${session.date}T00:00:00`)
+    return sessionDate.getMonth() === currentMonth.value.getMonth()
+      && sessionDate.getFullYear() === currentMonth.value.getFullYear()
+      && session.status === 'cancelled'
+  }).length
 
   return [
     { label: 'Average attendance rate', value: `${averageAttendanceRate}%` },
-    { label: 'Sessions requiring attendance', value: String(requiresAttendanceSessions.value.length) },
+    { label: 'Cancelled this month', value: String(cancelledThisMonth) },
     { label: 'Sessions this month', value: String(sessionsThisMonth) },
-    { label: 'Marked attendance records', value: String(markedRecords) }
+    { label: 'Marked this month', value: String(markedRecordsThisMonth) }
   ]
 })
 
@@ -774,6 +796,7 @@ const calendarWeeks = computed(() => {
 
 onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
+  syncDateFromRoute()
   updateViewportState()
   window.addEventListener('resize', updateViewportState)
   initializePage()
@@ -792,6 +815,10 @@ watch(notificationsDialog, (value) => {
   if (value) {
     loadNotifications(true)
   }
+})
+
+watch(() => route.query.date, () => {
+  syncDateFromRoute()
 })
 
 watch(selectedCoachGroupId, async (value) => {
@@ -871,7 +898,8 @@ async function loadGroupAttendance(groupId) {
 
 function syncSelectedDate(groupSessions) {
   if (!groupSessions.length) {
-    selectedDate.value = todayIso()
+    selectedDate.value = requestedRouteDate() ?? todayIso()
+    currentMonth.value = new Date(`${selectedDate.value}T00:00:00`)
     selectedSessionId.value = null
     return
   }
@@ -882,6 +910,19 @@ function syncSelectedDate(groupSessions) {
   }
 
   currentMonth.value = new Date(`${selectedDate.value}T00:00:00`)
+}
+
+function syncDateFromRoute() {
+  const routeDate = requestedRouteDate()
+  if (!routeDate) return
+
+  selectedDate.value = routeDate
+  currentMonth.value = new Date(`${routeDate}T00:00:00`)
+}
+
+function requestedRouteDate() {
+  const value = typeof route.query.date === 'string' ? route.query.date : ''
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null
 }
 
 function ensureSessionDraft(session) {

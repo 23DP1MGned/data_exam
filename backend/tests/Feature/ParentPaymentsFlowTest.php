@@ -192,6 +192,12 @@ class ParentPaymentsFlowTest extends TestCase
         $this->assertSame(235.0, (float) $parent->fresh()->parentProfile->account_balance);
 
         $this->patchJson("/api/sessions/{$session->id}/status", [
+            'status' => 'planned',
+        ])->assertOk();
+
+        $this->assertSame(200.0, (float) $parent->fresh()->parentProfile->account_balance);
+
+        $this->patchJson("/api/sessions/{$session->id}/status", [
             'status' => 'cancelled',
         ])->assertOk();
 
@@ -252,10 +258,68 @@ class ParentPaymentsFlowTest extends TestCase
         $this->assertSame(260.0, (float) $parent->fresh()->parentProfile->account_balance);
 
         $this->patchJson("/api/sessions/{$firstSession->id}/status", [
+            'status' => 'planned',
+        ])->assertOk();
+
+        $this->assertSame(200.0, (float) $parent->fresh()->parentProfile->account_balance);
+
+        $this->patchJson("/api/sessions/{$firstSession->id}/status", [
             'status' => 'cancelled',
         ])->assertOk();
 
         $this->assertSame(260.0, (float) $parent->fresh()->parentProfile->account_balance);
+    }
+
+    public function test_recent_activity_includes_cancellation_credit_and_credit_reversal(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-28 12:00:00'));
+
+        [$parent, $child, $group] = $this->createLinkedFamily();
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+        ]);
+
+        $session = TrainingSession::query()->create([
+            'group_id' => $group->id,
+            'title' => 'Restore Credit Session',
+            'date' => '2026-04-03',
+            'start_time' => '18:00',
+            'end_time' => '19:00',
+            'price' => 35,
+            'status' => 'planned',
+        ]);
+
+        Sanctum::actingAs($parent);
+
+        $this->postJson('/api/payments', [
+            'child_id' => $child->id,
+            'method' => 'Card',
+            'items' => [
+                [
+                    'type' => 'session',
+                    'session_id' => $session->id,
+                ],
+            ],
+        ])->assertCreated();
+
+        Sanctum::actingAs($admin);
+
+        $this->patchJson("/api/sessions/{$session->id}/status", [
+            'status' => 'cancelled',
+        ])->assertOk();
+
+        $this->patchJson("/api/sessions/{$session->id}/status", [
+            'status' => 'planned',
+        ])->assertOk();
+
+        Sanctum::actingAs($parent);
+
+        $activity = $this->getJson('/api/payments')
+            ->assertOk()
+            ->json('data.recent_activity');
+
+        $this->assertTrue(collect($activity)->contains(fn ($item) => $item['status'] === 'Credited'));
+        $this->assertTrue(collect($activity)->contains(fn ($item) => $item['status'] === 'Credit reversed'));
     }
 
     public function test_parent_can_pay_single_session_for_child_added_only_to_one_session_date(): void

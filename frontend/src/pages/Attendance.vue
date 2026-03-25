@@ -319,6 +319,7 @@
                       :key="day.id"
                       class="calendar-cell"
                       :class="{
+                        'calendar-cell-selected': day.id === focusedDate,
                         'calendar-cell-muted': day.statusType === 'no-training',
                         'calendar-cell-empty': !day.hasSessions,
                         'calendar-cell-planned': day.statusType === 'planned',
@@ -409,7 +410,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedChild } from '../composables/useSelectedChild'
@@ -418,10 +419,12 @@ import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
 const router = useRouter()
+const route = useRoute()
 const darkMode = ref(false)
 const notificationsDialog = ref(false)
 const markDialog = ref(false)
 const currentMonth = ref(new Date())
+const focusedDate = ref(null)
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const darkModeStorageKey = 'app-dark-mode'
@@ -614,6 +617,7 @@ const currentMonthLabel = computed(() =>
 
 onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
+  syncDateFromRoute()
   updateViewportState()
   window.addEventListener('resize', updateViewportState)
   loadCalendarSessions()
@@ -639,11 +643,17 @@ watch(notificationsDialog, (value) => {
   }
 })
 
+watch(() => route.query.date, () => {
+  syncDateFromRoute()
+})
+
 watch(() => markForm.value.session_id, () => {
   markForm.value.user_id = selectedSessionChildren.value[0]?.id ?? null
 })
 
 watch(records, (value) => {
+  if (focusedDate.value) return
+
   const firstRecordDate = value[0]?.date
   if (firstRecordDate) {
     currentMonth.value = new Date(`${firstRecordDate}T00:00:00`)
@@ -651,6 +661,7 @@ watch(records, (value) => {
 }, { immediate: true })
 
 watch(scopedCalendarSessions, (value) => {
+  if (focusedDate.value) return
   if (records.value.length) return
 
   const firstSessionDate = value[0]?.date
@@ -707,8 +718,22 @@ function changeMonth(offset) {
   )
 }
 
+function syncDateFromRoute() {
+  const routeDate = requestedRouteDate()
+  focusedDate.value = routeDate
+
+  if (routeDate) {
+    currentMonth.value = new Date(`${routeDate}T00:00:00`)
+  }
+}
+
 function updateViewportState() {
   isCompactNav.value = window.innerWidth <= 1024
+}
+
+function requestedRouteDate() {
+  const value = typeof route.query.date === 'string' ? route.query.date : ''
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null
 }
 
 const sessionOptions = computed(() =>
@@ -1638,6 +1663,23 @@ function formatDateKey(date) {
 .calendar-cell > * {
   position: relative;
   z-index: 1;
+}
+
+.calendar-cell-selected::before {
+  opacity: 1;
+  background: linear-gradient(180deg, rgba(67, 120, 255, 0.14), rgba(67, 120, 255, 0.08));
+  border-color: rgba(67, 120, 255, 0.48);
+  box-shadow:
+    0 0 0 2px rgba(67, 120, 255, 0.14),
+    0 12px 24px rgba(67, 120, 255, 0.12);
+}
+
+.attendance-shell-dark .calendar-cell-selected::before {
+  background: linear-gradient(180deg, rgba(67, 120, 255, 0.2), rgba(67, 120, 255, 0.1));
+  border-color: rgba(103, 151, 255, 0.58);
+  box-shadow:
+    0 0 0 2px rgba(67, 120, 255, 0.18),
+    0 12px 24px rgba(12, 24, 56, 0.3);
 }
 
 .calendar-cell-empty {

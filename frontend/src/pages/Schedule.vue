@@ -213,16 +213,6 @@
                   <h1 class="schedule-title">Schedule</h1>
                   <div class="schedule-subtitle">Here you can view the training schedule for the upcoming month</div>
                 </div>
-
-                <v-btn
-                  v-if="canCreateTraining"
-                  color="primary"
-                  class="create-btn desktop-only-btn"
-                  prepend-icon="mdi-plus"
-                  @click="openCreate"
-                >
-                  Create training
-                </v-btn>
               </div>
 
               <div class="toolbar-row">
@@ -237,13 +227,6 @@
                   >
                     {{ item.label }}
                   </button>
-                </div>
-
-                <div class="toolbar-actions">
-                  <v-btn variant="outlined" class="toolbar-btn" @click="filterDialog = true">
-                    <v-icon start size="18">mdi-tune-variant</v-icon>
-                    Filters
-                  </v-btn>
                 </div>
               </div>
 
@@ -296,18 +279,10 @@
                           Cancelled
                         </v-chip>
                       </div>
-
-                      <template v-if="expandedId === training.id && canManageTrainingActions">
-                        <div class="meta-label section-gap">Age</div>
-                        <div class="course-subtitle">{{ training.description }}</div>
-
-                        <div class="meta-label section-gap">Group</div>
-                        <div class="meeting-link">{{ training.group }}</div>
-                      </template>
                     </div>
 
                     <div
-                      v-if="expandedId === training.id && !canManageTrainingActions"
+                      v-if="expandedId === training.id"
                       class="schedule-detail-row"
                     >
                       <div class="schedule-detail-item">
@@ -339,11 +314,14 @@
                     <div class="teacher-block">
                       <div class="teacher-summary">
                         <v-avatar size="46" class="teacher-avatar">
-                          <img :src="training.avatar" :alt="training.trainer">
+                          <img
+                            :src="isCoach ? training.groupAvatar : training.avatar"
+                            :alt="isCoach ? training.group : training.trainer"
+                          >
                         </v-avatar>
                         <div>
-                          <div class="meta-label">Trainer</div>
-                          <div class="teacher-name">{{ training.trainer }}</div>
+                          <div class="meta-label">{{ isCoach ? 'Students' : 'Trainer' }}</div>
+                          <div class="teacher-name">{{ isCoach ? training.students.length : training.trainer }}</div>
                         </div>
                       </div>
                     </div>
@@ -376,18 +354,25 @@
                     </div>
 
                     <div v-if="canManageTrainingActions" class="action-row">
-                      <v-btn variant="outlined" color="error" class="action-btn" @click="cancelTraining(training)">
+                      <v-btn
+                        v-if="!isCancelledTraining(training.status)"
+                        variant="outlined"
+                        color="error"
+                        class="action-btn"
+                        @click="cancelTraining(training)"
+                      >
                         Cancel
                       </v-btn>
                       <v-btn
+                        v-else
                         variant="outlined"
                         color="primary"
                         class="action-btn"
-                        @click="openEdit(training)"
+                        @click="restoreTraining(training)"
                       >
-                        Edit
+                        Restore
                       </v-btn>
-                      <v-btn color="primary" class="action-btn" to="/attendance">
+                      <v-btn color="primary" class="action-btn" :to="attendanceRouteFor(training)">
                         Attendance
                       </v-btn>
                     </div>
@@ -431,111 +416,6 @@
           </section>
         </div>
 
-        <v-dialog v-model="dialog" max-width="560">
-          <v-card class="dialog-card">
-            <v-card-title>
-              {{ isEditing ? 'Edit Training' : 'Create Training' }}
-            </v-card-title>
-
-            <v-card-text>
-              <v-select
-                v-model="newTraining.group_id"
-                label="Group"
-                :items="groupOptions"
-                item-title="section"
-                item-value="id"
-              />
-              <v-text-field label="Training title" v-model="newTraining.title" />
-              <v-text-field label="Date (YYYY-MM-DD)" v-model="newTraining.date" />
-              <v-text-field label="Start time" v-model="newTraining.start" />
-              <v-text-field label="End time" v-model="newTraining.end" />
-              <v-text-field label="Trainer" v-model="newTraining.trainer" readonly />
-              <v-textarea label="Description" v-model="newTraining.description" readonly />
-            </v-card-text>
-
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn @click="dialog = false">Cancel</v-btn>
-              <v-btn color="primary" @click="saveTraining">
-                {{ isEditing ? 'Update' : 'Save' }}
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-
-        <v-dialog v-model="filterDialog" max-width="520">
-          <v-card class="dialog-card filter-dialog-card">
-            <div class="filter-dialog-header">
-              <div>
-                <div class="filter-dialog-title">Filters</div>
-                <div class="filter-dialog-subtitle">
-                  Sort trainings by time or title without leaving the schedule view.
-                </div>
-              </div>
-
-              <v-btn icon variant="text" @click="filterDialog = false">
-                <v-icon>mdi-close</v-icon>
-              </v-btn>
-            </div>
-
-            <div class="filter-options">
-              <button
-                type="button"
-                class="filter-option"
-                :class="{ 'filter-option-active': selectedSort === 'time' }"
-                @click="selectedSort = 'time'"
-              >
-                <span class="filter-option-icon">
-                  <v-icon size="18">mdi-clock-outline</v-icon>
-                </span>
-                <span>
-                  <span class="filter-option-title">By time</span>
-                  <span class="filter-option-text">Show trainings from the earliest start time.</span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                class="filter-option"
-                :class="{ 'filter-option-active': selectedSort === 'az' }"
-                @click="selectedSort = 'az'"
-              >
-                <span class="filter-option-icon">
-                  <v-icon size="18">mdi-sort-alphabetical-ascending</v-icon>
-                </span>
-                <span>
-                  <span class="filter-option-title">A to Z</span>
-                  <span class="filter-option-text">Order trainings alphabetically from A to Z.</span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                class="filter-option"
-                :class="{ 'filter-option-active': selectedSort === 'za' }"
-                @click="selectedSort = 'za'"
-              >
-                <span class="filter-option-icon">
-                  <v-icon size="18">mdi-sort-alphabetical-descending</v-icon>
-                </span>
-                <span>
-                  <span class="filter-option-title">Z to A</span>
-                  <span class="filter-option-text">Order trainings alphabetically from Z to A.</span>
-                </span>
-              </button>
-            </div>
-
-            <div class="filter-dialog-actions">
-              <v-btn variant="outlined" class="reset-filter-btn" @click="resetSort">
-                Reset
-              </v-btn>
-              <v-btn color="primary" class="apply-filter-btn" @click="applySelectedSort">
-                Apply filters
-              </v-btn>
-            </div>
-          </v-card>
-        </v-dialog>
-
         <AppNotificationsDialog
           v-model="notificationsDialog"
           :dark-mode="darkMode"
@@ -554,20 +434,15 @@ import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedChild } from '../composables/useSelectedChild'
-import { groupsApi, sessionsApi } from '../services/api'
+import { sessionsApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
 const router = useRouter()
 const search = ref('')
 const tab = ref('upcoming')
-const dialog = ref(false)
-const filterDialog = ref(false)
 const notificationsDialog = ref(false)
-const isEditing = ref(false)
-const editingId = ref(null)
 const expandedId = ref(1)
-const selectedSort = ref('time')
 const darkMode = ref(false)
 const currentPage = ref(1)
 const pageSize = 6
@@ -592,13 +467,12 @@ const {
 } = useNotifications()
 const { selectedChildId, syncSelectedChild } = useSelectedChild()
 const trainings = ref([])
-const groupOptions = ref([])
 const profileName = computed(() => {
   if (!user.value) return 'SportSystem User'
   return `${user.value.name} ${user.value.surname}`.trim()
 })
 const isParent = computed(() => user.value?.role === 'parent')
-const canCreateTraining = computed(() => ['admin', 'coach'].includes(user.value?.role ?? ''))
+const isCoach = computed(() => user.value?.role === 'coach')
 const canManageTrainingActions = computed(() => ['admin', 'coach'].includes(user.value?.role ?? ''))
 const navItems = computed(() => [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
@@ -611,16 +485,6 @@ const navItems = computed(() => [
 ])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
-
-const newTraining = ref({
-  group_id: null,
-  title: '',
-  date: '',
-  start: '',
-  end: '',
-  trainer: '',
-  description: ''
-})
 
 const today = computed(() => {
   const now = new Date()
@@ -706,7 +570,7 @@ const pagedGroupedTrainings = computed(() => {
 
 const totalPages = computed(() => Math.max(1, Math.ceil(sortedFilteredTrainings.value.length / pageSize)))
 
-watch([tab, search, selectedSort], () => {
+watch([tab, search], () => {
   currentPage.value = 1
 })
 
@@ -722,7 +586,6 @@ onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
   updateViewportState()
   window.addEventListener('resize', updateViewportState)
-  loadGroups()
   loadSessions()
   loadNotifications()
 })
@@ -741,52 +604,8 @@ watch(notificationsDialog, (value) => {
   }
 })
 
-watch(() => newTraining.value.group_id, () => {
-  syncTrainingGroupDetails()
-})
-
 function toggleExpanded(id) {
   expandedId.value = expandedId.value === id ? null : id
-}
-
-function openCreate() {
-  if (!canCreateTraining.value) return
-
-  isEditing.value = false
-  editingId.value = null
-  newTraining.value = {
-    group_id: groupOptions.value[0]?.id ?? null,
-    title: '',
-    date: '',
-    start: '',
-    end: '',
-    trainer: '',
-    description: '',
-    group: ''
-  }
-  syncTrainingGroupDetails()
-  dialog.value = true
-}
-
-function openEdit(training) {
-  isEditing.value = true
-  editingId.value = training.id
-  newTraining.value = {
-    group_id: training.group_id,
-    title: training.title,
-    date: training.date,
-    start: training.start,
-    end: training.end,
-    trainer: training.trainer,
-    description: training.description,
-    group: training.group
-  }
-  dialog.value = true
-}
-
-async function loadGroups() {
-  const response = await groupsApi.list()
-  groupOptions.value = response
 }
 
 async function loadSessions() {
@@ -804,26 +623,6 @@ async function loadSessions() {
   } finally {
     loading.value = false
   }
-}
-
-async function saveTraining() {
-  const payload = {
-    group_id: newTraining.value.group_id,
-    title: newTraining.value.title,
-    date: newTraining.value.date,
-    start_time: newTraining.value.start,
-    end_time: newTraining.value.end,
-    status: new Date(`${newTraining.value.date}T${newTraining.value.end}:00`).getTime() < Date.now() ? 'completed' : 'planned'
-  }
-
-  if (isEditing.value && editingId.value) {
-    await sessionsApi.update(editingId.value, payload)
-  } else {
-    await sessionsApi.create(payload)
-  }
-
-  await loadSessions()
-  dialog.value = false
 }
 
 function parseTime(value) {
@@ -887,49 +686,15 @@ function isCancelledTraining(status) {
   return String(status || '').toLowerCase() === 'cancelled'
 }
 
-function sortAZ() {
-  trainings.value.sort((a, b) => a.title.localeCompare(b.title))
-}
-
-function sortZA() {
-  trainings.value.sort((a, b) => b.title.localeCompare(a.title))
-}
-
-function sortTime() {
-  trainings.value.sort((a, b) => parseTime(a.start) - parseTime(b.start))
-}
-
-function applySelectedSort() {
-  if (selectedSort.value === 'time') sortTime()
-  if (selectedSort.value === 'az') sortAZ()
-  if (selectedSort.value === 'za') sortZA()
-
-  filterDialog.value = false
-}
-
-function resetSort() {
-  selectedSort.value = 'time'
-  sortTime()
-  filterDialog.value = false
-}
-
 function updateViewportState() {
   isCompactNav.value = window.innerWidth <= 1024
-}
-
-function syncTrainingGroupDetails() {
-  const selectedGroup = groupOptions.value.find((group) => group.id === newTraining.value.group_id)
-  if (!selectedGroup) return
-
-  newTraining.value.trainer = selectedGroup.trainer
-  newTraining.value.description = selectedGroup.age_category || 'Training session'
-  newTraining.value.group = selectedGroup.section
 }
 
 function withTrainingAvatars(training) {
   return {
     ...training,
     avatar: avatarFor(`trainer-${training.trainer}`, training.trainer),
+    groupAvatar: avatarFor(`group-${training.group}`, training.group),
     students: (training.students || []).map((student) => ({
       ...student,
       avatar: avatarFor(`student-${student.name}`, student.name)
@@ -938,8 +703,31 @@ function withTrainingAvatars(training) {
 }
 
 async function cancelTraining(training) {
-  await sessionsApi.remove(training.id)
+  if (isCancelledTraining(training.status)) return
+
+  const confirmed = window.confirm(`Cancel ${training.title}?`)
+  if (!confirmed) return
+
+  await sessionsApi.updateStatus(training.id, { status: 'cancelled' })
   await loadSessions()
+}
+
+async function restoreTraining(training) {
+  if (!isCancelledTraining(training.status)) return
+
+  const restoredStatus = isPastTraining(training) ? 'completed' : 'planned'
+  const confirmed = window.confirm(`Restore ${training.title}?`)
+  if (!confirmed) return
+
+  await sessionsApi.updateStatus(training.id, { status: restoredStatus })
+  await loadSessions()
+}
+
+function attendanceRouteFor(training) {
+  return {
+    path: user.value?.role === 'coach' ? '/coach-attendance' : '/attendance',
+    query: training?.date ? { date: training.date } : undefined
+  }
 }
 
 async function handleNotificationClick(item) {

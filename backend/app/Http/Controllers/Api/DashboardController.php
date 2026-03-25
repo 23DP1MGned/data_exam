@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\TrainingSession;
 use App\Models\User;
 use App\Services\SessionTemplateService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -121,19 +122,36 @@ class DashboardController extends Controller
         $attendanceRate = $attendanceRecords->count() > 0
             ? round(($attendanceRecords->where('status', 'present')->count() / $attendanceRecords->count()) * 100).'%'
             : '0%';
+        $attendanceRateLabel = $user->role === User::ROLE_COACH
+            ? 'Attendance across my groups'
+            : 'Attendance rate';
 
-        $upcoming = $sessions->sortBy(fn ($session) => $session->date->format('Y-m-d').' '.$session->start_time)->take(5);
-        $roleSpecificOverviewStat = $user->role === User::ROLE_CHILD
-            ? ['label' => 'My groups', 'value' => $user->childGroups()->count()]
-            : ['label' => 'Pending payments', 'value' => Payment::query()->where('status', 'pending')->count()];
+        $sessionStartsAt = fn (TrainingSession $session) => Carbon::parse($session->date->toDateString().' '.$session->start_time);
+        $upcomingSessions = $sessions
+            ->filter(fn (TrainingSession $session) => $sessionStartsAt($session)->greaterThanOrEqualTo(now()))
+            ->sortBy(fn (TrainingSession $session) => $sessionStartsAt($session)->timestamp)
+            ->values();
+        $coachUpcomingWindowEnd = now()->copy()->addDays(7)->endOfDay();
+        $upcoming = $user->role === User::ROLE_COACH
+            ? $upcomingSessions
+                ->filter(fn (TrainingSession $session) => $sessionStartsAt($session)->lessThanOrEqualTo($coachUpcomingWindowEnd))
+                ->values()
+            : $upcomingSessions->take(5);
+        $roleSpecificOverviewStat = match ($user->role) {
+            User::ROLE_COACH => ['label' => 'My groups', 'value' => Group::query()->where('coach_id', $user->id)->count()],
+            User::ROLE_CHILD => ['label' => 'My groups', 'value' => $user->childGroups()->count()],
+            default => ['label' => 'Pending payments', 'value' => Payment::query()->where('status', 'pending')->count()],
+        };
 
         return $this->success([
             'mode' => 'standard',
             'overview_stats' => [
-                ['label' => 'Trainings in 3 days', 'value' => $sessions->whereBetween('date', [now()->startOfDay(), now()->copy()->addDays(2)->endOfDay()])->count()],
+                ['label' => 'Trainings in 3 days', 'value' => $upcomingSessions->filter(
+                    fn (TrainingSession $session) => $sessionStartsAt($session)->lessThanOrEqualTo(now()->copy()->addDays(2)->endOfDay())
+                )->count()],
                 ['label' => 'Next training countdown', 'value' => $upcoming->isNotEmpty() ? 'Upcoming' : 'No upcoming'],
                 $roleSpecificOverviewStat,
-                ['label' => 'Attendance rate', 'value' => $attendanceRate],
+                ['label' => $attendanceRateLabel, 'value' => $attendanceRate],
             ],
             'next_trainings' => $upcoming->map(fn ($session) => [
                 'id' => $session->id,
@@ -141,6 +159,7 @@ class DashboardController extends Controller
                 'group_code' => $session->group->group_code,
                 'group' => $session->group->display_name,
                 'trainer' => trim(($session->group->coach->name ?? '').' '.($session->group->coach->surname ?? '')),
+                'students_count' => $session->effectiveChildren()->count(),
                 'date' => $session->date->toDateString(),
                 'start' => substr($session->start_time, 0, 5),
                 'end' => substr($session->end_time, 0, 5),

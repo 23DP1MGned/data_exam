@@ -135,6 +135,14 @@ class SessionController extends Controller
             'status' => ['required', 'in:planned,completed,cancelled'],
         ]);
 
+        $previousStatus = $session->status;
+
+        if ($previousStatus === 'cancelled' && $validated['status'] !== 'cancelled') {
+            $this->paymentService->reverseCancelledSessionCredit(
+                $session->fresh()->load(['group.children.parents', 'extraChildren.parents', 'paymentItems.payment.parent'])
+            );
+        }
+
         $session->update([
             'status' => $validated['status'],
         ]);

@@ -203,6 +203,13 @@
                   <h1 class="groups-title">My Groups</h1>
                   <div class="groups-subtitle">Groups you manage and their key training details</div>
                 </div>
+
+                <div v-if="isCoach" class="coach-header-stats">
+                  <article v-for="item in coachOverviewStats" :key="item.label" class="coach-header-stat">
+                    <div class="coach-header-stat-label">{{ item.label }}</div>
+                    <div class="coach-header-stat-value">{{ item.value }}</div>
+                  </article>
+                </div>
               </div>
 
               <div class="toolbar-row">
@@ -230,7 +237,7 @@
                     <div>
                       <div class="section">{{ group.section }}</div>
                       <div class="trainer">
-                        {{ isChild ? `Group #${group.group_number}` : `Group #${group.group_number} • ${group.trainer}` }}
+                        {{ groupCardSubtitle(group) }}
                       </div>
                     </div>
                   </div>
@@ -247,8 +254,8 @@
                     </div>
 
                     <div class="info-item">
-                      <div class="label">Time</div>
-                      <div class="value">{{ group.time }}</div>
+                      <div class="label">Completed this month</div>
+                      <div class="value">{{ groupCompletedThisMonth(group.id) }}</div>
                     </div>
 
                     <div class="info-item">
@@ -263,9 +270,9 @@
                     <div class="label">Attendance</div>
                     <div class="attendance-row">
                       <div class="attendance-bar">
-                        <div class="attendance-fill" :style="{ width: `${group.attendance}%` }"></div>
+                        <div class="attendance-fill" :style="{ width: `${groupAttendanceRate(group)}%` }"></div>
                       </div>
-                      <div class="attendance-value">{{ group.attendance }}%</div>
+                      <div class="attendance-value">{{ groupAttendanceRate(group) }}%</div>
                     </div>
                   </div>
                 </article>
@@ -350,7 +357,7 @@ import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedChild } from '../composables/useSelectedChild'
-import { groupsApi } from '../services/api'
+import { groupsApi, sessionsApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
@@ -376,12 +383,14 @@ const {
 } = useNotifications()
 const { selectedChildId, syncSelectedChild } = useSelectedChild()
 const groups = ref([])
+const sessions = ref([])
 const profileName = computed(() => {
   if (!user.value) return 'SportSystem User'
   return `${user.value.name} ${user.value.surname}`.trim()
 })
 const isChild = computed(() => user.value?.role === 'child')
 const isParent = computed(() => user.value?.role === 'parent')
+const isCoach = computed(() => user.value?.role === 'coach')
 const navItems = computed(() => [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
   { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
@@ -402,6 +411,48 @@ const filteredGroups = computed(() =>
     )
   )
 )
+
+const monthlyGroupProgressById = computed(() => {
+  const now = new Date()
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
+
+  return sessions.value.reduce((map, session) => {
+    const sessionDate = new Date(`${session.date}T00:00:00`)
+    if (
+      sessionDate.getMonth() !== currentMonth
+      || sessionDate.getFullYear() !== currentYear
+      || session.status === 'cancelled'
+    ) {
+      return map
+    }
+
+    if (!map[session.group_id]) {
+      map[session.group_id] = {
+        completed: 0,
+        total: 0
+      }
+    }
+
+    map[session.group_id].total += 1
+
+    if (session.status === 'completed') {
+      map[session.group_id].completed += 1
+    }
+
+    return map
+  }, {})
+})
+
+const coachOverviewStats = computed(() => {
+  const groupCount = groups.value.length
+  const totalStudents = groups.value.reduce((sum, group) => sum + Number(group.students || 0), 0)
+
+  return [
+    { label: 'My groups', value: String(groupCount) },
+    { label: 'Students total', value: String(totalStudents) }
+  ]
+})
 
 onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
@@ -441,8 +492,13 @@ async function loadGroups() {
   loading.value = true
 
   try {
-    const response = await groupsApi.list()
-    groups.value = response.map(withGroupAvatar)
+    const [groupsResponse, sessionsResponse] = await Promise.all([
+      groupsApi.list(),
+      sessionsApi.list()
+    ])
+
+    groups.value = groupsResponse.map(withGroupAvatar)
+    sessions.value = sessionsResponse
     if (isParent.value) {
       syncSelectedChild(groups.value.flatMap((group) => group.child_ids || []), { preserveExisting: true })
     }
@@ -482,6 +538,29 @@ function withGroupAvatar(group) {
     ...group,
     avatar: avatarFor(`group-${group.section}-${group.trainer}`, group.section)
   }
+}
+
+function groupCompletedThisMonth(groupId) {
+  const stats = monthlyGroupProgressById.value[groupId]
+  if (!stats) return '0/0'
+  return `${stats.completed}/${stats.total}`
+}
+
+function groupAttendanceRate(group) {
+  if (isParent.value && selectedChildId.value) {
+    const personalRate = group.child_attendance_rates?.[selectedChildId.value]
+    return typeof personalRate === 'number' ? personalRate : 0
+  }
+
+  return group.attendance ?? 0
+}
+
+function groupCardSubtitle(group) {
+  if (isChild.value || isCoach.value) {
+    return `Group #${group.group_number}`
+  }
+
+  return `Group #${group.group_number} • ${group.trainer}`
 }
 
 async function handleNotificationClick(item) {
@@ -1031,6 +1110,45 @@ async function handleMobileLogout() {
   color: #8fa3c1;
 }
 
+.coach-header-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.coach-header-stat {
+  min-width: 132px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(229, 236, 246, 0.94);
+}
+
+.groups-shell-dark .coach-header-stat {
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
+.coach-header-stat-label {
+  font-size: 0.82rem;
+  color: #66748a;
+}
+
+.groups-shell-dark .coach-header-stat-label {
+  color: #8fa3c1;
+}
+
+.coach-header-stat-value {
+  margin-top: 6px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #121826;
+}
+
+.groups-shell-dark .coach-header-stat-value {
+  color: #f3f7ff;
+}
+
 .create-btn {
   min-height: 54px;
   padding: 0 24px;
@@ -1513,6 +1631,15 @@ async function handleMobileLogout() {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .coach-header-stats {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .coach-header-stat {
+    flex: 1;
+  }
+
   .toolbar-actions,
   .toolbar-btn {
     width: 100%;
@@ -1631,6 +1758,15 @@ async function handleMobileLogout() {
 
   .groups-subtitle {
     font-size: 0.92rem;
+  }
+
+  .coach-header-stats {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .coach-header-stat {
+    width: 100%;
   }
 
   .group-card {

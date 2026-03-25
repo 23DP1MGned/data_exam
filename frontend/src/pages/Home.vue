@@ -302,7 +302,7 @@
               </div>
 
               <div class="overview-stats-grid">
-                <article v-for="item in overviewStats" :key="item.label" class="overview-stat-card">
+                <article v-for="item in displayedOverviewStats" :key="item.label" class="overview-stat-card">
                   <div class="summary-label">{{ item.label }}</div>
                   <div class="summary-value">{{ item.value }}</div>
                 </article>
@@ -416,7 +416,7 @@
               <div v-else class="overview-grid">
                 <section class="overview-card">
                   <div class="overview-card-header">
-                    <div class="list-title">Next 3 Days Trainings</div>
+                    <div class="list-title">{{ trainingsBlockTitle }}</div>
                     <v-btn
                       v-if="!isParent"
                       variant="text"
@@ -430,21 +430,21 @@
 
                   <div class="list-wrap">
                     <article
-                      v-for="training in nextThreeDaysTrainings.slice(0, 5)"
+                      v-for="training in homeTrainings.slice(0, 5)"
                       :key="training.id"
                       class="overview-item"
                     >
                       <div>
                         <div class="payment-name">{{ training.title }}</div>
-                        <div class="payment-meta">{{ training.trainer }} • {{ formatOverviewDate(training.date) }}</div>
+                        <div class="payment-meta">{{ trainingMeta(training) }}</div>
                       </div>
                       <div class="payment-side">
                         <div class="payment-amount">{{ training.start }} - {{ training.end }}</div>
                       </div>
                     </article>
 
-                    <div v-if="!nextThreeDaysTrainings.length" class="empty-state">
-                      No trainings scheduled for the next three days.
+                    <div v-if="!homeTrainings.length" class="empty-state">
+                      {{ trainingsBlockEmptyState }}
                     </div>
                   </div>
                 </section>
@@ -665,6 +665,7 @@ const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
 const isAdmin = computed(() => (user.value?.role === 'admin') || dashboardMode.value === 'admin')
 const isParent = computed(() => user.value?.role === 'parent')
+const isCoach = computed(() => user.value?.role === 'coach')
 const selectedChild = computed(() =>
   linkedChildren.value.find((child) => child.id === selectedChildId.value) ?? linkedChildren.value[0] ?? null
 )
@@ -677,15 +678,87 @@ const nextThreeDaysTrainings = computed(() => {
   )
 })
 
+const homeTrainings = computed(() => {
+  if (!isCoach.value) return nextThreeDaysTrainings.value
+
+  const limitTimestamp = countdownNow.value + (7 * 24 * 60 * 60 * 1000)
+
+  return trainings.value.filter((training) => {
+    const startAt = trainingStartTimestamp(training)
+    return Number.isFinite(startAt) && startAt <= limitTimestamp
+  })
+})
+
+const trainingsBlockTitle = computed(() =>
+  isCoach.value ? 'My next trainings' : 'Next 3 Days Trainings'
+)
+
+const trainingsBlockEmptyState = computed(() =>
+  isCoach.value
+    ? 'No trainings scheduled for the next seven days.'
+    : 'No trainings scheduled for the next three days.'
+)
+
 const notifications = computed(() => notificationItems.value.slice(0, 3))
 const filteredAdminGroups = computed(() => adminGroups.value.slice(0, 5))
 const filteredAdminSessions = computed(() => adminSessions.value.slice(0, 5))
 const filteredAdminPayments = computed(() => adminPayments.value.slice(0, 5))
+const countdownNow = ref(Date.now())
+let countdownTimer = null
+
+const countdownTrainings = computed(() => {
+  if (!isParent.value || !selectedChild.value) return trainings.value
+
+  return trainings.value.filter((training) =>
+    Array.isArray(training.child_ids) && training.child_ids.includes(selectedChild.value.id)
+  )
+})
+
+const nextTrainingCountdown = computed(() => {
+  const nextTraining = countdownTrainings.value
+    .map((training) => ({
+      ...training,
+      startAt: trainingStartTimestamp(training)
+    }))
+    .filter((training) => Number.isFinite(training.startAt) && training.startAt >= countdownNow.value)
+    .sort((left, right) => left.startAt - right.startAt)[0]
+
+  if (!nextTraining) return 'No upcoming'
+
+  const diffMs = nextTraining.startAt - countdownNow.value
+  const weekMs = 7 * 24 * 60 * 60 * 1000
+
+  if (diffMs > weekMs) return 'More than a week'
+
+  const totalMinutes = Math.max(0, Math.floor(diffMs / 60000))
+  const totalHours = Math.floor(totalMinutes / 60)
+  const days = Math.floor(totalHours / 24)
+  const hours = totalHours % 24
+  const minutes = totalMinutes % 60
+
+  if (days > 0) return `${days}d ${hours}h`
+  if (totalHours > 0) return `${totalHours}h ${minutes}m`
+  if (minutes > 0) return `${minutes}m`
+
+  return 'Now'
+})
+
+const displayedOverviewStats = computed(() =>
+  overviewStats.value.map((item) =>
+    item.label === 'Next training countdown'
+      ? { ...item, value: nextTrainingCountdown.value }
+      : item
+  )
+)
 
 onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
   updateViewportState()
   window.addEventListener('resize', updateViewportState)
+  countdownNow.value = Date.now()
+  countdownTimer = window.setInterval(() => {
+    countdownNow.value = Date.now()
+  }, 60000)
   loadDashboard()
   loadNotifications()
 })
@@ -700,6 +773,10 @@ watch(isCompactNav, (value) => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateViewportState)
+  if (countdownTimer) {
+    window.clearInterval(countdownTimer)
+    countdownTimer = null
+  }
 })
 
 watch(notificationsDialog, (value) => {
@@ -751,11 +828,27 @@ function parseTime(value) {
   return new Date(`1970-01-01 ${value}`).getTime()
 }
 
+function trainingStartTimestamp(training) {
+  return new Date(`${training.date}T${training.start}:00`).getTime()
+}
+
 function formatOverviewDate(value) {
   return new Date(`${value}T00:00:00`).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric'
   })
+}
+
+function trainingMeta(training) {
+  const date = formatOverviewDate(training.date)
+
+  if (isCoach.value) {
+    const count = Number(training.students_count ?? 0)
+    const label = count === 1 ? 'student' : 'students'
+    return `${count} ${label} • ${date}`
+  }
+
+  return `${training.trainer} • ${date}`
 }
 
 function formatCurrency(value) {

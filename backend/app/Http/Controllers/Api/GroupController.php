@@ -14,7 +14,7 @@ class GroupController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $query = Group::query()->with(['coach', 'children', 'sessions']);
+        $query = Group::query()->with(['coach', 'children', 'sessions.attendanceRecords']);
 
         if ($user->role === User::ROLE_COACH) {
             $query->where('coach_id', $user->id);
@@ -25,7 +25,7 @@ class GroupController extends Controller
             $query->whereHas('children', fn ($builder) => $builder->where('users.id', $user->id));
         }
 
-        return $this->success($query->get()->map(fn (Group $group) => $this->formatGroup($group))->values());
+        return $this->success($query->get()->map(fn (Group $group) => $this->formatGroup($group, $user))->values());
     }
 
     public function store(StoreGroupRequest $request)
@@ -50,7 +50,7 @@ class GroupController extends Controller
 
         $group->children()->sync($request->validated('child_ids', []));
 
-        return $this->success($this->formatGroup($group->load(['coach', 'children', 'sessions'])), 'Group created.', 201);
+        return $this->success($this->formatGroup($group->load(['coach', 'children', 'sessions.attendanceRecords']), $request->user()), 'Group created.', 201);
     }
 
     public function show(Request $request, Group $group)
@@ -59,7 +59,7 @@ class GroupController extends Controller
             return $this->error('Forbidden.', [], 403);
         }
 
-        return $this->success($this->formatGroup($group->load(['coach', 'children', 'sessions'])));
+        return $this->success($this->formatGroup($group->load(['coach', 'children', 'sessions.attendanceRecords']), $request->user()));
     }
 
     public function update(UpdateGroupRequest $request, Group $group)
@@ -87,7 +87,7 @@ class GroupController extends Controller
             $group->children()->sync($payload['child_ids'] ?? []);
         }
 
-        return $this->success($this->formatGroup($group->load(['coach', 'children', 'sessions'])), 'Group updated.');
+        return $this->success($this->formatGroup($group->load(['coach', 'children', 'sessions.attendanceRecords']), $request->user()), 'Group updated.');
     }
 
     public function destroy(Request $request, Group $group)
@@ -124,13 +124,25 @@ class GroupController extends Controller
         return ((int) Group::query()->max('group_number')) + 1;
     }
 
-    private function formatGroup(Group $group): array
+    private function formatGroup(Group $group, User $viewer): array
     {
         $firstSession = $group->sessions->sortBy('date')->first();
-        $attended = $group->sessions->flatMap->attendanceRecords;
-        $attendanceRate = $attended->count()
-            ? (int) round(($attended->where('status', 'present')->count() / $attended->count()) * 100)
+        $groupAttendanceRecords = $group->sessions->flatMap->attendanceRecords;
+        $groupAttendanceRate = $groupAttendanceRecords->count()
+            ? (int) round(($groupAttendanceRecords->where('status', 'present')->count() / $groupAttendanceRecords->count()) * 100)
             : 0;
+        $childAttendanceRates = $group->children
+            ->mapWithKeys(function (User $child) use ($groupAttendanceRecords) {
+                $childRecords = $groupAttendanceRecords->where('user_id', $child->id);
+                $rate = $childRecords->count()
+                    ? (int) round(($childRecords->where('status', 'present')->count() / $childRecords->count()) * 100)
+                    : 0;
+
+                return [$child->id => $rate];
+            });
+        $attendanceRate = $viewer->role === User::ROLE_CHILD
+            ? $childAttendanceRates->get($viewer->id, 0)
+            : $groupAttendanceRate;
 
         return [
             'id' => $group->id,
@@ -144,6 +156,7 @@ class GroupController extends Controller
             'time' => $group->default_time ?: ($firstSession ? substr($firstSession->start_time, 0, 5) : null),
             'students' => $group->children->count(),
             'attendance' => $attendanceRate,
+            'child_attendance_rates' => $childAttendanceRates,
             'price' => (float) $group->price,
             'child_ids' => $group->children->pluck('id')->values(),
         ];

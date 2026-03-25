@@ -1254,6 +1254,8 @@ const payDialogTotal = computed(() =>
 const getStatusColor = (status) => {
   if (status === 'Paid') return 'green'
   if (status === 'Refunded') return 'blue-grey'
+  if (status === 'Credited') return 'teal'
+  if (status === 'Credit reversed') return 'deep-orange'
   if (status === 'Pending') return 'orange'
   if (status === 'Overdue') return 'red'
   if (status === 'Failed') return 'red'

@@ -137,10 +137,12 @@ class PaymentService
             $session->loadMissing(['group.children.parents', 'extraChildren.parents', 'paymentItems.payment', 'paymentItems.payment.parent']);
 
             foreach ($session->effectiveChildren() as $child) {
-                if (SessionCancellationCredit::query()
+                $existingCredit = SessionCancellationCredit::query()
                     ->where('session_id', $session->id)
                     ->where('child_id', $child->id)
-                    ->exists()) {
+                    ->first();
+
+                if ($existingCredit && ! $existingCredit->reversed_at) {
                     continue;
                 }
 
@@ -213,6 +215,55 @@ class PaymentService
                     paymentItem: $coverage->paymentItem,
                     monthCoverage: $coverage,
                 );
+            }
+        });
+    }
+
+    public function reverseCancelledSessionCredit(TrainingSession $session): void
+    {
+        DB::transaction(function () use ($session) {
+            $credits = SessionCancellationCredit::query()
+                ->with('parent.parentProfile')
+                ->where('session_id', $session->id)
+                ->whereNull('reversed_at')
+                ->orderBy('id')
+                ->get();
+
+            foreach ($credits as $credit) {
+                $parent = $credit->parent;
+                $balance = (float) ($parent?->parentProfile?->account_balance ?? 0);
+
+                if (! $parent?->parentProfile || $balance < (float) $credit->amount) {
+                    throw ValidationException::withMessages([
+                        'status' => ['This session cannot be restored because the cancellation credit has already been used from the parent balance.'],
+                    ]);
+                }
+            }
+
+            foreach ($credits as $credit) {
+                $parent = $credit->parent;
+                $child = $credit->child;
+
+                $parent?->parentProfile?->decrement('account_balance', (float) $credit->amount);
+                $credit->update([
+                    'reversed_at' => now(),
+                ]);
+
+                Notification::create([
+                    'user_id' => $parent->id,
+                    'title' => 'Cancelled training credit reversed',
+                    'message' => 'A restored training removed the previously issued cancellation credit from your account balance.',
+                    'type' => 'payment',
+                    'is_read' => false,
+                ]);
+
+                Notification::create([
+                    'user_id' => $child->id,
+                    'title' => 'Training restored',
+                    'message' => 'A restored training removed the cancellation credit that had been issued earlier.',
+                    'type' => 'payment',
+                    'is_read' => false,
+                ]);
             }
         });
     }
@@ -454,16 +505,35 @@ class PaymentService
             return;
         }
 
-        SessionCancellationCredit::query()->create([
-            'session_id' => $session->id,
-            'parent_id' => $parent->id,
-            'child_id' => $child->id,
-            'payment_id' => $payment->id,
-            'payment_item_id' => $paymentItem?->id,
-            'payment_month_coverage_id' => $monthCoverage?->id,
-            'source_type' => $sourceType,
-            'amount' => $amount,
-        ]);
+        $credit = SessionCancellationCredit::query()
+            ->where('session_id', $session->id)
+            ->where('child_id', $child->id)
+            ->first();
+
+        if ($credit) {
+            $credit->update([
+                'parent_id' => $parent->id,
+                'payment_id' => $payment->id,
+                'payment_item_id' => $paymentItem?->id,
+                'payment_month_coverage_id' => $monthCoverage?->id,
+                'source_type' => $sourceType,
+                'amount' => $amount,
+                'credited_at' => now(),
+                'reversed_at' => null,
+            ]);
+        } else {
+            SessionCancellationCredit::query()->create([
+                'session_id' => $session->id,
+                'parent_id' => $parent->id,
+                'child_id' => $child->id,
+                'payment_id' => $payment->id,
+                'payment_item_id' => $paymentItem?->id,
+                'payment_month_coverage_id' => $monthCoverage?->id,
+                'source_type' => $sourceType,
+                'amount' => $amount,
+                'credited_at' => now(),
+            ]);
+        }
 
         $parent->loadMissing('parentProfile');
         if ($parent->parentProfile) {

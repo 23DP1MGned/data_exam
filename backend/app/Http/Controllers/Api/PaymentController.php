@@ -7,6 +7,7 @@ use App\Http\Requests\Payments\StorePaymentRequest;
 use App\Models\Payment;
 use App\Models\PaymentItem;
 use App\Models\PaymentMonthCoverage;
+use App\Models\SessionCancellationCredit;
 use App\Models\TrainingSession;
 use App\Models\User;
 use App\Services\PaymentService;
@@ -114,8 +115,54 @@ class PaymentController extends Controller
             ];
         });
 
+        $creditActivity = SessionCancellationCredit::query()
+            ->with(['parent', 'child', 'session.group'])
+            ->when($user->role === User::ROLE_PARENT, fn ($builder) => $builder->where('parent_id', $user->id))
+            ->when($user->role !== User::ROLE_PARENT, fn ($builder) => $builder->whereIn('child_id', $relevantChildIds))
+            ->get()
+            ->flatMap(function (SessionCancellationCredit $credit) {
+                $childName = trim(($credit->child->name ?? '').' '.($credit->child->surname ?? ''));
+                $parentName = trim(($credit->parent->name ?? '').' '.($credit->parent->surname ?? ''));
+                $sessionLabel = $credit->session?->title
+                    ?: $credit->session?->group?->display_name
+                    ?: 'Training session';
+
+                $events = collect();
+
+                if ($credit->credited_at) {
+                    $events->push([
+                        'id' => 'credit-issued-'.$credit->id,
+                        'child_id' => $credit->child_id,
+                        'name' => $childName ?: $sessionLabel,
+                        'date' => $credit->credited_at->format('d M'),
+                        'amount' => (float) $credit->amount,
+                        'method' => '',
+                        'status' => 'Credited',
+                        'detail' => 'Cancelled training credit · '.$sessionLabel.($parentName ? ' · Parent: '.$parentName : ''),
+                        'sort_value' => $credit->credited_at->timestamp,
+                    ]);
+                }
+
+                if ($credit->reversed_at) {
+                    $events->push([
+                        'id' => 'credit-reversed-'.$credit->id,
+                        'child_id' => $credit->child_id,
+                        'name' => $childName ?: $sessionLabel,
+                        'date' => $credit->reversed_at->format('d M'),
+                        'amount' => (float) $credit->amount,
+                        'method' => '',
+                        'status' => 'Credit reversed',
+                        'detail' => 'Training restored · '.$sessionLabel.($parentName ? ' · Parent: '.$parentName : ''),
+                        'sort_value' => $credit->reversed_at->timestamp,
+                    ]);
+                }
+
+                return $events;
+            });
+
         $recentActivity = $dueActivity
             ->merge($paymentActivity)
+            ->merge($creditActivity)
             ->sortByDesc('sort_value')
             ->map(function (array $item) {
                 unset($item['sort_value']);

@@ -16,10 +16,14 @@ class SessionCancellationCredit extends Model
         'payment_month_coverage_id',
         'source_type',
         'amount',
+        'credited_at',
+        'reversed_at',
     ];
 
     protected $casts = [
         'amount' => 'float',
+        'credited_at' => 'datetime',
+        'reversed_at' => 'datetime',
     ];
 
     public function session(): BelongsTo
