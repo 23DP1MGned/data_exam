@@ -52,7 +52,7 @@ const routes = [
   {
     path: '/payments',
     component: Payments,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, noChildAccess: true }
   },
   {
     path: '/attendance',
@@ -110,6 +110,10 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta?.adminOnly && user.value?.role !== 'admin') {
+    return '/home'
+  }
+
+  if (to.meta?.noChildAccess && user.value?.role === 'child') {
     return '/home'
   }
 

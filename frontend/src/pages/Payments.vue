@@ -403,9 +403,9 @@
                         <div class="payment-secondary">{{ formatHistoryItemSecondary(item) }}</div>
                       </div>
 
-                      <div class="payment-side">
+                      <div class="payment-side payment-side-history">
                         <div class="payment-amount">{{ formatCurrency(item.amount) }}</div>
-                        <v-chip size="small" :color="getStatusColor(capitalize(item.status))" class="payment-chip" dark>
+                        <v-chip size="small" :color="getStatusColor(capitalize(item.status))" class="payment-chip payment-chip-history" dark>
                           {{ capitalize(item.status) }}
                         </v-chip>
                         <v-btn variant="text" class="history-action-btn" @click="openReceipt(item)">
@@ -622,9 +622,9 @@
                   <div class="payment-secondary">{{ formatHistoryItemSecondary(item) }}</div>
                 </div>
 
-                <div class="payment-side">
+                <div class="payment-side payment-side-history">
                   <div class="payment-amount">{{ formatCurrency(item.amount) }}</div>
-                  <v-chip size="small" :color="getStatusColor(capitalize(item.status))" class="payment-chip" dark>
+                  <v-chip size="small" :color="getStatusColor(capitalize(item.status))" class="payment-chip payment-chip-history" dark>
                     {{ capitalize(item.status) }}
                   </v-chip>
                   <v-btn variant="text" class="history-action-btn" @click="openReceipt(item)">
@@ -860,19 +860,20 @@ const paymentsData = ref({
   payments: []
 })
 
-const navItems = [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
-  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
-  { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
-]
-
 const chartGridLines = [32, 72, 112, 152]
 const profileName = computed(() => {
   if (!user.value) return 'SportSystem User'
   return `${user.value.name} ${user.value.surname}`.trim()
 })
+const navItems = computed(() => [
+  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
+  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
+  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
+  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
+  ...(user.value?.role === 'child'
+    ? []
+    : [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }])
+])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
 const dueTrainings = computed(() => paymentsData.value.due_trainings ?? [])
@@ -2219,6 +2220,14 @@ async function handleNotificationClick(item) {
   text-align: right;
 }
 
+.payment-side-history {
+  display: grid;
+  justify-items: end;
+  align-content: start;
+  min-width: 156px;
+  gap: 10px;
+}
+
 .payment-action-side {
   display: flex;
   align-items: flex-end;
@@ -2243,6 +2252,10 @@ async function handleNotificationClick(item) {
   margin-top: 8px;
 }
 
+.payment-chip-history {
+  margin-top: 0;
+}
+
 .pay-btn {
   width: 56px;
   min-width: 56px;
@@ -2257,13 +2270,15 @@ async function handleNotificationClick(item) {
 }
 
 .history-action-btn {
-  min-height: 34px;
-  margin-top: 10px;
+  min-height: 28px;
+  margin-top: 0;
   padding: 0;
   color: #111827;
   text-transform: none;
   letter-spacing: 0;
   font-weight: 700;
+  line-height: 1;
+  justify-content: flex-end;
 }
 
 .payments-shell-dark .history-action-btn {
@@ -2611,6 +2626,10 @@ async function handleNotificationClick(item) {
     text-align: right;
   }
 
+  .payment-side-history {
+    min-width: 140px;
+  }
+
   .payment-action-side {
     flex-direction: column;
     align-items: flex-end;
@@ -2907,6 +2926,11 @@ async function handleNotificationClick(item) {
     text-align: right;
   }
 
+  .payment-side-history {
+    min-width: 132px;
+    justify-items: end;
+  }
+
   .payment-action-side {
     min-width: 96px;
     gap: 8px;
@@ -2937,6 +2961,10 @@ async function handleNotificationClick(item) {
   .pay-btn {
     width: 100%;
     min-width: 0;
+  }
+
+  .history-action-btn {
+    justify-content: flex-end;
   }
 
   .chart-placeholder {

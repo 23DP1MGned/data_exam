@@ -327,10 +327,10 @@
 
                         <div class="payment-side">
                           <div class="payment-amount">{{ formatCurrency(item.amount) }}</div>
-                          <v-chip size="small" :color="getStatusColor(capitalize(item.status))" class="payment-chip" dark>
+                          <v-chip size="small" :color="getStatusColor(capitalize(item.status))" class="payment-chip payment-chip-record" dark>
                             {{ capitalize(item.status) }}
                           </v-chip>
-                          <div class="payment-actions">
+                          <div class="payment-actions payment-actions-record">
                             <v-btn variant="text" class="record-action-btn receipt-action-btn" @click="openReceipt(item)">
                               View receipt
                             </v-btn>
@@ -482,10 +482,10 @@
 
                 <div class="payment-side">
                   <div class="payment-amount">{{ formatCurrency(item.amount) }}</div>
-                  <v-chip size="small" :color="getStatusColor(capitalize(item.status))" class="payment-chip" dark>
+                  <v-chip size="small" :color="getStatusColor(capitalize(item.status))" class="payment-chip payment-chip-record" dark>
                     {{ capitalize(item.status) }}
                   </v-chip>
-                  <div class="payment-actions">
+                  <div class="payment-actions payment-actions-record">
                     <v-btn variant="text" class="record-action-btn receipt-action-btn" @click="openReceipt(item)">
                       View receipt
                     </v-btn>
@@ -695,10 +695,10 @@
 
                       <div class="payment-side">
                         <div class="payment-amount">{{ formatCurrency(item.amount) }}</div>
-                        <v-chip size="small" :color="getStatusColor(capitalize(item.status))" class="payment-chip" dark>
+                        <v-chip size="small" :color="getStatusColor(capitalize(item.status))" class="payment-chip payment-chip-record" dark>
                           {{ capitalize(item.status) }}
                         </v-chip>
-                        <div class="payment-actions">
+                        <div class="payment-actions payment-actions-record">
                           <v-btn variant="text" class="record-action-btn receipt-action-btn" @click="openReceipt(item)">
                             View receipt
                           </v-btn>
@@ -2020,30 +2020,44 @@ async function handleMobileLogout() {
 }
 
 .payment-side {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
+  display: grid;
+  justify-items: end;
+  align-content: start;
+  min-width: 176px;
+  gap: 10px;
 }
 
 .payment-actions {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   justify-content: flex-end;
 }
 
+.payment-actions-record {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
 .record-action-btn {
-  min-height: 34px;
-  padding-inline: 10px;
+  min-height: 28px;
+  height: 28px;
+  padding-inline: 0;
   border-radius: 12px;
   text-transform: none;
   letter-spacing: 0;
   font-weight: 600;
+  line-height: 1;
 }
 
 .receipt-action-btn {
   color: #172033;
+  font-size: 0.94rem;
+  justify-content: flex-end;
+}
+
+.payment-chip-record {
+  align-self: end;
 }
 
 .admin-payments-shell-dark .receipt-action-btn,
@@ -2351,11 +2365,17 @@ async function handleMobileLogout() {
   }
 
   .payment-side {
+    min-width: 0;
     align-items: flex-start;
+    justify-items: start;
   }
 
   .payment-actions {
     justify-content: flex-start;
+  }
+
+  .payment-actions-record {
+    align-items: flex-start;
   }
 }
 

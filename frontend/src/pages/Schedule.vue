@@ -131,6 +131,7 @@
                 </div>
 
                 <v-btn
+                  v-if="canCreateTraining"
                   color="primary"
                   class="mobile-create-btn"
                   prepend-icon="mdi-plus"
@@ -196,6 +197,7 @@
                 </div>
 
                 <v-btn
+                  v-if="canCreateTraining"
                   color="primary"
                   class="create-btn desktop-only-btn"
                   prepend-icon="mdi-plus"
@@ -244,32 +246,64 @@
                   :class="{ 'schedule-item-expanded': expandedId === training.id }"
                 >
                   <div class="schedule-grid">
-                    <div class="slot-block">
-                      <div class="meta-label">Date</div>
-                      <div class="slot-value">{{ formatCardDate(training.date) }}</div>
-                    </div>
+                    <div class="schedule-meta-grid">
+                      <div class="slot-block">
+                        <div class="meta-label">Date</div>
+                        <div class="slot-value">{{ formatCardDate(training.date) }}</div>
+                      </div>
 
-                    <div class="slot-block">
-                      <div class="meta-label">From</div>
-                      <div class="slot-value">{{ training.start }}</div>
-                    </div>
+                      <div class="slot-block">
+                        <div class="meta-label">From</div>
+                        <div class="slot-value">{{ training.start }}</div>
+                      </div>
 
-                    <div class="slot-block">
-                      <div class="meta-label">To</div>
-                      <div class="slot-value">{{ training.end }}</div>
+                      <div class="slot-block">
+                        <div class="meta-label">To</div>
+                        <div class="slot-value">{{ training.end }}</div>
+                      </div>
                     </div>
 
                     <div class="course-block">
                       <div class="meta-label">Training</div>
                       <div class="course-title">{{ training.title }}</div>
 
-                      <template v-if="expandedId === training.id">
-                        <div class="meta-label section-gap">Description</div>
+                      <template v-if="expandedId === training.id && canManageTrainingActions">
+                        <div class="meta-label section-gap">Age</div>
                         <div class="course-subtitle">{{ training.description }}</div>
 
                         <div class="meta-label section-gap">Group</div>
                         <div class="meeting-link">{{ training.group }}</div>
                       </template>
+                    </div>
+
+                    <div
+                      v-if="expandedId === training.id && !canManageTrainingActions"
+                      class="schedule-detail-row"
+                    >
+                      <div class="schedule-detail-item">
+                        <div class="meta-label">Day</div>
+                        <div class="slot-value">{{ formatWeekday(training.date) }}</div>
+                      </div>
+
+                      <div class="schedule-detail-item">
+                        <div class="meta-label">Duration</div>
+                        <div class="slot-value">{{ formatDuration(training.start, training.end) }}</div>
+                      </div>
+
+                      <div class="schedule-detail-item">
+                        <div class="meta-label">Status</div>
+                        <div class="slot-value">{{ formatTrainingStatus(training.status) }}</div>
+                      </div>
+
+                      <div class="schedule-detail-item">
+                        <div class="meta-label">Age</div>
+                        <div class="slot-value">{{ training.description }}</div>
+                      </div>
+
+                      <div class="schedule-detail-item schedule-detail-item-wide">
+                        <div class="meta-label">Group</div>
+                        <div class="meeting-link">{{ training.group }}</div>
+                      </div>
                     </div>
 
                     <div class="teacher-block">
@@ -311,7 +345,7 @@
                       </div>
                     </div>
 
-                    <div class="action-row">
+                    <div v-if="canManageTrainingActions" class="action-row">
                       <v-btn variant="outlined" color="error" class="action-btn" @click="cancelTraining(training)">
                         Cancel
                       </v-btn>
@@ -514,14 +548,6 @@ const tabs = [
   { value: 'past', label: 'Past' }
 ]
 
-const navItems = [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
-  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
-  { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
-]
-
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
 const { user } = useAuth()
 const {
@@ -537,6 +563,17 @@ const profileName = computed(() => {
   if (!user.value) return 'SportSystem User'
   return `${user.value.name} ${user.value.surname}`.trim()
 })
+const canCreateTraining = computed(() => user.value?.role !== 'child')
+const canManageTrainingActions = computed(() => user.value?.role !== 'child')
+const navItems = computed(() => [
+  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
+  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
+  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
+  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
+  ...(user.value?.role === 'child'
+    ? []
+    : [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }])
+])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
 
@@ -673,6 +710,8 @@ function toggleExpanded(id) {
 }
 
 function openCreate() {
+  if (!canCreateTraining.value) return
+
   isEditing.value = false
   editingId.value = null
   newTraining.value = {
@@ -767,6 +806,31 @@ function formatCardDate(value) {
     month: 'short',
     day: 'numeric'
   })
+}
+
+function formatWeekday(value) {
+  return new Date(value).toLocaleDateString('en-US', {
+    weekday: 'long'
+  })
+}
+
+function formatDuration(start, end) {
+  const startValue = parseTime(start)
+  const endValue = parseTime(end)
+  const minutes = Math.max(0, Math.round((endValue - startValue) / 60000))
+
+  if (minutes < 60) return `${minutes} min`
+
+  const hours = Math.floor(minutes / 60)
+  const remainder = minutes % 60
+
+  if (!remainder) return `${hours} h`
+
+  return `${hours} h ${remainder} min`
+}
+
+function formatTrainingStatus(status) {
+  return status ? `${status.charAt(0).toUpperCase()}${status.slice(1)}` : 'Planned'
 }
 
 function sortAZ() {
@@ -1503,6 +1567,38 @@ async function handleNotificationClick(item) {
   align-items: start;
 }
 
+.schedule-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  grid-column: 1 / span 3;
+  align-self: start;
+}
+
+.schedule-detail-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+  grid-column: 1 / span 5;
+  grid-row: 2;
+  align-self: start;
+}
+
+.schedule-detail-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.schedule-detail-item-wide {
+  min-width: 0;
+}
+
+.schedule-detail-row .slot-value,
+.schedule-detail-row .meeting-link {
+  font-weight: 500;
+}
+
 .meta-label {
   margin-bottom: 6px;
   font-size: 0.95rem;
@@ -1801,9 +1897,15 @@ async function handleNotificationClick(item) {
     grid-template-columns: repeat(3, minmax(90px, 110px)) minmax(220px, 1fr);
   }
 
+  .schedule-meta-grid,
   .teacher-block,
   .expand-block {
     grid-column: span 4;
+  }
+
+  .schedule-detail-row {
+    grid-column: 1 / span 4;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .expand-block {
@@ -1886,19 +1988,10 @@ async function handleNotificationClick(item) {
     gap: 16px 20px;
   }
 
-  .schedule-grid > .slot-block:nth-child(1) {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .schedule-grid > .slot-block:nth-child(2) {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .schedule-grid > .slot-block:nth-child(3) {
-    grid-column: 2;
-    grid-row: 2;
+  .schedule-meta-grid {
+    grid-column: 1 / span 2;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
   }
 
   .course-block {
@@ -1906,18 +1999,30 @@ async function handleNotificationClick(item) {
     grid-row: 2;
   }
 
-  .teacher-block {
-    grid-column: 1;
+  .schedule-detail-row {
+    grid-column: 1 / span 2;
     grid-row: 3;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
   }
 
-  .expand-block {
+  .teacher-block {
     grid-column: 1;
     grid-row: 4;
   }
 
+  .expand-block {
+    grid-column: 1;
+    grid-row: 5;
+  }
+
   .pagination-row {
     flex-wrap: wrap;
+  }
+
+  .schedule-footer {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 
@@ -1969,7 +2074,32 @@ async function handleNotificationClick(item) {
     grid-template-columns: 1fr;
   }
 
+  .schedule-meta-grid {
+    grid-column: 1;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .course-block {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .schedule-detail-row {
+    grid-column: 1;
+    grid-row: auto;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .teacher-block {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
   .expand-block {
+    grid-column: 1;
+    grid-row: auto;
     justify-content: flex-start;
   }
 

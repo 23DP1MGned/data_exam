@@ -129,10 +129,6 @@
                     <div class="profile-email">{{ profileEmail }}</div>
                   </div>
                 </div>
-
-                <v-btn color="primary" class="mobile-create-btn" prepend-icon="mdi-plus" @click="openCreateDialog">
-                  Create group
-                </v-btn>
               </div>
             </div>
 
@@ -189,10 +185,6 @@
                   <h1 class="groups-title">My Groups</h1>
                   <div class="groups-subtitle">Groups you manage and their key training details</div>
                 </div>
-
-                <v-btn color="primary" class="create-btn desktop-only-btn" prepend-icon="mdi-plus" @click="openCreateDialog">
-                  Create group
-                </v-btn>
               </div>
 
               <div class="toolbar-row">
@@ -219,7 +211,9 @@
 
                     <div>
                       <div class="section">{{ group.section }}</div>
-                      <div class="trainer">Group #{{ group.group_number }} • {{ group.trainer }}</div>
+                      <div class="trainer">
+                        {{ isChild ? `Group #${group.group_number}` : `Group #${group.group_number} • ${group.trainer}` }}
+                      </div>
                     </div>
                   </div>
 
@@ -240,8 +234,10 @@
                     </div>
 
                     <div class="info-item">
-                      <div class="label">Price</div>
-                      <div class="value">{{ group.price }} € / month</div>
+                      <div class="label">{{ isChild ? 'Coach' : 'Price' }}</div>
+                      <div class="value">
+                        {{ isChild ? group.trainer : `${group.price} € / month` }}
+                      </div>
                     </div>
                   </div>
 
@@ -259,40 +255,6 @@
             </div>
           </section>
         </div>
-
-        <v-dialog v-model="createDialog" max-width="560">
-          <v-card class="dialog-card create-dialog-card">
-            <div class="create-dialog-header">
-              <div>
-                <div class="create-dialog-title">Create Group</div>
-                <div class="create-dialog-subtitle">
-                  Add a new sports group using the same clean system style.
-                </div>
-              </div>
-
-              <v-btn icon variant="text" @click="createDialog = false">
-                <v-icon>mdi-close</v-icon>
-              </v-btn>
-            </div>
-
-            <v-card-text class="create-dialog-content">
-              <div class="create-fields-grid">
-                <v-text-field v-model="newGroup.section" label="Group name" variant="outlined" class="create-field" />
-                <v-text-field v-model="newGroup.ageCategory" label="Age category" variant="outlined" class="create-field" />
-                <v-text-field v-model="newGroup.days" label="Days" placeholder="Mon / Wed" variant="outlined" class="create-field" />
-                <v-text-field v-model="newGroup.time" label="Time" placeholder="17:00" variant="outlined" class="create-field" />
-                <v-text-field v-model="newGroup.students" label="Students" type="number" min="0" variant="outlined" class="create-field create-field-no-spin" />
-                <v-text-field v-model="newGroup.price" label="Price" type="number" min="0" variant="outlined" class="create-field create-field-no-spin" />
-              </div>
-            </v-card-text>
-
-            <v-card-actions class="create-dialog-actions">
-              <v-spacer></v-spacer>
-              <v-btn variant="outlined" class="reset-filter-btn" @click="createDialog = false">Cancel</v-btn>
-              <v-btn color="primary" class="apply-filter-btn" @click="saveGroup">Save</v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
 
         <v-dialog v-model="filterDialog" max-width="520">
           <v-card class="dialog-card filter-dialog-card">
@@ -375,21 +337,12 @@ import { createAvatarDataUri } from '../utils/avatar'
 const search = ref('')
 const darkMode = ref(false)
 const filterDialog = ref(false)
-const createDialog = ref(false)
 const notificationsDialog = ref(false)
 const selectedSort = ref('az')
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const darkModeStorageKey = 'app-dark-mode'
 const loading = ref(false)
-
-const navItems = [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
-  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
-  { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
-]
 
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
 const { user } = useAuth()
@@ -405,17 +358,18 @@ const profileName = computed(() => {
   if (!user.value) return 'SportSystem User'
   return `${user.value.name} ${user.value.surname}`.trim()
 })
+const isChild = computed(() => user.value?.role === 'child')
+const navItems = computed(() => [
+  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
+  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
+  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
+  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
+  ...(user.value?.role === 'child'
+    ? []
+    : [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }])
+])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
-
-const newGroup = ref({
-  section: '',
-  ageCategory: '',
-  days: '',
-  time: '',
-  students: 0,
-  price: 0
-})
 
 const filteredGroups = computed(() =>
   groups.value.filter((group) =>
@@ -459,18 +413,6 @@ function sortZA() {
   groups.value.sort((a, b) => b.section.localeCompare(a.section))
 }
 
-function openCreateDialog() {
-  newGroup.value = {
-    section: '',
-    ageCategory: '',
-    days: '',
-    time: '',
-    students: 0,
-    price: 0
-  }
-  createDialog.value = true
-}
-
 async function loadGroups() {
   loading.value = true
 
@@ -482,21 +424,6 @@ async function loadGroups() {
   } finally {
     loading.value = false
   }
-}
-
-async function saveGroup() {
-  await groupsApi.create({
-    name: newGroup.value.section || 'New Group',
-    age_category: newGroup.value.ageCategory || null,
-    schedule_days: newGroup.value.days || null,
-    default_time: newGroup.value.time || null,
-    price: Number(newGroup.value.price) || 0
-  })
-
-  await loadGroups()
-  if (selectedSort.value === 'az') sortAZ()
-  if (selectedSort.value === 'za') sortZA()
-  createDialog.value = false
 }
 
 function calculateAttendance(studentsCount) {

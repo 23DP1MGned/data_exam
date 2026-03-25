@@ -142,20 +142,6 @@
             </div>
 
             <div class="topbar-card">
-              <div class="search-wrap">
-                <div class="search-shell">
-                  <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
-                  <v-text-field
-                    v-model="search"
-                    placeholder="Search admin panel"
-                    variant="plain"
-                    hide-details
-                    density="comfortable"
-                    class="search-field"
-                  />
-                </div>
-              </div>
-
               <div class="topbar-tools">
                 <div class="icon-badge-wrap">
                   <v-btn
@@ -344,7 +330,6 @@ import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
 const router = useRouter()
-const search = ref('')
 const darkMode = ref(false)
 const notificationsDialog = ref(false)
 const mobileMenuOpen = ref(false)
@@ -374,7 +359,6 @@ const adminGroups = ref([])
 const adminSessions = ref([])
 const adminPayments = ref([])
 
-const overviewQuery = computed(() => search.value.trim().toLowerCase())
 const profileName = computed(() => {
   if (!user.value) return 'Admin User'
   return `${user.value.name} ${user.value.surname}`.trim()
@@ -383,38 +367,11 @@ const profileEmail = computed(() => user.value?.email ?? 'admin@sportsystem.app'
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
 
 const notifications = computed(() => notificationItems.value.slice(0, 3))
-const filteredAdminGroups = computed(() => {
-  if (!overviewQuery.value) return adminGroups.value.slice(0, 5)
-  return adminGroups.value
-    .filter((group) =>
-      [group.name, group.coach, group.age_category].filter(Boolean).some((value) =>
-        value.toLowerCase().includes(overviewQuery.value)
-      )
-    )
-    .slice(0, 5)
-})
+const filteredAdminGroups = computed(() => adminGroups.value.slice(0, 5))
 
-const filteredAdminSessions = computed(() => {
-  if (!overviewQuery.value) return adminSessions.value.slice(0, 5)
-  return adminSessions.value
-    .filter((session) =>
-      [session.title, session.trainer, session.status].filter(Boolean).some((value) =>
-        value.toLowerCase().includes(overviewQuery.value)
-      )
-    )
-    .slice(0, 5)
-})
+const filteredAdminSessions = computed(() => adminSessions.value.slice(0, 5))
 
-const filteredAdminPayments = computed(() => {
-  if (!overviewQuery.value) return adminPayments.value.slice(0, 5)
-  return adminPayments.value
-    .filter((payment) =>
-      [payment.parent, payment.child, payment.method, payment.status].filter(Boolean).some((value) =>
-        value.toLowerCase().includes(overviewQuery.value)
-      )
-    )
-    .slice(0, 5)
-})
+const filteredAdminPayments = computed(() => adminPayments.value.slice(0, 5))
 
 onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
@@ -779,7 +736,7 @@ function updateViewportState() {
 .topbar-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 18px;
   padding: 18px 20px;
   border-radius: 26px;
@@ -790,71 +747,6 @@ function updateViewportState() {
 .admin-home-shell-dark .topbar-card {
   background: rgba(22, 31, 48, 0.82);
   border-color: rgba(74, 92, 126, 0.42);
-}
-
-.search-wrap {
-  flex: 1;
-  min-width: 0;
-  max-width: 420px;
-}
-
-.search-shell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 58px;
-  padding: 0 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(223, 231, 243, 0.92);
-}
-
-.admin-home-shell-dark .search-shell {
-  background: rgba(13, 20, 34, 0.88);
-  border-color: rgba(63, 80, 114, 0.58);
-}
-
-.search-shell-icon {
-  color: #6b7280;
-  flex-shrink: 0;
-}
-
-.admin-home-shell-dark .search-shell-icon {
-  color: #8ea3c7;
-}
-
-.search-field {
-  flex: 1;
-}
-
-:deep(.search-field .v-input__control),
-:deep(.search-field .v-field),
-:deep(.search-field .v-field__field) {
-  min-height: auto;
-  background: transparent;
-  box-shadow: none;
-}
-
-.search-field :deep(.v-field__input) {
-  min-height: 58px;
-  padding-top: 0;
-  padding-bottom: 0;
-  display: flex;
-  align-items: center;
-}
-
-.search-field :deep(input) {
-  color: #172033;
-}
-
-.search-field :deep(input::placeholder) {
-  color: #111827;
-  opacity: 1;
-}
-
-.admin-home-shell-dark .search-field :deep(input),
-.admin-home-shell-dark .search-field :deep(input::placeholder) {
-  color: #e7eefb;
 }
 
 .topbar-tools {
@@ -1300,15 +1192,6 @@ function updateViewportState() {
   .topbar-card,
   .sidebar-card {
     padding: 14px;
-  }
-
-  .search-shell {
-    min-height: 52px;
-    padding: 0 14px;
-  }
-
-  .search-field :deep(.v-field__input) {
-    min-height: 52px;
   }
 
   .overview-stat-card,

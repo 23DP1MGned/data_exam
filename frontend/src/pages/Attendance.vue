@@ -133,20 +133,6 @@
             </div>
 
             <div class="topbar-card">
-              <div class="search-wrap">
-                <div class="search-shell">
-                  <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
-                  <v-text-field
-                    v-model="search"
-                    placeholder="Search attendance"
-                    variant="plain"
-                    hide-details
-                    density="comfortable"
-                    class="search-field"
-                  />
-                </div>
-              </div>
-
               <div class="topbar-tools">
                 <div class="icon-badge-wrap">
                   <v-btn
@@ -393,7 +379,6 @@ import { attendanceApi, sessionsApi } from '../services/api'
 import { useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
-const search = ref('')
 const darkMode = ref(false)
 const notificationsDialog = ref(false)
 const markDialog = ref(false)
@@ -429,18 +414,19 @@ const markForm = ref({
 })
 const attendanceStatusOptions = ['present', 'absent']
 
-const navItems = [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
-  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
-  { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
-]
-
 const profileName = computed(() => {
   if (!user.value) return 'SportSystem User'
   return `${user.value.name} ${user.value.surname}`.trim()
 })
+const navItems = computed(() => [
+  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
+  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
+  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
+  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
+  ...(user.value?.role === 'child'
+    ? []
+    : [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }])
+])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
 const records = computed(() => attendanceResponse.value.records ?? [])
@@ -914,7 +900,7 @@ function formatMinutes(totalMinutes) {
 .topbar-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 18px;
   padding: 18px 20px;
   border-radius: 26px;
@@ -925,73 +911,6 @@ function formatMinutes(totalMinutes) {
 .attendance-shell-dark .topbar-card {
   background: rgba(22, 31, 48, 0.82);
   border-color: rgba(74, 92, 126, 0.42);
-}
-
-.search-wrap {
-  flex: 1;
-  min-width: 0;
-  max-width: 420px;
-}
-
-.search-shell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 58px;
-  padding: 0 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(223, 231, 243, 0.92);
-}
-
-.attendance-shell-dark .search-shell {
-  background: rgba(13, 20, 34, 0.88);
-  border-color: rgba(63, 80, 114, 0.58);
-}
-
-.search-shell-icon {
-  color: #6b7280;
-  flex-shrink: 0;
-}
-
-.attendance-shell-dark .search-shell-icon {
-  color: #8ea3c7;
-}
-
-.search-field {
-  flex: 1;
-}
-
-:deep(.search-field .v-input__control),
-:deep(.search-field .v-field),
-:deep(.search-field .v-field__field) {
-  min-height: auto;
-  background: transparent;
-  box-shadow: none;
-}
-
-.search-field :deep(.v-field__input) {
-  min-height: 58px;
-  padding-top: 0;
-  padding-bottom: 0;
-  display: flex;
-  align-items: center;
-}
-
-.search-field :deep(input) {
-  color: #172033;
-}
-
-.search-field :deep(.v-label),
-.search-field :deep(input::placeholder) {
-  color: #111827;
-  opacity: 1;
-}
-
-.attendance-shell-dark .search-field :deep(input),
-.attendance-shell-dark .search-field :deep(.v-label),
-.attendance-shell-dark .search-field :deep(input::placeholder) {
-  color: #e7eefb;
 }
 
 .topbar-tools {

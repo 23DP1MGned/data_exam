@@ -95,18 +95,25 @@ class DashboardController extends Controller
             ]);
         }
 
-        $sessions = TrainingSession::query()->with(['group.coach'])->get();
+        $sessions = TrainingSession::query()->with(['group.coach', 'group.children'])->get();
         $attendanceQuery = \App\Models\Attendance::query();
+        $linkedChildren = collect();
+        $childIds = collect();
 
         if ($user->role === User::ROLE_COACH) {
             $sessions = $sessions->filter(fn ($session) => $session->group->coach_id === $user->id)->values();
             $attendanceQuery->whereHas('session.group', fn ($builder) => $builder->where('coach_id', $user->id));
         } elseif ($user->role === User::ROLE_PARENT) {
-            $childIds = $user->children()->pluck('users.id');
-            $sessions = $sessions->filter(fn ($session) => $session->group->children()->whereIn('users.id', $childIds)->exists())->values();
+            $linkedChildren = $user->children()
+                ->orderBy('users.name')
+                ->orderBy('users.surname')
+                ->get(['users.id', 'users.name', 'users.surname', 'users.email']);
+            $childIds = $linkedChildren->pluck('id');
+            $sessions = $sessions->filter(fn ($session) => $session->group->children->whereIn('id', $childIds)->isNotEmpty())->values();
             $attendanceQuery->whereIn('user_id', $childIds);
         } elseif ($user->role === User::ROLE_CHILD) {
-            $sessions = $sessions->filter(fn ($session) => $session->group->children()->where('users.id', $user->id)->exists())->values();
+            $childIds = collect([$user->id]);
+            $sessions = $sessions->filter(fn ($session) => $session->group->children->contains('id', $user->id))->values();
             $attendanceQuery->where('user_id', $user->id);
         }
 
@@ -116,13 +123,16 @@ class DashboardController extends Controller
             : '0%';
 
         $upcoming = $sessions->sortBy(fn ($session) => $session->date->format('Y-m-d').' '.$session->start_time)->take(5);
+        $roleSpecificOverviewStat = $user->role === User::ROLE_CHILD
+            ? ['label' => 'My groups', 'value' => $user->childGroups()->count()]
+            : ['label' => 'Pending payments', 'value' => Payment::query()->where('status', 'pending')->count()];
 
         return $this->success([
             'mode' => 'standard',
             'overview_stats' => [
                 ['label' => 'Trainings in 3 days', 'value' => $sessions->whereBetween('date', [now()->startOfDay(), now()->copy()->addDays(2)->endOfDay()])->count()],
                 ['label' => 'Next training countdown', 'value' => $upcoming->isNotEmpty() ? 'Upcoming' : 'No upcoming'],
-                ['label' => 'Pending payments', 'value' => Payment::query()->where('status', 'pending')->count()],
+                $roleSpecificOverviewStat,
                 ['label' => 'Attendance rate', 'value' => $attendanceRate],
             ],
             'next_trainings' => $upcoming->map(fn ($session) => [
@@ -134,6 +144,16 @@ class DashboardController extends Controller
                 'date' => $session->date->toDateString(),
                 'start' => substr($session->start_time, 0, 5),
                 'end' => substr($session->end_time, 0, 5),
+                'child_ids' => $session->group->children
+                    ->whereIn('id', $childIds)
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->values(),
+            ])->values(),
+            'linked_children' => $linkedChildren->map(fn (User $child) => [
+                'id' => $child->id,
+                'name' => trim($child->name.' '.$child->surname),
+                'email' => $child->email,
             ])->values(),
             'user' => [
                 'name' => trim($user->name.' '.$user->surname),

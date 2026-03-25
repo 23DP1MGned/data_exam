@@ -127,7 +127,7 @@
               </div>
             </div>
 
-              <div class="mobile-search-card">
+            <div class="mobile-search-card">
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
@@ -139,8 +139,51 @@
                   </div>
                 </div>
 
+                <v-menu
+                  v-if="isParent && selectedChild"
+                  :disabled="linkedChildren.length <= 1"
+                  location="bottom end"
+                  offset="10"
+                >
+                  <template #activator="{ props }">
+                    <button
+                      type="button"
+                      class="child-profile-selector child-profile-selector-mobile"
+                      :class="{ 'child-profile-selector-static': linkedChildren.length <= 1 }"
+                      v-bind="props"
+                    >
+                      <v-avatar size="40">
+                        <img :src="avatarFor(`child-${selectedChild.id}`, selectedChild.name)" :alt="selectedChild.name">
+                      </v-avatar>
+                      <div class="child-profile-copy">
+                        <div class="child-profile-name">{{ selectedChild.name }}</div>
+                        <div class="child-profile-email">{{ selectedChild.email }}</div>
+                      </div>
+                      <v-icon v-if="linkedChildren.length > 1" size="20" class="child-profile-chevron">
+                        mdi-chevron-down
+                      </v-icon>
+                    </button>
+                  </template>
+
+                  <v-list class="child-profile-menu">
+                    <v-list-item
+                      v-for="child in linkedChildren"
+                      :key="child.id"
+                      @click="selectedChildId = child.id"
+                    >
+                      <template #prepend>
+                        <v-avatar size="36">
+                          <img :src="avatarFor(`child-${child.id}`, child.name)" :alt="child.name">
+                        </v-avatar>
+                      </template>
+                      <v-list-item-title>{{ child.name }}</v-list-item-title>
+                      <v-list-item-subtitle>{{ child.email }}</v-list-item-subtitle>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+
                 <v-btn
-                  v-if="!isAdmin"
+                  v-else-if="!isAdmin"
                   color="primary"
                   class="mobile-schedule-btn"
                   prepend-icon="mdi-calendar-month-outline"
@@ -152,20 +195,6 @@
             </div>
 
             <div class="topbar-card">
-              <div class="search-wrap">
-                <div class="search-shell">
-                  <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
-                  <v-text-field
-                    v-model="search"
-                    :placeholder="isAdmin ? 'Search admin panel' : 'Search overview'"
-                    variant="plain"
-                    hide-details
-                    density="comfortable"
-                    class="search-field"
-                  />
-                </div>
-              </div>
-
               <div class="topbar-tools">
                 <div class="icon-badge-wrap">
                   <v-btn
@@ -218,8 +247,51 @@
                   </div>
                 </div>
 
+                <v-menu
+                  v-if="isParent && selectedChild"
+                  :disabled="linkedChildren.length <= 1"
+                  location="bottom end"
+                  offset="12"
+                >
+                  <template #activator="{ props }">
+                    <button
+                      type="button"
+                      class="child-profile-selector child-profile-selector-desktop"
+                      :class="{ 'child-profile-selector-static': linkedChildren.length <= 1 }"
+                      v-bind="props"
+                    >
+                      <v-avatar size="52">
+                        <img :src="avatarFor(`child-${selectedChild.id}`, selectedChild.name)" :alt="selectedChild.name">
+                      </v-avatar>
+                      <div class="child-profile-copy">
+                        <div class="child-profile-name">{{ selectedChild.name }}</div>
+                        <div class="child-profile-email">{{ selectedChild.email }}</div>
+                      </div>
+                      <v-icon v-if="linkedChildren.length > 1" size="22" class="child-profile-chevron">
+                        mdi-chevron-down
+                      </v-icon>
+                    </button>
+                  </template>
+
+                  <v-list class="child-profile-menu">
+                    <v-list-item
+                      v-for="child in linkedChildren"
+                      :key="child.id"
+                      @click="selectedChildId = child.id"
+                    >
+                      <template #prepend>
+                        <v-avatar size="36">
+                          <img :src="avatarFor(`child-${child.id}`, child.name)" :alt="child.name">
+                        </v-avatar>
+                      </template>
+                      <v-list-item-title>{{ child.name }}</v-list-item-title>
+                      <v-list-item-subtitle>{{ child.email }}</v-list-item-subtitle>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+
                 <v-btn
-                  v-if="!isAdmin"
+                  v-else-if="!isAdmin"
                   color="primary"
                   class="create-btn desktop-only-btn"
                   prepend-icon="mdi-calendar-month-outline"
@@ -345,7 +417,15 @@
                 <section class="overview-card">
                   <div class="overview-card-header">
                     <div class="list-title">Next 3 Days Trainings</div>
-                    <v-btn variant="text" color="primary" class="desktop-only-btn" to="/schedule">View full schedule</v-btn>
+                    <v-btn
+                      v-if="!isParent"
+                      variant="text"
+                      color="primary"
+                      class="desktop-only-btn"
+                      to="/schedule"
+                    >
+                      View full schedule
+                    </v-btn>
                   </div>
 
                   <div class="list-wrap">
@@ -512,7 +592,6 @@ import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 
 const router = useRouter()
-const search = ref('')
 const dialog = ref(false)
 const filterDialog = ref(false)
 const notificationsDialog = ref(false)
@@ -541,7 +620,9 @@ const navItems = computed(() => {
     { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
     { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
     { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
-    { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }
+    ...(user.value?.role === 'child'
+      ? []
+      : [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }])
   ]
 })
 
@@ -560,6 +641,8 @@ const overviewStats = ref([])
 const adminGroups = ref([])
 const adminSessions = ref([])
 const adminPayments = ref([])
+const linkedChildren = ref([])
+const selectedChildId = ref(null)
 const newTraining = ref({
   title: '',
   date: '',
@@ -569,7 +652,6 @@ const newTraining = ref({
   description: ''
 })
 
-const overviewQuery = computed(() => search.value.trim().toLowerCase())
 const profileName = computed(() => {
   if (!user.value) return 'SportSystem User'
   return `${user.value.name} ${user.value.surname}`.trim()
@@ -577,52 +659,23 @@ const profileName = computed(() => {
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
 const isAdmin = computed(() => (user.value?.role === 'admin') || dashboardMode.value === 'admin')
+const isParent = computed(() => user.value?.role === 'parent')
+const selectedChild = computed(() =>
+  linkedChildren.value.find((child) => child.id === selectedChildId.value) ?? linkedChildren.value[0] ?? null
+)
 
 const nextThreeDaysTrainings = computed(() => {
-  const query = overviewQuery.value
+  if (!isParent.value || !selectedChild.value) return trainings.value
 
-  return trainings.value.filter((training) => {
-    if (!query) return true
-
-    return [
-      training.title,
-      training.trainer,
-      training.group
-    ].some((value) => value.toLowerCase().includes(query))
-  })
+  return trainings.value.filter((training) =>
+    Array.isArray(training.child_ids) && training.child_ids.includes(selectedChild.value.id)
+  )
 })
 
 const notifications = computed(() => notificationItems.value.slice(0, 3))
-const filteredAdminGroups = computed(() => {
-  if (!overviewQuery.value) return adminGroups.value.slice(0, 5)
-  return adminGroups.value
-    .filter((group) =>
-      [group.name, group.coach, group.age_category].filter(Boolean).some((value) =>
-        value.toLowerCase().includes(overviewQuery.value)
-      )
-    )
-    .slice(0, 5)
-})
-const filteredAdminSessions = computed(() => {
-  if (!overviewQuery.value) return adminSessions.value.slice(0, 5)
-  return adminSessions.value
-    .filter((session) =>
-      [session.title, session.trainer, session.status].filter(Boolean).some((value) =>
-        value.toLowerCase().includes(overviewQuery.value)
-      )
-    )
-    .slice(0, 5)
-})
-const filteredAdminPayments = computed(() => {
-  if (!overviewQuery.value) return adminPayments.value.slice(0, 5)
-  return adminPayments.value
-    .filter((payment) =>
-      [payment.parent, payment.child, payment.method, payment.status].filter(Boolean).some((value) =>
-        value.toLowerCase().includes(overviewQuery.value)
-      )
-    )
-    .slice(0, 5)
-})
+const filteredAdminGroups = computed(() => adminGroups.value.slice(0, 5))
+const filteredAdminSessions = computed(() => adminSessions.value.slice(0, 5))
+const filteredAdminPayments = computed(() => adminPayments.value.slice(0, 5))
 
 onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
@@ -661,6 +714,13 @@ async function loadDashboard() {
       group: training.title,
       students: []
     }))
+    linkedChildren.value = data?.linked_children ?? []
+    if (isParent.value) {
+      const currentChildExists = linkedChildren.value.some((child) => child.id === selectedChildId.value)
+      selectedChildId.value = currentChildExists
+        ? selectedChildId.value
+        : linkedChildren.value[0]?.id ?? null
+    }
     overviewStats.value = data?.overview_stats ?? []
     adminGroups.value = data?.latest_groups ?? []
     adminSessions.value = data?.recent_sessions ?? []
@@ -1072,10 +1132,121 @@ function updateViewportState() {
   box-shadow: 0 18px 34px rgba(22, 119, 255, 0.22);
 }
 
+.child-profile-selector {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 18px;
+  border: 1px solid rgba(231, 238, 247, 0.95);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 28px rgba(110, 136, 173, 0.08);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dashboard-shell-dark .child-profile-selector {
+  border-color: rgba(74, 92, 126, 0.42);
+  background: rgba(18, 27, 43, 0.9);
+  box-shadow: 0 18px 38px rgba(4, 10, 24, 0.26);
+}
+
+.child-profile-selector-static {
+  cursor: default;
+}
+
+.child-profile-selector-desktop {
+  min-width: 320px;
+  max-width: 360px;
+}
+
+.child-profile-selector-mobile {
+  min-height: 76px;
+  flex: 1;
+}
+
+.child-profile-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.child-profile-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #172033;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-shell-dark .child-profile-name {
+  color: #f3f7ff;
+}
+
+.child-profile-email {
+  margin-top: 4px;
+  font-size: 0.92rem;
+  color: #7b8798;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-shell-dark .child-profile-email {
+  color: #94a6c4;
+}
+
+.child-profile-chevron {
+  color: #7b8798;
+  flex-shrink: 0;
+}
+
+.dashboard-shell-dark .child-profile-chevron {
+  color: #94a6c4;
+}
+
+:deep(.child-profile-menu) {
+  min-width: 300px;
+  padding: 8px;
+  border-radius: 22px;
+  border: 1px solid rgba(223, 231, 243, 0.92);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 24px 48px rgba(79, 106, 154, 0.18);
+}
+
+:deep(.child-profile-menu .v-list-item) {
+  min-height: 62px;
+  border-radius: 16px;
+}
+
+:deep(.child-profile-menu .v-list-item-title) {
+  color: #172033;
+  font-weight: 600;
+}
+
+:deep(.child-profile-menu .v-list-item-subtitle) {
+  color: #7b8798;
+}
+
+.dashboard-shell-dark :deep(.child-profile-menu) {
+  border-color: rgba(74, 92, 126, 0.42);
+  background: rgba(18, 27, 43, 0.98);
+  box-shadow: 0 28px 52px rgba(4, 10, 24, 0.4);
+}
+
+.dashboard-shell-dark :deep(.child-profile-menu .v-list-item-title) {
+  color: #f3f7ff;
+}
+
+.dashboard-shell-dark :deep(.child-profile-menu .v-list-item-subtitle) {
+  color: #94a6c4;
+}
+
 .topbar-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 18px;
   padding: 18px 20px;
   border-radius: 26px;
@@ -1086,71 +1257,6 @@ function updateViewportState() {
 .dashboard-shell-dark .topbar-card {
   background: rgba(22, 31, 48, 0.82);
   border-color: rgba(74, 92, 126, 0.42);
-}
-
-.search-wrap {
-  flex: 1;
-  min-width: 0;
-  max-width: 420px;
-}
-
-.search-shell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 58px;
-  padding: 0 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(223, 231, 243, 0.92);
-}
-
-.dashboard-shell-dark .search-shell {
-  background: rgba(13, 20, 34, 0.88);
-  border-color: rgba(63, 80, 114, 0.58);
-}
-
-.search-shell-icon {
-  color: #6b7280;
-  flex-shrink: 0;
-}
-
-.dashboard-shell-dark .search-shell-icon {
-  color: #8ea3c7;
-}
-
-.search-field {
-  flex: 1;
-}
-
-:deep(.search-field .v-input__control),
-:deep(.search-field .v-field),
-:deep(.search-field .v-field__field) {
-  min-height: auto;
-  background: transparent;
-  box-shadow: none;
-}
-
-.search-field :deep(.v-field__input) {
-  min-height: 58px;
-  padding-top: 0;
-  padding-bottom: 0;
-  display: flex;
-  align-items: center;
-}
-
-.search-field :deep(input) {
-  color: #172033;
-}
-
-.search-field :deep(input::placeholder) {
-  color: #111827;
-  opacity: 1;
-}
-
-.dashboard-shell-dark .search-field :deep(input),
-.dashboard-shell-dark .search-field :deep(input::placeholder) {
-  color: #e7eefb;
 }
 
 .topbar-tools {
@@ -1845,15 +1951,6 @@ function updateViewportState() {
   .topbar-card,
   .sidebar-card {
     padding: 14px;
-  }
-
-  .search-shell {
-    min-height: 52px;
-    padding: 0 14px;
-  }
-
-  .search-field :deep(.v-field__input) {
-    min-height: 52px;
   }
 
   .overview-stat-card,

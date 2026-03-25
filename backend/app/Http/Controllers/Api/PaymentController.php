@@ -28,6 +28,11 @@ class PaymentController extends Controller
         $this->sessionTemplateService->ensureUpcomingSessionsGenerated();
 
         $user = $request->user();
+
+        if ($user->role === User::ROLE_CHILD) {
+            return $this->error('Forbidden.', [], 403);
+        }
+
         $paymentsQuery = Payment::query()->with(['parent', 'child', 'items.session.group', 'items.monthCoverage.group', 'monthCoverages.group']);
 
         if ($user->role === User::ROLE_PARENT) {
@@ -179,6 +184,10 @@ class PaymentController extends Controller
     public function show(Request $request, Payment $payment)
     {
         $user = $request->user();
+
+        if ($user->role === User::ROLE_CHILD) {
+            return $this->error('Forbidden.', [], 403);
+        }
 
         if (
             $user->role !== User::ROLE_ADMIN
