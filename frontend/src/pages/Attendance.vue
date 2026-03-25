@@ -672,7 +672,7 @@ const calendarWeeks = computed(() => {
     const date = new Date(firstVisibleDay)
     date.setDate(firstVisibleDay.getDate() + index)
 
-    const iso = date.toISOString().slice(0, 10)
+    const iso = formatDateKey(date)
     const isCurrentMonth = date.getMonth() === currentMonth.value.getMonth()
     const sessions = calendarEntriesByDate.value[iso] ?? []
     const statusSignature = sessions.length
@@ -829,6 +829,13 @@ function buildCalendarCellStyle(statusSignature) {
   }
 
   return styles[statusSignature] ?? styles['no-training']
+}
+
+function formatDateKey(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 </script>
 

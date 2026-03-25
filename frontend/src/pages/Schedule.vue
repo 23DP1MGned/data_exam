@@ -671,7 +671,7 @@ const groupedTrainings = computed(() => {
 
   return Array.from(groups.entries()).map(([date, items]) => ({
     title: getRelativeDayLabel(date),
-    label: new Date(date).toLocaleDateString('en-US', {
+    label: parseDateOnly(date).toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
       year: 'numeric'
@@ -695,7 +695,7 @@ const pagedGroupedTrainings = computed(() => {
 
   return Array.from(groups.entries()).map(([date, items]) => ({
     title: getRelativeDayLabel(date),
-    label: new Date(date).toLocaleDateString('en-US', {
+    label: parseDateOnly(date).toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
       year: 'numeric'
@@ -834,6 +834,10 @@ function parseTrainingDateTime(date, time) {
   return new Date(`${date}T${time}:00`)
 }
 
+function parseDateOnly(value) {
+  return new Date(`${value}T00:00:00`)
+}
+
 function isPastTraining(training) {
   return parseTrainingDateTime(training.date, training.end).getTime() < Date.now()
 }
@@ -848,14 +852,14 @@ function getRelativeDayLabel(date) {
 }
 
 function formatCardDate(value) {
-  return new Date(value).toLocaleDateString('en-US', {
+  return parseDateOnly(value).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric'
   })
 }
 
 function formatWeekday(value) {
-  return new Date(value).toLocaleDateString('en-US', {
+  return parseDateOnly(value).toLocaleDateString('en-US', {
     weekday: 'long'
   })
 }

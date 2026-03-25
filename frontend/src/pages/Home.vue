@@ -752,7 +752,7 @@ function parseTime(value) {
 }
 
 function formatOverviewDate(value) {
-  return new Date(value).toLocaleDateString('en-US', {
+  return new Date(`${value}T00:00:00`).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric'
   })

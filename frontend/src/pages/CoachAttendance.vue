@@ -458,8 +458,8 @@
                         Marked
                       </span>
                       <span class="legend-item">
-                        <span class="legend-dot legend-dot-blue"></span>
-                        Needs attention
+                      <span class="legend-dot legend-dot-blue"></span>
+                        Planned
                       </span>
                       <span class="legend-item">
                         <span class="legend-dot legend-dot-gray"></span>
@@ -817,10 +817,16 @@ async function initializePage() {
   try {
     const groups = await groupsApi.list()
     coachGroups.value = groups
-    syncSelectedCoachGroup(groups.map((group) => group.id))
+    const resolvedGroupId = syncSelectedCoachGroup(groups.map((group) => group.id))
 
-    if (!selectedCoachGroupId.value && groups[0]?.id) {
+    if (!resolvedGroupId && groups[0]?.id) {
       setSelectedCoachGroupId(groups[0].id)
+      await loadGroupAttendance(groups[0].id)
+      return
+    }
+
+    if (resolvedGroupId) {
+      await loadGroupAttendance(resolvedGroupId)
     }
   } catch (error) {
     errorMessage.value = extractErrorMessage(error, 'Failed to load coach groups.')

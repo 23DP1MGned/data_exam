@@ -922,7 +922,7 @@ function statusChipClass(status) {
 }
 
 function formatDate(value) {
-  return new Date(value).toLocaleDateString('en-US', {
+  return new Date(`${value}T00:00:00`).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric'
@@ -930,7 +930,7 @@ function formatDate(value) {
 }
 
 function formatDay(value) {
-  return new Date(value).toLocaleDateString('en-US', {
+  return new Date(`${value}T00:00:00`).toLocaleDateString('en-US', {
     weekday: 'long'
   })
 }
@@ -954,7 +954,7 @@ function formatWeekdayLabels(weekdays) {
 }
 
 function formatSessionWeekdays(session) {
-  return formatWeekdayLabels(session.weekdays?.length ? session.weekdays : [new Date(session.date).toLocaleDateString('en-US', { weekday: 'short' })])
+  return formatWeekdayLabels(session.weekdays?.length ? session.weekdays : [new Date(`${session.date}T00:00:00`).toLocaleDateString('en-US', { weekday: 'short' })])
 }
 
 function resetSessionDateFilters() {
