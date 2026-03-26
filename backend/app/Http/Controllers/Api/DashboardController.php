@@ -23,7 +23,9 @@ class DashboardController extends Controller
         $this->sessionTemplateService->ensureUpcomingSessionsGenerated();
 
         $user = $request->user();
-        $notifications = $user->notifications()->latest()->take(6)->get();
+        $notifications = $user->role === User::ROLE_ADMIN
+            ? Notification::query()->with('user')->latest()->take(6)->get()
+            : $user->notifications()->latest()->take(6)->get();
 
         if ($user->role === User::ROLE_ADMIN) {
             $latestGroups = Group::query()
@@ -90,6 +92,9 @@ class DashboardController extends Controller
                     'id' => $notification->id,
                     'title' => $notification->title,
                     'text' => $notification->message,
+                    'user_name' => $notification->user
+                        ? trim($notification->user->name.' '.$notification->user->surname)
+                        : null,
                     'time' => $notification->created_at->diffForHumans(),
                     'unread' => ! $notification->is_read,
                 ])->values(),

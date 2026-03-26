@@ -408,10 +408,19 @@
                       v-for="item in notifications"
                       :key="item.id"
                       class="overview-item"
+                      :class="{ 'overview-item-unread': item.unread }"
                     >
                       <div>
-                        <div class="payment-name">{{ item.title }}</div>
-                        <div class="payment-meta">{{ item.time }}</div>
+                        <div class="notification-title-row">
+                          <div class="payment-name">{{ item.title }}</div>
+                          <span v-if="item.unread" class="notification-inline-dot"></span>
+                        </div>
+                        <div class="notification-preview">
+                          {{ formatNotificationPreview(item.text) }}
+                        </div>
+                        <div class="payment-meta">
+                          {{ item.user_name ? `${item.user_name} • ${item.time}` : item.time }}
+                        </div>
                       </div>
                     </article>
 
@@ -468,12 +477,23 @@
                       v-for="item in notifications"
                       :key="item.id"
                       class="overview-item"
+                      :class="{ 'overview-item-unread': item.unread }"
                     >
                       <div>
-                        <div class="payment-name">{{ item.title }}</div>
+                        <div class="notification-title-row">
+                          <div class="payment-name">{{ item.title }}</div>
+                          <span v-if="item.unread" class="notification-inline-dot"></span>
+                        </div>
+                        <div class="notification-preview">
+                          {{ formatNotificationPreview(item.text) }}
+                        </div>
                         <div class="payment-meta">{{ item.time }}</div>
                       </div>
                     </article>
+
+                    <div v-if="!notifications.length" class="empty-state">
+                      No notifications available.
+                    </div>
                   </div>
                 </section>
               </div>
@@ -605,6 +625,7 @@ import { useSelectedChild } from '../composables/useSelectedChild'
 import { dashboardApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
+import { isSameNotificationTarget, resolveNotificationTarget } from '../utils/notifications'
 
 const router = useRouter()
 const dialog = ref(false)
@@ -905,6 +926,15 @@ function formatCurrency(value) {
   return `€${Number(value ?? 0)}`
 }
 
+function formatNotificationPreview(text) {
+  const normalized = String(text ?? '').trim()
+
+  if (!normalized) return 'Open notification to view more details.'
+  if (normalized.length <= 96) return normalized
+
+  return `${normalized.slice(0, 93).trimEnd()}...`
+}
+
 function withTrainingAvatars(training) {
   return {
     ...training,
@@ -919,6 +949,12 @@ function withTrainingAvatars(training) {
 async function handleNotificationClick(item) {
   if (item?.unread) {
     await markNotificationRead(item.id)
+  }
+
+  const target = resolveNotificationTarget(item, user.value?.role)
+
+  if (target && !isSameNotificationTarget(router.currentRoute.value, target)) {
+    await router.push(target)
   }
 }
 
@@ -1658,6 +1694,46 @@ function updateViewportState() {
 .dashboard-shell-dark .overview-item {
   background: rgba(12, 19, 32, 0.88);
   border-color: rgba(63, 80, 114, 0.58);
+}
+
+.overview-item-unread {
+  border-color: rgba(81, 127, 218, 0.34);
+  background: rgba(239, 246, 255, 0.96);
+}
+
+.dashboard-shell-dark .overview-item-unread {
+  background: rgba(14, 23, 40, 0.96);
+  border-color: rgba(83, 113, 175, 0.72);
+}
+
+.notification-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notification-inline-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2f80ff, #6db0ff);
+  box-shadow: 0 0 0 5px rgba(81, 127, 218, 0.12);
+}
+
+.notification-preview {
+  margin-top: 6px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #5f708a;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dashboard-shell-dark .notification-preview {
+  color: #9eb0cc;
 }
 
 .payment-name {

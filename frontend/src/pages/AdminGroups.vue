@@ -444,6 +444,7 @@ import { useNotifications } from '../composables/useNotifications'
 import { groupsApi, usersApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
+import { isSameNotificationTarget, resolveNotificationTarget } from '../utils/notifications'
 
 const router = useRouter()
 const search = ref('')
@@ -749,6 +750,12 @@ async function deleteGroup(group) {
 async function handleNotificationClick(item) {
   if (item?.unread) {
     await markNotificationRead(item.id)
+  }
+
+  const target = resolveNotificationTarget(item, 'admin')
+
+  if (target && !isSameNotificationTarget(router.currentRoute.value, target)) {
+    await router.push(target)
   }
 }
 

@@ -294,10 +294,19 @@
                       v-for="item in notifications"
                       :key="item.id"
                       class="overview-item"
+                      :class="{ 'overview-item-unread': item.unread }"
                     >
                       <div>
-                        <div class="payment-name">{{ item.title }}</div>
-                        <div class="payment-meta">{{ item.time }}</div>
+                        <div class="notification-title-row">
+                          <div class="payment-name">{{ item.title }}</div>
+                          <span v-if="item.unread" class="notification-inline-dot"></span>
+                        </div>
+                        <div class="notification-preview">
+                          {{ formatNotificationPreview(item.text) }}
+                        </div>
+                        <div class="payment-meta">
+                          {{ item.user_name ? `${item.user_name} • ${item.time}` : item.time }}
+                        </div>
                       </div>
                     </article>
 
@@ -337,6 +346,7 @@ import { useNotifications } from '../composables/useNotifications'
 import { dashboardApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
+import { isSameNotificationTarget, resolveNotificationTarget } from '../utils/notifications'
 
 const router = useRouter()
 const darkMode = ref(false)
@@ -427,9 +437,24 @@ function formatCurrency(value) {
   return `€${Number(value ?? 0)}`
 }
 
+function formatNotificationPreview(text) {
+  const normalized = String(text ?? '').trim()
+
+  if (!normalized) return 'Open notification to view more details.'
+  if (normalized.length <= 96) return normalized
+
+  return `${normalized.slice(0, 93).trimEnd()}...`
+}
+
 async function handleNotificationClick(item) {
   if (item?.unread) {
     await markNotificationRead(item.id)
+  }
+
+  const target = resolveNotificationTarget(item, 'admin')
+
+  if (target && !isSameNotificationTarget(router.currentRoute.value, target)) {
+    await router.push(target)
   }
 }
 
@@ -1438,6 +1463,46 @@ function updateViewportState() {
 .admin-home-shell-dark .overview-item {
   background: rgba(12, 19, 32, 0.88);
   border-color: rgba(63, 80, 114, 0.58);
+}
+
+.overview-item-unread {
+  border-color: rgba(233, 140, 52, 0.34);
+  background: rgba(255, 246, 238, 0.96);
+}
+
+.admin-home-shell-dark .overview-item-unread {
+  background: rgba(22, 16, 11, 0.96);
+  border-color: rgba(203, 128, 63, 0.68);
+}
+
+.notification-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notification-inline-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f08d34, #ffb35c);
+  box-shadow: 0 0 0 5px rgba(240, 141, 52, 0.14);
+}
+
+.notification-preview {
+  margin-top: 6px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #7d6958;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.admin-home-shell-dark .notification-preview {
+  color: #ccb299;
 }
 
 .payment-name {

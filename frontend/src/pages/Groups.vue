@@ -374,6 +374,7 @@ import { useSelectedChild } from '../composables/useSelectedChild'
 import { groupsApi, sessionsApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
+import { isSameNotificationTarget, resolveNotificationTarget } from '../utils/notifications'
 
 const router = useRouter()
 const search = ref('')
@@ -581,6 +582,12 @@ function groupCardSubtitle(group) {
 async function handleNotificationClick(item) {
   if (item?.unread) {
     await markNotificationRead(item.id)
+  }
+
+  const target = resolveNotificationTarget(item, user.value?.role)
+
+  if (target && !isSameNotificationTarget(router.currentRoute.value, target)) {
+    await router.push(target)
   }
 }
 

@@ -18,17 +18,26 @@ class NotificationController extends Controller
 
     public function index(Request $request)
     {
-        if ($request->user()->role === User::ROLE_PARENT) {
-            $this->notificationService->syncParentPaymentNotifications($request->user());
+        $user = $request->user();
+
+        if ($user->role === User::ROLE_PARENT) {
+            $this->notificationService->syncParentPaymentNotifications($user);
         }
 
+        $notifications = $user->role === User::ROLE_ADMIN
+            ? Notification::query()->with('user')->latest()->get()
+            : $user->notifications()->latest()->get();
+
         return $this->success(
-            $request->user()->notifications()->latest()->get()->map(fn (Notification $notification) => [
+            $notifications->map(fn (Notification $notification) => [
                 'id' => $notification->id,
                 'title' => $notification->title,
                 'text' => $notification->message,
                 'type' => $notification->type,
                 'payload' => $notification->payload,
+                'user_name' => $notification->user
+                    ? trim($notification->user->name.' '.$notification->user->surname)
+                    : null,
                 'time' => $notification->created_at->diffForHumans(),
                 'is_read' => $notification->is_read,
                 'unread' => ! $notification->is_read,
@@ -38,7 +47,7 @@ class NotificationController extends Controller
 
     public function update(UpdateNotificationRequest $request, Notification $notification)
     {
-        if ($notification->user_id !== $request->user()->id) {
+        if ($request->user()->role !== User::ROLE_ADMIN && $notification->user_id !== $request->user()->id) {
             return $this->error('Forbidden.', [], 403);
         }
 

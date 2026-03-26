@@ -541,6 +541,7 @@ import { useSelectedCoachGroup } from '../composables/useSelectedCoachGroup'
 import { attendanceApi, groupsApi, sessionsApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
+import { isSameNotificationTarget, resolveNotificationTarget } from '../utils/notifications'
 
 const router = useRouter()
 const route = useRoute()
@@ -1123,6 +1124,12 @@ function extractErrorMessage(error, fallback) {
 async function handleNotificationClick(item) {
   if (item?.unread) {
     await markNotificationRead(item.id)
+  }
+
+  const target = resolveNotificationTarget(item, 'coach')
+
+  if (target && !isSameNotificationTarget(router.currentRoute.value, target)) {
+    await router.push(target)
   }
 }
 

@@ -426,6 +426,7 @@ import { useSelectedChild } from '../composables/useSelectedChild'
 import { attendanceApi, sessionsApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
+import { isSameNotificationTarget, resolveNotificationTarget } from '../utils/notifications'
 
 const router = useRouter()
 const route = useRoute()
@@ -803,6 +804,12 @@ async function submitAttendance() {
 async function handleNotificationClick(item) {
   if (item?.unread) {
     await markNotificationRead(item.id)
+  }
+
+  const target = resolveNotificationTarget(item, user.value?.role)
+
+  if (target && !isSameNotificationTarget(router.currentRoute.value, target)) {
+    await router.push(target)
   }
 }
 
