@@ -1,7 +1,8 @@
 <template>
   <v-app>
     <v-main class="admin-home-page">
-      <div class="admin-home-shell" :class="{ 'admin-home-shell-dark': darkMode }">
+      <v-theme-provider :theme="darkMode ? 'adminDark' : 'adminLight'">
+      <div class="admin-home-shell admin-theme-root" :class="{ 'admin-home-shell-dark': darkMode, 'admin-theme-root-dark': darkMode }">
         <v-navigation-drawer
           v-if="isCompactNav && mobileMenuOpen"
           v-model="mobileMenuOpen"
@@ -310,14 +311,19 @@
           </section>
         </div>
 
+        <AppPageFooter :dark-mode="darkMode" />
+
         <AppNotificationsDialog
           v-model="notificationsDialog"
           :dark-mode="darkMode"
+          accent="admin"
           :notifications="notificationItems"
           :loading="notificationsLoading"
           @notification-click="handleNotificationClick"
         />
+
       </div>
+      </v-theme-provider>
     </v-main>
   </v-app>
 </template>
@@ -326,6 +332,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
+import AppPageFooter from '../components/AppPageFooter.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { dashboardApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
@@ -471,6 +478,453 @@ function updateViewportState() {
   padding: 22px;
 }
 
+.admin-home-footer {
+  position: relative;
+  margin: 0 22px 22px;
+  border-radius: 28px;
+  overflow: hidden;
+  background: rgba(249, 251, 255, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+}
+
+.admin-home-shell-dark .admin-home-footer {
+  background: rgba(22, 31, 48, 0.72);
+  border-color: rgba(74, 92, 126, 0.4);
+}
+
+.admin-home-footer-decor {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(184, 216, 255, 0.14) 46%, rgba(255, 255, 255, 0.08)),
+    linear-gradient(180deg, rgba(245, 250, 255, 0.14), rgba(225, 237, 252, 0.08));
+  pointer-events: none;
+}
+
+.admin-home-shell-dark .admin-home-footer-decor {
+  background:
+    linear-gradient(135deg, rgba(96, 136, 208, 0.16), rgba(41, 58, 92, 0.1) 46%, rgba(255, 255, 255, 0.04)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+}
+
+.admin-home-footer-glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(28px);
+  opacity: 0.78;
+}
+
+.admin-home-footer-glow-left {
+  top: -12px;
+  left: 40px;
+  width: 220px;
+  height: 96px;
+  background: rgba(150, 203, 255, 0.34);
+}
+
+.admin-home-footer-glow-right {
+  right: 70px;
+  bottom: -20px;
+  width: 260px;
+  height: 102px;
+  background: rgba(182, 216, 255, 0.28);
+}
+
+.admin-home-shell-dark .admin-home-footer-glow-left {
+  background: rgba(78, 120, 190, 0.24);
+}
+
+.admin-home-shell-dark .admin-home-footer-glow-right {
+  background: rgba(54, 93, 156, 0.22);
+}
+
+.admin-home-footer-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+}
+
+.admin-home-footer-meta {
+  color: #7b8798;
+  font-size: 0.82rem;
+}
+
+.admin-home-shell-dark .admin-home-footer-meta {
+  color: #94a6c4;
+}
+
+.admin-home-footer-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  justify-self: center;
+}
+
+.admin-home-footer-socials {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: end;
+}
+
+.admin-home-footer-side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  justify-self: end;
+}
+
+.admin-home-footer-link {
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: #4e6689;
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: default;
+  transition:
+    color 0.18s ease,
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.admin-home-shell-dark .admin-home-footer-link {
+  color: #b3c4e2;
+}
+
+.admin-home-footer-link:hover {
+  color: #315f9d;
+  transform: translateY(-1px);
+  border-color: rgba(173, 196, 229, 0.7);
+  background: rgba(255, 255, 255, 0.36);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    0 8px 18px rgba(160, 184, 218, 0.18);
+}
+
+.admin-home-shell-dark .admin-home-footer-link:hover {
+  color: #dce9ff;
+  border-color: rgba(106, 129, 171, 0.56);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 18px rgba(5, 10, 24, 0.24);
+}
+
+.admin-home-footer-link-icon {
+  width: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(170, 193, 225, 0.42);
+  background: rgba(255, 255, 255, 0.34);
+  color: #4e6689;
+}
+
+.admin-home-shell-dark .admin-home-footer-link-icon {
+  border-color: rgba(93, 109, 145, 0.42);
+  background: rgba(255, 255, 255, 0.06);
+  color: #b3c4e2;
+}
+
+.admin-home-footer-link-icon:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.admin-home-shell-dark .admin-home-footer-link-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.footer-dialog-card {
+  padding: 24px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(250, 252, 255, 0.98), rgba(239, 246, 255, 0.98));
+  border: 1px solid rgba(223, 232, 246, 0.94);
+  box-shadow: 0 24px 56px rgba(79, 106, 154, 0.22);
+}
+
+.footer-dialog-card-dark {
+  background: linear-gradient(180deg, rgba(16, 23, 37, 0.99), rgba(22, 31, 48, 0.98));
+  border-color: rgba(64, 82, 116, 0.62);
+  box-shadow: 0 24px 56px rgba(3, 8, 20, 0.55);
+}
+
+.footer-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.footer-dialog-eyebrow {
+  color: #5d7db1;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.footer-dialog-card-dark .footer-dialog-eyebrow {
+  color: #8eb8ff;
+}
+
+.footer-dialog-title {
+  margin: 8px 0 0;
+  color: #172033;
+  font-size: 1.55rem;
+  line-height: 1.15;
+}
+
+.footer-dialog-card-dark .footer-dialog-title {
+  color: #eef4ff;
+}
+
+.footer-dialog-close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(223, 231, 243, 0.92);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #172033;
+  cursor: pointer;
+}
+
+.footer-dialog-card-dark .footer-dialog-close {
+  color: #eef4ff;
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
+.footer-dialog-body {
+  margin-top: 22px;
+}
+
+.footer-dialog-copy {
+  margin: 0;
+  color: #6f819d;
+  line-height: 1.7;
+}
+
+.footer-dialog-card-dark .footer-dialog-copy {
+  color: #94a6c4;
+}
+
+.footer-dialog-grid,
+.footer-contact-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.footer-dialog-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 16px;
+  background: rgba(244, 248, 255, 0.9);
+  border: 1px solid rgba(224, 232, 243, 0.92);
+}
+
+.footer-dialog-card-dark .footer-dialog-tabs {
+  background: rgba(12, 19, 32, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
+.footer-dialog-tab {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: #6f819d;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.footer-dialog-card-dark .footer-dialog-tab {
+  color: #94a6c4;
+}
+
+.footer-dialog-tab-active {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(223, 231, 243, 0.92);
+  color: #172033;
+}
+
+.footer-dialog-card-dark .footer-dialog-tab-active {
+  background: rgba(20, 30, 46, 0.96);
+  border-color: rgba(63, 80, 114, 0.58);
+  color: #eef4ff;
+}
+
+.footer-dialog-info-card,
+.footer-contact-card {
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(244, 248, 255, 0.9);
+  border: 1px solid rgba(224, 232, 243, 0.92);
+}
+
+.footer-dialog-card-dark .footer-dialog-info-card,
+.footer-dialog-card-dark .footer-contact-card {
+  background: rgba(12, 19, 32, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
+.footer-dialog-info-label,
+.footer-contact-label {
+  color: #7b8798;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.footer-dialog-card-dark .footer-dialog-info-label,
+.footer-dialog-card-dark .footer-contact-label {
+  color: #8ea3c7;
+}
+
+.footer-dialog-info-value,
+.footer-contact-value,
+.footer-contact-link {
+  display: block;
+  margin-top: 8px;
+  color: #172033;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.footer-dialog-card-dark .footer-dialog-info-value,
+.footer-dialog-card-dark .footer-contact-value,
+.footer-dialog-card-dark .footer-contact-link {
+  color: #eef4ff;
+}
+
+.footer-support-wrap {
+  margin-top: 20px;
+}
+
+.footer-support-success {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(221, 245, 228, 0.9);
+  border: 1px solid rgba(170, 223, 184, 0.92);
+  color: #236340;
+  font-weight: 600;
+}
+
+.footer-dialog-card-dark .footer-support-success {
+  background: rgba(22, 61, 42, 0.84);
+  border-color: rgba(54, 121, 84, 0.72);
+  color: #9ce5b5;
+}
+
+.footer-support-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.footer-support-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-support-field-full {
+  margin-top: 14px;
+}
+
+.footer-support-input,
+.footer-support-textarea {
+  width: 100%;
+  border: 1px solid rgba(223, 231, 243, 0.92);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #172033;
+  font: inherit;
+  outline: none;
+}
+
+.footer-support-input {
+  min-height: 50px;
+  padding: 0 14px;
+}
+
+.footer-support-textarea {
+  padding: 14px;
+  resize: vertical;
+  min-height: 140px;
+}
+
+.footer-dialog-card-dark .footer-support-input,
+.footer-dialog-card-dark .footer-support-textarea {
+  color: #eef4ff;
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
+.footer-support-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.footer-support-btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 14px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.footer-support-btn:hover {
+  transform: translateY(-1px);
+}
+
+.footer-support-btn-secondary {
+  border: 1px solid rgba(223, 231, 243, 0.92);
+  background: rgba(255, 255, 255, 0.92);
+  color: #172033;
+}
+
+.footer-dialog-card-dark .footer-support-btn-secondary {
+  color: #eef4ff;
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
+}
+
+.footer-support-btn-primary {
+  border: 1px solid rgba(14, 103, 244, 0.92);
+  background: linear-gradient(180deg, #1677ff 0%, #0f5fe3 100%);
+  color: white;
+}
+
 .mobile-header-card,
 .mobile-utility-card {
   display: none;
@@ -574,8 +1028,8 @@ function updateViewportState() {
   height: 54px;
   flex-shrink: 0;
   border-radius: 18px;
-  background: linear-gradient(180deg, #1677ff 0%, #0f5fe3 100%);
-  box-shadow: 0 16px 30px rgba(22, 119, 255, 0.28);
+  background: linear-gradient(180deg, var(--admin-accent) 0%, var(--admin-accent-strong) 100%);
+  box-shadow: 0 16px 30px var(--admin-accent-shadow);
 }
 
 .brand-text {
@@ -631,8 +1085,8 @@ function updateViewportState() {
 
 .nav-item-active {
   color: white;
-  background: linear-gradient(180deg, #1677ff 0%, #0f5fe3 100%);
-  box-shadow: 0 16px 34px rgba(22, 119, 255, 0.28);
+  background: linear-gradient(180deg, var(--admin-accent) 0%, var(--admin-accent-strong) 100%);
+  box-shadow: 0 16px 34px var(--admin-accent-shadow);
 }
 
 .content-shell {
@@ -778,11 +1232,11 @@ function updateViewportState() {
 }
 
 .top-icon-btn-active {
-  color: #0f5fe3;
+  color: var(--admin-accent-text);
 }
 
 .admin-home-shell-dark .top-icon-btn-active {
-  color: #7fbcff;
+  color: var(--admin-accent-dark-text);
 }
 
 .icon-badge-wrap {
@@ -799,7 +1253,7 @@ function updateViewportState() {
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #1677ff;
+  background: var(--admin-accent);
   color: white;
   font-size: 0.72rem;
   font-weight: 700;
@@ -1065,6 +1519,27 @@ function updateViewportState() {
     gap: 18px;
   }
 
+  .admin-home-footer {
+    margin: 0 18px 18px;
+  }
+
+  .admin-home-footer-content {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    row-gap: 14px;
+  }
+
+  .admin-home-footer-nav {
+    justify-self: end;
+  }
+
+  .admin-home-footer-side {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: space-between;
+    justify-self: stretch;
+  }
+
   .sidebar-card {
     display: none;
   }
@@ -1113,6 +1588,49 @@ function updateViewportState() {
 
   .admin-home-page {
     padding: 10px;
+  }
+
+  .admin-home-footer {
+    margin: 0 12px 12px;
+  }
+
+  .admin-home-footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px 18px;
+  }
+
+  .admin-home-footer-meta {
+    text-align: center;
+  }
+
+  .admin-home-footer-nav {
+    justify-content: center;
+    justify-self: auto;
+  }
+
+  .admin-home-footer-side {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    justify-self: auto;
+  }
+
+  .footer-dialog-card {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .footer-dialog-title {
+    font-size: 1.32rem;
+  }
+
+  .footer-dialog-grid,
+  .footer-contact-list,
+  .footer-support-grid {
+    grid-template-columns: 1fr;
   }
 
   .admin-home-panel {
@@ -1171,6 +1689,47 @@ function updateViewportState() {
   .admin-home-panel {
     padding: 10px;
     gap: 10px;
+  }
+
+  .admin-home-footer {
+    margin: 0 10px 10px;
+    border-radius: 20px;
+  }
+
+  .admin-home-footer-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .admin-home-footer-nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    justify-self: auto;
+  }
+
+  .admin-home-footer-socials {
+    align-self: center;
+    justify-self: auto;
+  }
+
+  .admin-home-footer-side {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    justify-self: auto;
+  }
+
+  .footer-dialog-close {
+    width: 40px;
+    height: 40px;
+  }
+
+  .footer-support-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
   }
 
   .sidebar-card,

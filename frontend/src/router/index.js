@@ -3,7 +3,6 @@ import { bootstrapAuth, useAuth } from '../services/auth'
 
 import Login from '../pages/Login.vue'
 import Home from '../pages/Home.vue'
-import Register from '../pages/Register.vue'
 import Groups from '../pages/Groups.vue'
 import Schedule from '../pages/Schedule.vue'
 import Payments from '../pages/Payments.vue'
@@ -26,6 +25,10 @@ const routes = [
     meta: { guestOnly: true }
   },
   {
+    path: '/register',
+    redirect: '/login'
+  },
+  {
     path: '/home',
     component: Home,
     meta: { requiresAuth: true }
@@ -34,11 +37,6 @@ const routes = [
     path: '/admin',
     component: AdminHome,
     meta: { requiresAuth: true, adminOnly: true }
-  },
-  {
-    path: '/register',
-    component: Register,
-    meta: { guestOnly: true }
   },
   {
     path: '/groups',

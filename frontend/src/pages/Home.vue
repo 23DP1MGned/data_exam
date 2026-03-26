@@ -1,7 +1,16 @@
 <template>
   <v-app>
     <v-main class="dashboard-page">
-      <div class="dashboard-shell" :class="{ 'dashboard-shell-dark': darkMode }">
+      <v-theme-provider :theme="pageTheme">
+      <div
+        class="dashboard-shell"
+        :class="{
+          'dashboard-shell-dark': darkMode,
+          'dashboard-shell-coach': isCoach,
+          'coach-theme-root': isCoach,
+          'coach-theme-root-dark': isCoach && darkMode
+        }"
+      >
         <v-navigation-drawer
           v-if="isCompactNav && mobileMenuOpen"
           v-model="mobileMenuOpen"
@@ -570,14 +579,18 @@
           </v-card>
         </v-dialog>
 
+        <AppPageFooter :dark-mode="darkMode" />
+
         <AppNotificationsDialog
           v-model="notificationsDialog"
           :dark-mode="darkMode"
+          :accent="isCoach ? 'coach' : 'default'"
           :notifications="notificationItems"
           :loading="notificationsLoading"
           @notification-click="handleNotificationClick"
         />
       </div>
+      </v-theme-provider>
     </v-main>
   </v-app>
 </template>
@@ -586,6 +599,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
+import AppPageFooter from '../components/AppPageFooter.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedChild } from '../composables/useSelectedChild'
 import { dashboardApi } from '../services/api'
@@ -666,6 +680,7 @@ const profileSeed = computed(() => user.value?.email ?? profileName.value)
 const isAdmin = computed(() => (user.value?.role === 'admin') || dashboardMode.value === 'admin')
 const isParent = computed(() => user.value?.role === 'parent')
 const isCoach = computed(() => user.value?.role === 'coach')
+const pageTheme = computed(() => (isCoach.value ? (darkMode.value ? 'coachDark' : 'coachLight') : undefined))
 const selectedChild = computed(() =>
   linkedChildren.value.find((child) => child.id === selectedChildId.value) ?? linkedChildren.value[0] ?? null
 )
@@ -2446,5 +2461,72 @@ function updateViewportState() {
   .summary-value {
     font-size: 1.28rem;
   }
+}
+.dashboard-shell-coach .brand-icon,
+.dashboard-shell-coach .nav-item-active {
+  background: linear-gradient(180deg, var(--coach-accent) 0%, var(--coach-accent-strong) 100%);
+  box-shadow: 0 16px 34px var(--coach-accent-shadow);
+}
+
+.dashboard-shell-coach .top-icon-btn-active {
+  color: var(--coach-accent-text);
+  background: rgba(244, 239, 255, 0.96);
+  border-color: var(--coach-accent-border);
+}
+
+.dashboard-shell-coach.dashboard-shell-dark .top-icon-btn-active {
+  color: var(--coach-accent-dark-text);
+  background: rgba(42, 31, 74, 0.96);
+  border-color: var(--coach-accent-border-strong);
+}
+
+.dashboard-shell-coach .icon-badge {
+  background: var(--coach-accent);
+  box-shadow: 0 8px 18px var(--coach-accent-shadow-soft);
+}
+
+.dashboard-shell-coach .create-btn {
+  box-shadow: 0 18px 34px var(--coach-accent-shadow);
+}
+
+.dashboard-shell-coach .base-dialog-card :deep(.base-dialog-field .v-field--focused) {
+  box-shadow:
+    inset 0 0 0 1px rgba(156, 124, 255, 0.72),
+    0 0 0 4px var(--coach-accent-ring);
+}
+
+.dashboard-shell-coach.dashboard-shell-dark .base-dialog-card :deep(.base-dialog-field .v-field--focused) {
+  box-shadow:
+    inset 0 0 0 1px rgba(183, 156, 255, 0.74),
+    0 0 0 4px rgba(183, 156, 255, 0.12);
+}
+
+.dashboard-shell-coach .base-dialog-cancel-btn,
+.dashboard-shell-coach .reset-filter-btn {
+  color: var(--coach-accent-text);
+  border-color: var(--coach-accent-border);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.dashboard-shell-coach.dashboard-shell-dark .base-dialog-cancel-btn,
+.dashboard-shell-coach.dashboard-shell-dark .reset-filter-btn {
+  color: var(--coach-accent-dark-text);
+  border-color: var(--coach-accent-border);
+  background: rgba(18, 27, 43, 0.92);
+}
+
+.dashboard-shell-coach .filter-option:hover {
+  border-color: var(--coach-accent-border);
+}
+
+.dashboard-shell-coach .filter-option-active {
+  border-color: var(--coach-accent-border-strong);
+  background: linear-gradient(180deg, rgba(246, 241, 255, 0.98), rgba(238, 231, 255, 0.96));
+  box-shadow: 0 14px 28px var(--coach-accent-shadow-soft);
+}
+
+.dashboard-shell-coach .filter-option-icon {
+  color: var(--coach-accent-text);
+  background: rgba(156, 124, 255, 0.12);
 }
 </style>

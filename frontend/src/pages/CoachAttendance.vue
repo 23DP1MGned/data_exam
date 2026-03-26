@@ -1,7 +1,11 @@
 <template>
   <v-app>
     <v-main class="coach-attendance-page">
-      <div class="coach-attendance-shell" :class="{ 'coach-attendance-shell-dark': darkMode }">
+      <v-theme-provider :theme="darkMode ? 'coachDark' : 'coachLight'">
+      <div
+        class="coach-attendance-shell coach-theme-root"
+        :class="{ 'coach-attendance-shell-dark': darkMode, 'coach-theme-root-dark': darkMode }"
+      >
         <v-navigation-drawer
           v-if="isCompactNav && mobileMenuOpen"
           v-model="mobileMenuOpen"
@@ -511,14 +515,18 @@
           </section>
         </div>
 
+        <AppPageFooter :dark-mode="darkMode" />
+
         <AppNotificationsDialog
           v-model="notificationsDialog"
           :dark-mode="darkMode"
+          accent="coach"
           :notifications="notificationItems"
           :loading="notificationsLoading"
           @notification-click="handleNotificationClick"
         />
       </div>
+      </v-theme-provider>
     </v-main>
   </v-app>
 </template>
@@ -527,6 +535,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
+import AppPageFooter from '../components/AppPageFooter.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedCoachGroup } from '../composables/useSelectedCoachGroup'
 import { attendanceApi, groupsApi, sessionsApi } from '../services/api'
@@ -2353,5 +2362,53 @@ async function handleMobileLogout() {
   .calendar-cell {
     min-height: 104px;
   }
+}
+.coach-attendance-shell .brand-icon,
+.coach-attendance-shell .nav-item-active {
+  background: linear-gradient(180deg, var(--coach-accent) 0%, var(--coach-accent-strong) 100%);
+  box-shadow: 0 16px 34px var(--coach-accent-shadow);
+}
+
+.coach-attendance-shell .top-icon-btn-active {
+  color: var(--coach-accent-text);
+  background: rgba(244, 239, 255, 0.96);
+  border-color: var(--coach-accent-border);
+}
+
+.coach-attendance-shell.coach-attendance-shell-dark .top-icon-btn-active {
+  color: var(--coach-accent-dark-text);
+  background: rgba(42, 31, 74, 0.96);
+  border-color: var(--coach-accent-border-strong);
+}
+
+.coach-attendance-shell .icon-badge {
+  background: var(--coach-accent);
+  box-shadow: 0 8px 18px var(--coach-accent-shadow-soft);
+}
+
+.coach-attendance-shell .group-selector-avatar {
+  box-shadow: 0 12px 26px var(--coach-accent-shadow-soft);
+}
+
+.coach-attendance-shell .section-chip,
+.coach-attendance-shell .requires-item-progress {
+  color: var(--coach-accent-text);
+}
+
+.coach-attendance-shell .section-chip {
+  background: rgba(156, 124, 255, 0.14);
+}
+
+.coach-attendance-shell .day-session-pill-active {
+  border-color: var(--coach-accent-border-strong);
+  box-shadow: 0 0 0 3px var(--coach-accent-ring);
+}
+
+.coach-attendance-shell .day-session-pill-pending {
+  background: rgba(156, 124, 255, 0.12);
+}
+
+.coach-attendance-shell .calendar-cell-selected {
+  box-shadow: 0 0 0 2px var(--coach-accent-border-strong), var(--calendar-cell-shadow);
 }
 </style>

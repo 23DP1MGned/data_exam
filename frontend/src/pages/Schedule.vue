@@ -1,7 +1,16 @@
 <template>
   <v-app>
     <v-main class="schedule-page">
-      <div class="schedule-shell" :class="{ 'schedule-shell-dark': darkMode }">
+      <v-theme-provider :theme="pageTheme">
+      <div
+        class="schedule-shell"
+        :class="{
+          'schedule-shell-dark': darkMode,
+          'schedule-shell-coach': isCoach,
+          'coach-theme-root': isCoach,
+          'coach-theme-root-dark': isCoach && darkMode
+        }"
+      >
         <v-navigation-drawer
           v-if="isCompactNav && mobileMenuOpen"
           v-model="mobileMenuOpen"
@@ -416,14 +425,18 @@
           </section>
         </div>
 
+        <AppPageFooter :dark-mode="darkMode" />
+
         <AppNotificationsDialog
           v-model="notificationsDialog"
           :dark-mode="darkMode"
+          :accent="isCoach ? 'coach' : 'default'"
           :notifications="notificationItems"
           :loading="notificationsLoading"
           @notification-click="handleNotificationClick"
         />
       </div>
+      </v-theme-provider>
     </v-main>
   </v-app>
 </template>
@@ -432,6 +445,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
+import AppPageFooter from '../components/AppPageFooter.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedChild } from '../composables/useSelectedChild'
 import { sessionsApi } from '../services/api'
@@ -473,6 +487,7 @@ const profileName = computed(() => {
 })
 const isParent = computed(() => user.value?.role === 'parent')
 const isCoach = computed(() => user.value?.role === 'coach')
+const pageTheme = computed(() => (isCoach.value ? (darkMode.value ? 'coachDark' : 'coachLight') : undefined))
 const canManageTrainingActions = computed(() => ['admin', 'coach'].includes(user.value?.role ?? ''))
 const navItems = computed(() => [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
@@ -2126,5 +2141,64 @@ async function handleMobileLogout() {
     align-items: stretch;
     flex-direction: column;
   }
+}
+.schedule-shell-coach .brand-icon,
+.schedule-shell-coach .nav-item-active,
+.schedule-shell-coach .pill-tab-active,
+.schedule-shell-coach .pagination-page-btn-active {
+  background: linear-gradient(180deg, var(--coach-accent) 0%, var(--coach-accent-strong) 100%);
+  box-shadow: 0 16px 34px var(--coach-accent-shadow);
+}
+
+.schedule-shell-coach .top-icon-btn-active {
+  color: var(--coach-accent-text);
+  background: rgba(244, 239, 255, 0.96);
+  border-color: var(--coach-accent-border);
+}
+
+.schedule-shell-coach.schedule-shell-dark .top-icon-btn-active {
+  color: var(--coach-accent-dark-text);
+  background: rgba(42, 31, 74, 0.96);
+  border-color: var(--coach-accent-border-strong);
+}
+
+.schedule-shell-coach .icon-badge,
+.schedule-shell-coach .student-more {
+  background: var(--coach-accent);
+}
+
+.schedule-shell-coach .mobile-create-btn,
+.schedule-shell-coach .create-btn {
+  box-shadow: 0 18px 34px var(--coach-accent-shadow);
+}
+
+.schedule-shell-coach .schedule-item-expanded {
+  border-color: var(--coach-accent-border-strong);
+  box-shadow: 0 18px 36px var(--coach-accent-shadow-soft);
+}
+
+.schedule-shell-coach .expand-link,
+.schedule-shell-coach .reset-filter-btn {
+  color: var(--coach-accent-text);
+}
+
+.schedule-shell-coach.schedule-shell-dark .reset-filter-btn {
+  color: var(--coach-accent-dark-text);
+  border-color: var(--coach-accent-border);
+}
+
+.schedule-shell-coach .filter-option:hover {
+  border-color: var(--coach-accent-border);
+}
+
+.schedule-shell-coach .filter-option-active {
+  border-color: var(--coach-accent-border-strong);
+  background: linear-gradient(180deg, rgba(246, 241, 255, 0.98), rgba(238, 231, 255, 0.96));
+  box-shadow: 0 14px 28px var(--coach-accent-shadow-soft);
+}
+
+.schedule-shell-coach .filter-option-icon {
+  color: var(--coach-accent-text);
+  background: rgba(156, 124, 255, 0.12);
 }
 </style>

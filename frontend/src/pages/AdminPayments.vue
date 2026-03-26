@@ -1,7 +1,8 @@
 <template>
   <v-app>
     <v-main class="admin-payments-page">
-      <div class="admin-payments-shell" :class="{ 'admin-payments-shell-dark': darkMode }">
+      <v-theme-provider :theme="darkMode ? 'adminDark' : 'adminLight'">
+      <div class="admin-payments-shell admin-theme-root" :class="{ 'admin-payments-shell-dark': darkMode, 'admin-theme-root-dark': darkMode }">
         <v-navigation-drawer
           v-if="isCompactNav && mobileMenuOpen"
           v-model="mobileMenuOpen"
@@ -849,14 +850,18 @@
           </v-card>
         </v-dialog>
 
+        <AppPageFooter :dark-mode="darkMode" />
+
         <AppNotificationsDialog
           v-model="notificationsDialog"
           :dark-mode="darkMode"
+          accent="admin"
           :notifications="notificationItems"
           :loading="notificationsLoading"
           @notification-click="handleNotificationClick"
         />
       </div>
+      </v-theme-provider>
     </v-main>
   </v-app>
 </template>
@@ -865,6 +870,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
+import AppPageFooter from '../components/AppPageFooter.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { paymentsApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
@@ -1508,8 +1514,8 @@ async function handleMobileLogout() {
   height: 54px;
   flex-shrink: 0;
   border-radius: 18px;
-  background: linear-gradient(180deg, #1677ff 0%, #0f5fe3 100%);
-  box-shadow: 0 16px 30px rgba(22, 119, 255, 0.28);
+  background: linear-gradient(180deg, var(--admin-accent) 0%, var(--admin-accent-strong) 100%);
+  box-shadow: 0 16px 30px var(--admin-accent-shadow);
 }
 
 .brand-text {
@@ -1559,8 +1565,8 @@ async function handleMobileLogout() {
 
 .nav-item-active {
   color: white;
-  background: linear-gradient(180deg, #1677ff 0%, #0f5fe3 100%);
-  box-shadow: 0 16px 34px rgba(22, 119, 255, 0.28);
+  background: linear-gradient(180deg, var(--admin-accent) 0%, var(--admin-accent-strong) 100%);
+  box-shadow: 0 16px 34px var(--admin-accent-shadow);
 }
 
 .content-shell {
@@ -1740,7 +1746,7 @@ async function handleMobileLogout() {
 }
 
 .top-icon-btn-active {
-  color: #0f5fe3;
+  color: var(--admin-accent-text);
 }
 
 .icon-badge {
@@ -1753,7 +1759,7 @@ async function handleMobileLogout() {
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #1677ff;
+  background: var(--admin-accent);
   color: white;
   font-size: 0.72rem;
   font-weight: 700;
@@ -1893,7 +1899,7 @@ async function handleMobileLogout() {
 .person-field :deep(.v-field--focused) {
   box-shadow:
     inset 0 0 0 1px rgba(74, 144, 255, 0.72),
-    0 0 0 4px rgba(22, 119, 255, 0.08);
+    0 0 0 4px var(--admin-accent-ring);
 }
 
 .person-field :deep(input),
@@ -1983,7 +1989,7 @@ async function handleMobileLogout() {
   border: 0;
   padding: 0;
   background: transparent;
-  color: #1677ff;
+  color: var(--admin-accent-text);
   font-weight: 700;
   cursor: pointer;
 }

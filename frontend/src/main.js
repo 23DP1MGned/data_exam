@@ -7,7 +7,36 @@ import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
 import { bootstrapAuth } from './services/auth'
 
-const vuetify = createVuetify()
+const vuetify = createVuetify({
+  theme: {
+    themes: {
+      coachLight: {
+        dark: false,
+        colors: {
+          primary: '#9c7cff'
+        }
+      },
+      coachDark: {
+        dark: true,
+        colors: {
+          primary: '#b79cff'
+        }
+      },
+      adminLight: {
+        dark: false,
+        colors: {
+          primary: '#f28c28'
+        }
+      },
+      adminDark: {
+        dark: true,
+        colors: {
+          primary: '#ff9e3d'
+        }
+      }
+    }
+  }
+})
 
 await bootstrapAuth()
 

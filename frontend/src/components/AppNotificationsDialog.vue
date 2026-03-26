@@ -1,6 +1,13 @@
 <template>
   <v-dialog :model-value="modelValue" max-width="720" @update:model-value="emit('update:modelValue', $event)">
-    <v-card class="notifications-dialog-card" :class="{ 'notifications-dialog-card-dark': darkMode }">
+    <v-card
+      class="notifications-dialog-card"
+      :class="{
+        'notifications-dialog-card-dark': darkMode,
+        'notifications-dialog-card-admin': accent === 'admin',
+        'notifications-dialog-card-coach': accent === 'coach'
+      }"
+    >
       <div class="notifications-dialog-header">
         <div>
           <div class="notifications-dialog-title">All Notifications</div>
@@ -52,6 +59,10 @@ const props = defineProps({
   darkMode: {
     type: Boolean,
     default: false
+  },
+  accent: {
+    type: String,
+    default: 'default'
   },
   notifications: {
     type: Array,
@@ -125,6 +136,14 @@ function handleNotificationClick(item) {
   scrollbar-color: rgba(22, 119, 255, 0.45) rgba(226, 232, 240, 0.5);
 }
 
+.notifications-dialog-card-admin .notifications-list {
+  scrollbar-color: rgba(242, 140, 40, 0.55) rgba(226, 232, 240, 0.5);
+}
+
+.notifications-dialog-card-coach .notifications-list {
+  scrollbar-color: rgba(156, 124, 255, 0.55) rgba(226, 232, 240, 0.5);
+}
+
 .notifications-list::-webkit-scrollbar {
   width: 10px;
 }
@@ -138,6 +157,14 @@ function handleNotificationClick(item) {
   border: 2px solid rgba(226, 232, 240, 0.5);
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(22, 119, 255, 0.7), rgba(15, 95, 227, 0.55));
+}
+
+.notifications-dialog-card-admin .notifications-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(242, 140, 40, 0.78), rgba(222, 111, 18, 0.58));
+}
+
+.notifications-dialog-card-coach .notifications-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(156, 124, 255, 0.78), rgba(127, 92, 255, 0.58));
 }
 
 .notification-item {
@@ -166,6 +193,16 @@ function handleNotificationClick(item) {
 .notification-dot-active {
   background: #1677ff;
   box-shadow: 0 0 0 6px rgba(22, 119, 255, 0.12);
+}
+
+.notifications-dialog-card-admin .notification-dot-active {
+  background: #f28c28;
+  box-shadow: 0 0 0 6px rgba(242, 140, 40, 0.14);
+}
+
+.notifications-dialog-card-coach .notification-dot-active {
+  background: #9c7cff;
+  box-shadow: 0 0 0 6px rgba(156, 124, 255, 0.14);
 }
 
 .notification-copy {

@@ -86,4 +86,62 @@ body {
   background: linear-gradient(180deg, #1677ff 0%, #0f5fe3 100%);
   color: white;
 }
+
+.admin-theme-root {
+  --admin-accent: #f28c28;
+  --admin-accent-strong: #de6f12;
+  --admin-accent-soft: #fff2e3;
+  --admin-accent-soft-strong: #ffe4c2;
+  --admin-accent-border: rgba(242, 140, 40, 0.32);
+  --admin-accent-shadow: rgba(242, 140, 40, 0.28);
+  --admin-accent-shadow-soft: rgba(242, 140, 40, 0.16);
+  --admin-accent-ring: rgba(242, 140, 40, 0.12);
+  --admin-accent-text: #bf6515;
+  --admin-accent-muted: #9a5a1d;
+  --admin-accent-dark-text: #ffc78f;
+}
+
+.admin-theme-root.admin-theme-root-dark {
+  --admin-accent: #ff9e3d;
+  --admin-accent-strong: #f08219;
+  --admin-accent-soft: rgba(96, 56, 17, 0.32);
+  --admin-accent-soft-strong: rgba(122, 69, 18, 0.38);
+  --admin-accent-border: rgba(255, 158, 61, 0.3);
+  --admin-accent-shadow: rgba(255, 158, 61, 0.24);
+  --admin-accent-shadow-soft: rgba(255, 158, 61, 0.14);
+  --admin-accent-ring: rgba(255, 158, 61, 0.14);
+  --admin-accent-text: #ffbe7b;
+  --admin-accent-muted: #ffcf98;
+  --admin-accent-dark-text: #ffd5a8;
+}
+
+.coach-theme-root {
+  --coach-accent: #9c7cff;
+  --coach-accent-strong: #7f5cff;
+  --coach-accent-soft: #f4efff;
+  --coach-accent-soft-strong: #e6dcff;
+  --coach-accent-border: rgba(156, 124, 255, 0.32);
+  --coach-accent-border-strong: rgba(156, 124, 255, 0.54);
+  --coach-accent-shadow: rgba(156, 124, 255, 0.28);
+  --coach-accent-shadow-soft: rgba(156, 124, 255, 0.16);
+  --coach-accent-ring: rgba(156, 124, 255, 0.12);
+  --coach-accent-text: #7654df;
+  --coach-accent-muted: #8a6af0;
+  --coach-accent-dark-text: #d8c7ff;
+}
+
+.coach-theme-root.coach-theme-root-dark {
+  --coach-accent: #b79cff;
+  --coach-accent-strong: #9879ff;
+  --coach-accent-soft: rgba(58, 43, 99, 0.34);
+  --coach-accent-soft-strong: rgba(73, 56, 123, 0.42);
+  --coach-accent-border: rgba(183, 156, 255, 0.32);
+  --coach-accent-border-strong: rgba(183, 156, 255, 0.5);
+  --coach-accent-shadow: rgba(183, 156, 255, 0.24);
+  --coach-accent-shadow-soft: rgba(183, 156, 255, 0.14);
+  --coach-accent-ring: rgba(183, 156, 255, 0.14);
+  --coach-accent-text: #cfbdff;
+  --coach-accent-muted: #b89df8;
+  --coach-accent-dark-text: #e0d3ff;
+}
 </style>
