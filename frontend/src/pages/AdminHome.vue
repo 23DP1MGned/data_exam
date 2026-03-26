@@ -142,6 +142,8 @@
             </div>
 
             <div class="topbar-card">
+              <div class="topbar-spacer" aria-hidden="true"></div>
+
               <div class="topbar-tools">
                 <div class="icon-badge-wrap">
                   <v-btn
@@ -338,7 +340,7 @@ const darkModeStorageKey = 'app-dark-mode'
 
 const navItems = [
   { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-  { label: 'Admin Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
+  { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
   { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
   { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/admin-payments' }
@@ -736,12 +738,12 @@ function updateViewportState() {
 .topbar-card {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 18px;
-  padding: 18px 20px;
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.58);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 18px 22px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.62);
 }
 
 .admin-home-shell-dark .topbar-card {
@@ -749,67 +751,68 @@ function updateViewportState() {
   border-color: rgba(74, 92, 126, 0.42);
 }
 
+.topbar-spacer {
+  flex: 1;
+  min-width: 0;
+}
+
 .topbar-tools {
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-width: 0;
+  gap: 12px;
 }
 
 .top-icon-btn {
   width: 54px;
   height: 54px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(255, 255, 255, 0.75);
+  border-radius: 18px;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(230, 237, 246, 0.94);
 }
 
 .admin-home-shell-dark .top-icon-btn {
-  color: #dce6f7;
-  background: rgba(18, 27, 43, 0.92);
-  border-color: rgba(74, 92, 126, 0.46);
+  color: #eef4ff;
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
 }
 
 .top-icon-btn-active {
-  color: #1677ff;
-  background: rgba(232, 242, 255, 0.96);
-  border-color: rgba(22, 119, 255, 0.28);
+  color: #0f5fe3;
 }
 
 .admin-home-shell-dark .top-icon-btn-active {
   color: #7fbcff;
-  background: rgba(22, 43, 76, 0.96);
-  border-color: rgba(82, 156, 255, 0.44);
 }
 
 .icon-badge-wrap {
   position: relative;
-  color: #111827;
 }
 
 .icon-badge {
   position: absolute;
   top: 2px;
   right: 2px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
   display: grid;
   place-items: center;
-  min-width: 21px;
-  height: 21px;
-  padding: 0 6px;
   border-radius: 999px;
+  background: #1677ff;
+  color: white;
   font-size: 0.72rem;
   font-weight: 700;
-  color: white;
-  background: #1677ff;
 }
 
 .profile-pill {
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-width: 0;
-  padding: 10px 16px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.82);
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(230, 237, 246, 0.94);
 }
 
 .profile-pill > div {
@@ -817,28 +820,29 @@ function updateViewportState() {
 }
 
 .admin-home-shell-dark .profile-pill {
-  background: rgba(18, 27, 43, 0.92);
-  border: 1px solid rgba(74, 92, 126, 0.42);
+  background: rgba(13, 20, 34, 0.88);
+  border-color: rgba(63, 80, 114, 0.58);
 }
 
 .profile-name {
   font-size: 0.98rem;
-  font-weight: 600;
-  color: #172033;
+  font-weight: 700;
+  color: #1c2438;
 }
 
 .admin-home-shell-dark .profile-name {
-  color: #f2f7ff;
+  color: #f3f7ff;
 }
 
 .profile-email {
+  margin-top: 2px;
   font-size: 0.9rem;
-  color: #7b8798;
+  color: #78859a;
   word-break: break-word;
 }
 
 .admin-home-shell-dark .profile-email {
-  color: #93a5c3;
+  color: #94a6c4;
 }
 
 .overview-shell-card {
@@ -864,10 +868,9 @@ function updateViewportState() {
 
 .overview-title {
   margin: 0;
-  font-size: 2.3rem;
+  font-size: 2.1rem;
   line-height: 1.1;
-  font-weight: 700;
-  color: #121826;
+  color: #172033;
 }
 
 .admin-home-shell-dark .overview-title {
@@ -875,13 +878,11 @@ function updateViewportState() {
 }
 
 .overview-subtitle {
-  margin-top: 10px;
-  font-size: 1rem;
-  color: #66748a;
+  color: #7b8798;
 }
 
 .admin-home-shell-dark .overview-subtitle {
-  color: #8fa3c1;
+  color: #94a6c4;
 }
 
 .overview-stats-grid {
@@ -911,24 +912,22 @@ function updateViewportState() {
 }
 
 .summary-label {
-  font-size: 0.94rem;
-  color: #6f7d90;
+  color: #7b8798;
 }
 
 .admin-home-shell-dark .summary-label {
-  color: #8fa3c1;
+  color: #94a6c4;
 }
 
 .summary-value {
-  margin-top: 10px;
-  font-size: 2rem;
+  margin-top: 8px;
+  font-size: 1.9rem;
   font-weight: 700;
-  color: #111827;
-  line-height: 1;
+  color: #172033;
 }
 
 .admin-home-shell-dark .summary-value {
-  color: #f4f8ff;
+  color: #f3f7ff;
 }
 
 .overview-grid {

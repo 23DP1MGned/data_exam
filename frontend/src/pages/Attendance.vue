@@ -364,15 +364,17 @@
         </div>
 
         <v-dialog v-model="markDialog" max-width="560">
-          <v-card class="dialog-card">
-            <v-card-title>Mark Attendance</v-card-title>
-            <v-card-text>
+          <v-card class="dialog-card mark-dialog-card">
+            <v-card-title class="mark-dialog-title">Mark Attendance</v-card-title>
+            <v-card-text class="mark-dialog-content">
               <v-select
                 v-model="markForm.session_id"
                 label="Session"
                 :items="sessionOptions"
                 item-title="label"
                 item-value="id"
+                class="mark-field"
+                :menu-props="selectMenuProps"
               />
               <v-select
                 v-model="markForm.user_id"
@@ -380,18 +382,22 @@
                 :items="selectedSessionChildren"
                 item-title="name"
                 item-value="id"
+                class="mark-field"
+                :menu-props="selectMenuProps"
               />
               <v-select
                 v-model="markForm.status"
                 label="Status"
                 :items="attendanceStatusOptions"
+                class="mark-field"
+                :menu-props="selectMenuProps"
               />
-              <v-text-field v-model="markForm.comment" label="Comment" />
+              <v-text-field v-model="markForm.comment" label="Comment" class="mark-field" />
             </v-card-text>
-            <v-card-actions>
+            <v-card-actions class="mark-dialog-actions">
               <v-spacer />
-              <v-btn variant="outlined" @click="markDialog = false">Cancel</v-btn>
-              <v-btn color="primary" @click="submitAttendance">Save</v-btn>
+              <v-btn variant="outlined" class="mark-cancel-btn" @click="markDialog = false">Cancel</v-btn>
+              <v-btn color="primary" class="mark-save-btn" @click="submitAttendance">Save</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -428,6 +434,10 @@ const focusedDate = ref(null)
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const darkModeStorageKey = 'app-dark-mode'
+const selectMenuProps = computed(() => ({
+  contentClass: darkMode.value ? 'app-select-menu app-select-menu-dark' : 'app-select-menu',
+  theme: darkMode.value ? 'dark' : 'light'
+}))
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
 const { user } = useAuth()
 const {
@@ -1768,6 +1778,118 @@ function formatDateKey(date) {
 .attendance-shell-dark .cell-session-item,
 .attendance-shell-dark .cell-status {
   color: #a8b7cf;
+}
+
+.dialog-card {
+  border-radius: 24px;
+}
+
+.mark-dialog-card {
+  padding: 8px;
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(238, 245, 255, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  box-shadow: 0 22px 48px rgba(76, 104, 148, 0.18);
+}
+
+.attendance-shell-dark :deep(.v-overlay__content .mark-dialog-card) {
+  background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
+  border-color: rgba(74, 92, 126, 0.42);
+  color: #eff5ff;
+  box-shadow: 0 24px 48px rgba(4, 10, 24, 0.42);
+}
+
+.mark-dialog-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #172033;
+}
+
+.attendance-shell-dark .mark-dialog-title {
+  color: #f3f7ff;
+}
+
+.mark-dialog-content {
+  display: grid;
+  gap: 8px;
+}
+
+.mark-dialog-card :deep(.mark-field .v-field) {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: inset 0 0 0 1px rgba(223, 232, 246, 0.95);
+}
+
+.mark-dialog-card :deep(.mark-field .v-field--focused) {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(74, 144, 255, 0.72),
+    0 0 0 4px rgba(22, 119, 255, 0.08);
+}
+
+.mark-dialog-card :deep(.mark-field .v-field__outline) {
+  --v-field-border-opacity: 0;
+}
+
+.mark-dialog-card :deep(.mark-field input),
+.mark-dialog-card :deep(.mark-field textarea),
+.mark-dialog-card :deep(.mark-field .v-field__input),
+.mark-dialog-card :deep(.mark-field .v-select__selection-text),
+.mark-dialog-card :deep(.mark-field .v-select__selection),
+.mark-dialog-card :deep(.mark-field .v-label),
+.mark-dialog-card :deep(.mark-field .v-field__append-inner) {
+  color: #172033;
+}
+
+.attendance-shell-dark .mark-dialog-card :deep(.mark-field .v-field) {
+  background: rgba(17, 25, 40, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(64, 82, 116, 0.72);
+}
+
+.attendance-shell-dark .mark-dialog-card :deep(.mark-field .v-field--focused) {
+  background: rgba(22, 31, 48, 0.98);
+  box-shadow:
+    inset 0 0 0 1px rgba(97, 155, 255, 0.74),
+    0 0 0 4px rgba(22, 119, 255, 0.12);
+}
+
+.attendance-shell-dark .mark-dialog-card :deep(.mark-field input),
+.attendance-shell-dark .mark-dialog-card :deep(.mark-field textarea),
+.attendance-shell-dark .mark-dialog-card :deep(.mark-field .v-field__input),
+.attendance-shell-dark .mark-dialog-card :deep(.mark-field .v-select__selection-text),
+.attendance-shell-dark .mark-dialog-card :deep(.mark-field .v-select__selection) {
+  color: #eef4ff;
+}
+
+.attendance-shell-dark .mark-dialog-card :deep(.mark-field .v-label),
+.attendance-shell-dark .mark-dialog-card :deep(.mark-field .v-field__append-inner) {
+  color: #94a6c4;
+}
+
+.mark-dialog-actions {
+  padding: 8px 16px 16px;
+  gap: 10px;
+}
+
+.mark-cancel-btn,
+.mark-save-btn {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 16px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.mark-cancel-btn {
+  color: #1677ff;
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(22, 119, 255, 0.28);
+  font-weight: 600;
+}
+
+.attendance-shell-dark .mark-cancel-btn {
+  background: rgba(18, 27, 43, 0.92);
+  color: #7fbcff;
+  border-color: rgba(82, 156, 255, 0.32);
 }
 
 .cell-session-name {

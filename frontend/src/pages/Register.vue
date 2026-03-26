@@ -38,6 +38,7 @@
           item-title="label"
           item-value="value"
           variant="outlined"
+          :menu-props="roleMenuProps"
           :error-messages="fieldErrors.role"
         />
 
@@ -145,6 +146,11 @@ const roleOptions = [
   { label: 'Parent', value: 'parent' },
   { label: 'Child', value: 'child' }
 ]
+
+const roleMenuProps = {
+  contentClass: 'app-select-menu',
+  theme: 'light'
+}
 
 const form = reactive({
   name: '',

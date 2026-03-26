@@ -473,24 +473,24 @@
         </div>
 
         <v-dialog v-model="dialog" max-width="560">
-          <v-card class="dialog-card">
-            <v-card-title>
+          <v-card class="dialog-card base-dialog-card">
+            <v-card-title class="base-dialog-title">
               {{ isEditing ? 'Edit Training' : 'Create Training' }}
             </v-card-title>
 
-            <v-card-text>
-              <v-text-field label="Title" v-model="newTraining.title" />
-              <v-text-field label="Date (YYYY-MM-DD)" v-model="newTraining.date" />
-              <v-text-field label="Start time" v-model="newTraining.start" />
-              <v-text-field label="End time" v-model="newTraining.end" />
-              <v-text-field label="Trainer" v-model="newTraining.trainer" />
-              <v-textarea label="Description" v-model="newTraining.description" />
+            <v-card-text class="base-dialog-content">
+              <v-text-field label="Title" v-model="newTraining.title" class="base-dialog-field" />
+              <v-text-field label="Date (YYYY-MM-DD)" v-model="newTraining.date" class="base-dialog-field" />
+              <v-text-field label="Start time" v-model="newTraining.start" class="base-dialog-field" />
+              <v-text-field label="End time" v-model="newTraining.end" class="base-dialog-field" />
+              <v-text-field label="Trainer" v-model="newTraining.trainer" class="base-dialog-field" />
+              <v-textarea label="Description" v-model="newTraining.description" class="base-dialog-field" />
             </v-card-text>
 
-            <v-card-actions>
+            <v-card-actions class="base-dialog-actions">
               <v-spacer></v-spacer>
-              <v-btn @click="dialog = false">Cancel</v-btn>
-              <v-btn color="primary" @click="saveTraining">
+              <v-btn variant="outlined" class="base-dialog-cancel-btn" @click="dialog = false">Cancel</v-btn>
+              <v-btn color="primary" class="base-dialog-save-btn" @click="saveTraining">
                 {{ isEditing ? 'Update' : 'Save' }}
               </v-btn>
             </v-card-actions>
@@ -609,7 +609,7 @@ const navItems = computed(() => {
   if (user.value?.role === 'admin') {
     return [
       { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-      { label: 'Admin Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
+      { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
       { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
       { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
       { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/admin-payments' }
@@ -714,6 +714,20 @@ const countdownTrainings = computed(() => {
   )
 })
 
+const coachThreeDayTrainingHours = computed(() => {
+  if (!isCoach.value) return null
+
+  const limitTimestamp = countdownNow.value + (3 * 24 * 60 * 60 * 1000)
+  const totalMinutes = trainings.value
+    .filter((training) => {
+      const startAt = trainingStartTimestamp(training)
+      return Number.isFinite(startAt) && startAt >= countdownNow.value && startAt <= limitTimestamp
+    })
+    .reduce((sum, training) => sum + trainingDurationMinutes(training), 0)
+
+  return formatDuration(totalMinutes)
+})
+
 const nextTrainingCountdown = computed(() => {
   const nextTraining = countdownTrainings.value
     .map((training) => ({
@@ -747,7 +761,9 @@ const displayedOverviewStats = computed(() =>
   overviewStats.value.map((item) =>
     item.label === 'Next training countdown'
       ? { ...item, value: nextTrainingCountdown.value }
-      : item
+      : isCoach.value && item.label === 'Training hours in 3 days'
+        ? { ...item, value: coachThreeDayTrainingHours.value }
+        : item
   )
 )
 
@@ -830,6 +846,25 @@ function parseTime(value) {
 
 function trainingStartTimestamp(training) {
   return new Date(`${training.date}T${training.start}:00`).getTime()
+}
+
+function trainingDurationMinutes(training) {
+  const startAt = trainingStartTimestamp(training)
+  const endAt = new Date(`${training.date}T${training.end}:00`).getTime()
+
+  if (!Number.isFinite(startAt) || !Number.isFinite(endAt)) return 0
+
+  return Math.max(0, Math.round((endAt - startAt) / 60000))
+}
+
+function formatDuration(totalMinutes) {
+  const minutes = Math.max(0, Number(totalMinutes) || 0)
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+
+  if (hours > 0 && remainingMinutes > 0) return `${hours}h ${remainingMinutes}m`
+  if (hours > 0) return `${hours}h`
+  return `${remainingMinutes}m`
 }
 
 function formatOverviewDate(value) {
@@ -1665,6 +1700,103 @@ function updateViewportState() {
   background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
   color: #eff5ff;
   border: 1px solid rgba(74, 92, 126, 0.42);
+}
+
+.base-dialog-card {
+  padding: 8px;
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(238, 245, 255, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  box-shadow: 0 22px 48px rgba(76, 104, 148, 0.18);
+}
+
+.base-dialog-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #172033;
+}
+
+.dashboard-shell-dark .base-dialog-title {
+  color: #f3f7ff;
+}
+
+.base-dialog-content {
+  display: grid;
+  gap: 8px;
+}
+
+.base-dialog-card :deep(.base-dialog-field .v-field) {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: inset 0 0 0 1px rgba(223, 232, 246, 0.95);
+}
+
+.base-dialog-card :deep(.base-dialog-field .v-field--focused) {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(74, 144, 255, 0.72),
+    0 0 0 4px rgba(22, 119, 255, 0.08);
+}
+
+.base-dialog-card :deep(.base-dialog-field .v-field__outline) {
+  --v-field-border-opacity: 0;
+}
+
+.base-dialog-card :deep(.base-dialog-field input),
+.base-dialog-card :deep(.base-dialog-field textarea),
+.base-dialog-card :deep(.base-dialog-field .v-field__input),
+.base-dialog-card :deep(.base-dialog-field .v-label),
+.base-dialog-card :deep(.base-dialog-field .v-field__append-inner) {
+  color: #172033;
+}
+
+.dashboard-shell-dark .base-dialog-card :deep(.base-dialog-field .v-field) {
+  background: rgba(17, 25, 40, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(64, 82, 116, 0.72);
+}
+
+.dashboard-shell-dark .base-dialog-card :deep(.base-dialog-field .v-field--focused) {
+  background: rgba(22, 31, 48, 0.98);
+  box-shadow:
+    inset 0 0 0 1px rgba(97, 155, 255, 0.74),
+    0 0 0 4px rgba(22, 119, 255, 0.12);
+}
+
+.dashboard-shell-dark .base-dialog-card :deep(.base-dialog-field input),
+.dashboard-shell-dark .base-dialog-card :deep(.base-dialog-field textarea),
+.dashboard-shell-dark .base-dialog-card :deep(.base-dialog-field .v-field__input) {
+  color: #eef4ff;
+}
+
+.dashboard-shell-dark .base-dialog-card :deep(.base-dialog-field .v-label),
+.dashboard-shell-dark .base-dialog-card :deep(.base-dialog-field .v-field__append-inner) {
+  color: #94a6c4;
+}
+
+.base-dialog-actions {
+  padding: 8px 16px 16px;
+  gap: 10px;
+}
+
+.base-dialog-cancel-btn,
+.base-dialog-save-btn {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 16px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.base-dialog-cancel-btn {
+  color: #1677ff;
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(22, 119, 255, 0.28);
+  font-weight: 600;
+}
+
+.dashboard-shell-dark .base-dialog-cancel-btn {
+  background: rgba(18, 27, 43, 0.92);
+  color: #7fbcff;
+  border-color: rgba(82, 156, 255, 0.32);
 }
 
 .filter-dialog-card {

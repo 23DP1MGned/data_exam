@@ -127,10 +127,29 @@ class DashboardController extends Controller
             : 'Attendance rate';
 
         $sessionStartsAt = fn (TrainingSession $session) => Carbon::parse($session->date->toDateString().' '.$session->start_time);
+        $sessionDurationMinutes = fn (TrainingSession $session) => Carbon::parse($session->end_time)
+            ->diffInMinutes(Carbon::parse($session->start_time));
+        $formatDuration = function (int $minutes): string {
+            $hours = intdiv($minutes, 60);
+            $remainingMinutes = $minutes % 60;
+
+            if ($hours > 0 && $remainingMinutes > 0) {
+                return "{$hours}h {$remainingMinutes}m";
+            }
+
+            if ($hours > 0) {
+                return "{$hours}h";
+            }
+
+            return "{$remainingMinutes}m";
+        };
         $upcomingSessions = $sessions
             ->filter(fn (TrainingSession $session) => $sessionStartsAt($session)->greaterThanOrEqualTo(now()))
             ->sortBy(fn (TrainingSession $session) => $sessionStartsAt($session)->timestamp)
             ->values();
+        $threeDaySessions = $upcomingSessions->filter(
+            fn (TrainingSession $session) => $sessionStartsAt($session)->lessThanOrEqualTo(now()->copy()->addDays(2)->endOfDay())
+        );
         $coachUpcomingWindowEnd = now()->copy()->addDays(7)->endOfDay();
         $upcoming = $user->role === User::ROLE_COACH
             ? $upcomingSessions
@@ -138,7 +157,10 @@ class DashboardController extends Controller
                 ->values()
             : $upcomingSessions->take(5);
         $roleSpecificOverviewStat = match ($user->role) {
-            User::ROLE_COACH => ['label' => 'My groups', 'value' => Group::query()->where('coach_id', $user->id)->count()],
+            User::ROLE_COACH => [
+                'label' => 'Training hours in 3 days',
+                'value' => $formatDuration($threeDaySessions->sum(fn (TrainingSession $session) => $sessionDurationMinutes($session))),
+            ],
             User::ROLE_CHILD => ['label' => 'My groups', 'value' => $user->childGroups()->count()],
             default => ['label' => 'Pending payments', 'value' => Payment::query()->where('status', 'pending')->count()],
         };
@@ -146,9 +168,7 @@ class DashboardController extends Controller
         return $this->success([
             'mode' => 'standard',
             'overview_stats' => [
-                ['label' => 'Trainings in 3 days', 'value' => $upcomingSessions->filter(
-                    fn (TrainingSession $session) => $sessionStartsAt($session)->lessThanOrEqualTo(now()->copy()->addDays(2)->endOfDay())
-                )->count()],
+                ['label' => 'Trainings in 3 days', 'value' => $threeDaySessions->count()],
                 ['label' => 'Next training countdown', 'value' => $upcoming->isNotEmpty() ? 'Upcoming' : 'No upcoming'],
                 $roleSpecificOverviewStat,
                 ['label' => $attendanceRateLabel, 'value' => $attendanceRate],

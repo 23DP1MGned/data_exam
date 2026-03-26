@@ -614,6 +614,7 @@
                 variant="outlined"
                 class="person-field"
                 placeholder="Search by name"
+                :menu-props="selectMenuProps"
                 clearable
               />
 
@@ -889,10 +890,14 @@ const selectedPersonFilter = ref(null)
 const refundLoadingId = ref(null)
 const paymentActionError = ref('')
 const darkModeStorageKey = 'app-dark-mode'
+const selectMenuProps = computed(() => ({
+  contentClass: darkMode.value ? 'app-select-menu app-select-menu-dark' : 'app-select-menu',
+  theme: darkMode.value ? 'dark' : 'light'
+}))
 
 const navItems = [
   { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-  { label: 'Admin Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
+  { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
   { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
   { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
   { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/admin-payments' }
