@@ -425,11 +425,13 @@
         </div>
 
         <v-dialog v-model="sessionDialog" max-width="760">
-          <v-card class="dialog-card create-dialog-card">
-            <div class="create-dialog-header">
+          <v-card class="dialog-card create-dialog-card" :class="{ 'create-dialog-card-dark': darkMode }">
+            <div class="create-dialog-header" :class="{ 'create-dialog-header-dark': darkMode }">
               <div>
-                <div class="create-dialog-title">{{ editingSessionId ? 'Edit Session' : 'Create Session' }}</div>
-                <div class="create-dialog-subtitle">
+                <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">
+                  {{ editingSessionId ? 'Edit Session' : 'Create Session' }}
+                </div>
+                <div class="create-dialog-subtitle" :class="{ 'create-dialog-subtitle-dark': darkMode }">
                   {{
                     editingSessionId
                       ? 'Update the training title, group, weekdays, time and price.'
@@ -521,22 +523,22 @@
               </div>
             </v-card-text>
 
-            <v-card-actions class="create-dialog-actions">
+            <v-card-actions class="create-dialog-actions" :class="{ 'create-dialog-actions-dark': darkMode }">
               <v-spacer></v-spacer>
               <v-btn color="primary" class="apply-filter-btn" :loading="saving" @click="saveSession">
                 {{ editingSessionId ? 'Save changes' : 'Create session' }}
               </v-btn>
-              <v-btn variant="text" class="reset-filter-btn" @click="closeDialog">Cancel</v-btn>
+              <v-btn variant="text" class="reset-filter-btn" :class="{ 'reset-filter-btn-dark': darkMode }" @click="closeDialog">Cancel</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
 
         <v-dialog v-model="statusDialog" max-width="560">
-          <v-card class="dialog-card create-dialog-card">
-            <div class="create-dialog-header">
+          <v-card class="dialog-card create-dialog-card" :class="{ 'create-dialog-card-dark': darkMode }">
+            <div class="create-dialog-header" :class="{ 'create-dialog-header-dark': darkMode }">
               <div>
-                <div class="create-dialog-title">Update Session Status</div>
-                <div class="create-dialog-subtitle">
+                <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">Update Session Status</div>
+                <div class="create-dialog-subtitle" :class="{ 'create-dialog-subtitle-dark': darkMode }">
                   Change the status for one dated session without editing the weekly training plan.
                 </div>
               </div>
@@ -577,22 +579,22 @@
               />
             </v-card-text>
 
-            <v-card-actions class="create-dialog-actions">
+            <v-card-actions class="create-dialog-actions" :class="{ 'create-dialog-actions-dark': darkMode }">
               <v-spacer></v-spacer>
               <v-btn color="primary" class="apply-filter-btn" :loading="statusSaving" @click="saveInstanceStatus">
                 Save status
               </v-btn>
-              <v-btn variant="text" class="reset-filter-btn" @click="closeStatusDialog">Cancel</v-btn>
+              <v-btn variant="text" class="reset-filter-btn" :class="{ 'reset-filter-btn-dark': darkMode }" @click="closeStatusDialog">Cancel</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
 
         <v-dialog v-model="sessionDatesFilterDialog" max-width="620">
-          <v-card class="dialog-card create-dialog-card">
-            <div class="create-dialog-header">
+          <v-card class="dialog-card create-dialog-card" :class="{ 'create-dialog-card-dark': darkMode }">
+            <div class="create-dialog-header" :class="{ 'create-dialog-header-dark': darkMode }">
               <div>
-                <div class="create-dialog-title">Filter Session Dates</div>
-                <div class="create-dialog-subtitle">
+                <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">Filter Session Dates</div>
+                <div class="create-dialog-subtitle" :class="{ 'create-dialog-subtitle-dark': darkMode }">
                   Narrow concrete session instances by date range or sort order.
                 </div>
               </div>
@@ -648,12 +650,12 @@
               </div>
             </v-card-text>
 
-            <v-card-actions class="create-dialog-actions">
+            <v-card-actions class="create-dialog-actions" :class="{ 'create-dialog-actions-dark': darkMode }">
               <v-spacer></v-spacer>
               <v-btn color="primary" class="apply-filter-btn" @click="sessionDatesFilterDialog = false">
                 Apply
               </v-btn>
-              <v-btn variant="text" class="reset-filter-btn" @click="resetSessionDateFilters">
+              <v-btn variant="text" class="reset-filter-btn" :class="{ 'reset-filter-btn-dark': darkMode }" @click="resetSessionDateFilters">
                 Reset
               </v-btn>
             </v-card-actions>
@@ -661,11 +663,11 @@
         </v-dialog>
 
         <v-dialog v-model="sessionChildrenDialog" max-width="760">
-          <v-card class="dialog-card create-dialog-card">
-            <div class="create-dialog-header">
+          <v-card class="dialog-card create-dialog-card" :class="{ 'create-dialog-card-dark': darkMode }">
+            <div class="create-dialog-header" :class="{ 'create-dialog-header-dark': darkMode }">
               <div>
-                <div class="create-dialog-title">Manage Session Children</div>
-                <div class="create-dialog-subtitle">
+                <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">Manage Session Children</div>
+                <div class="create-dialog-subtitle" :class="{ 'create-dialog-subtitle-dark': darkMode }">
                   Add a child only to this dated session without changing the whole group membership.
                 </div>
               </div>
@@ -760,9 +762,9 @@
               </div>
             </v-card-text>
 
-            <v-card-actions class="create-dialog-actions">
+            <v-card-actions class="create-dialog-actions" :class="{ 'create-dialog-actions-dark': darkMode }">
               <v-spacer></v-spacer>
-              <v-btn variant="text" class="reset-filter-btn" @click="closeChildrenDialog">Close</v-btn>
+              <v-btn variant="text" class="reset-filter-btn" :class="{ 'reset-filter-btn-dark': darkMode }" @click="closeChildrenDialog">Close</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -862,7 +864,7 @@ const weekdayOptions = [
 ]
 
 const selectMenuProps = computed(() => ({
-  contentClass: darkMode.value ? 'admin-sessions-select-menu admin-sessions-select-menu-dark' : 'admin-sessions-select-menu',
+  contentClass: darkMode.value ? 'admin-select-menu admin-select-menu-dark' : 'admin-select-menu',
   theme: darkMode.value ? 'dark' : 'light'
 }))
 
@@ -2056,23 +2058,24 @@ async function handleMobileLogout() {
   color: #6f7f96;
 }
 
-.admin-sessions-shell-dark .session-date-filter-field :deep(.v-field) {
+.create-dialog-card-dark .session-date-filter-field :deep(.v-field) {
   background: rgba(17, 25, 40, 0.86);
   box-shadow: inset 0 0 0 1px rgba(64, 82, 116, 0.72);
 }
 
-.admin-sessions-shell-dark .session-date-filter-field :deep(input),
-.admin-sessions-shell-dark .session-date-filter-field :deep(.v-select__selection-text),
-.admin-sessions-shell-dark .session-date-filter-field :deep(.v-select__selection) {
+.create-dialog-card-dark .session-date-filter-field :deep(input),
+.create-dialog-card-dark .session-date-filter-field :deep(.v-select__selection-text),
+.create-dialog-card-dark .session-date-filter-field :deep(.v-select__selection) {
   color: #eef4ff;
 }
 
-.admin-sessions-shell-dark .session-date-filter-field :deep(.v-label),
-.admin-sessions-shell-dark .session-date-filter-field :deep(.v-field__append-inner) {
+.create-dialog-card-dark .session-date-filter-field :deep(.v-label),
+.create-dialog-card-dark .session-date-filter-field :deep(.v-field__append-inner),
+.create-dialog-card-dark .session-date-filter-field :deep(input::placeholder) {
   color: #94a6c4;
 }
 
-.admin-sessions-shell-dark .session-date-filter-field :deep(input[type='date']::-webkit-calendar-picker-indicator) {
+.create-dialog-card-dark .session-date-filter-field :deep(input[type='date']::-webkit-calendar-picker-indicator) {
   filter: invert(1);
 }
 
@@ -2312,7 +2315,7 @@ async function handleMobileLogout() {
   background: rgba(241, 246, 255, 0.8);
 }
 
-.admin-sessions-shell-dark .session-child-item {
+.create-dialog-card-dark .session-child-item {
   background: rgba(17, 25, 40, 0.88);
   border-color: rgba(58, 75, 108, 0.62);
 }
@@ -2329,7 +2332,7 @@ async function handleMobileLogout() {
   color: #172033;
 }
 
-.admin-sessions-shell-dark .session-child-name {
+.create-dialog-card-dark .session-child-name {
   color: #f3f7ff;
 }
 
@@ -2338,7 +2341,7 @@ async function handleMobileLogout() {
   color: #7b8798;
 }
 
-.admin-sessions-shell-dark .session-child-meta {
+.create-dialog-card-dark .session-child-meta {
   color: #94a6c4;
 }
 
@@ -2368,7 +2371,7 @@ async function handleMobileLogout() {
   box-shadow: 0 28px 70px rgba(79, 106, 154, 0.22);
 }
 
-.admin-sessions-shell-dark :deep(.v-overlay__content .create-dialog-card) {
+.create-dialog-card-dark {
   border-color: rgba(66, 84, 118, 0.64);
   background:
     radial-gradient(circle at top left, rgba(55, 116, 255, 0.18), transparent 34%),
@@ -2388,7 +2391,7 @@ async function handleMobileLogout() {
   border-bottom: 1px solid rgba(219, 230, 246, 0.78);
 }
 
-.admin-sessions-shell-dark .create-dialog-header {
+.create-dialog-header-dark {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
   border-bottom-color: rgba(64, 82, 116, 0.68);
 }
@@ -2399,7 +2402,7 @@ async function handleMobileLogout() {
   color: #172033;
 }
 
-.admin-sessions-shell-dark .create-dialog-title {
+.create-dialog-title-dark {
   color: #f3f7ff;
 }
 
@@ -2409,7 +2412,7 @@ async function handleMobileLogout() {
   max-width: 430px;
 }
 
-.admin-sessions-shell-dark .create-dialog-subtitle {
+.create-dialog-subtitle-dark {
   color: #94a6c4;
 }
 
@@ -2439,17 +2442,17 @@ async function handleMobileLogout() {
   color: #6f7f96;
 }
 
-.admin-sessions-shell-dark .status-instance-summary {
+.create-dialog-card-dark .status-instance-summary {
   background: rgba(17, 25, 40, 0.88);
   border-color: rgba(58, 75, 108, 0.62);
 }
 
-.admin-sessions-shell-dark .status-instance-summary .payment-name {
+.create-dialog-card-dark .status-instance-summary .payment-name {
   color: #eef4ff;
 }
 
-.admin-sessions-shell-dark .status-instance-summary .payment-meta,
-.admin-sessions-shell-dark .status-instance-summary .payment-secondary {
+.create-dialog-card-dark .status-instance-summary .payment-meta,
+.create-dialog-card-dark .status-instance-summary .payment-secondary {
   color: #94a6c4;
 }
 
@@ -2469,7 +2472,7 @@ async function handleMobileLogout() {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.28));
 }
 
-.admin-sessions-shell-dark .create-dialog-actions {
+.create-dialog-actions-dark {
   border-top-color: rgba(64, 82, 116, 0.62);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.03));
 }
@@ -2494,7 +2497,7 @@ async function handleMobileLogout() {
   background: transparent !important;
 }
 
-.admin-sessions-shell-dark .reset-filter-btn {
+.reset-filter-btn-dark {
   color: #9eb1cf;
 }
 
@@ -2504,7 +2507,7 @@ async function handleMobileLogout() {
   border: 1px solid rgba(219, 230, 246, 0.92);
 }
 
-.admin-sessions-shell-dark .create-dialog-card :deep(.v-btn--icon) {
+.create-dialog-card-dark :deep(.v-btn--icon) {
   color: #eef4ff;
   background: rgba(18, 27, 43, 0.72);
   border-color: rgba(64, 82, 116, 0.62);
@@ -2554,51 +2557,53 @@ async function handleMobileLogout() {
   color: #6f7f96;
 }
 
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-field) {
+.create-dialog-card-dark :deep(.create-field .v-field) {
   background: rgba(17, 25, 40, 0.86);
   box-shadow: inset 0 0 0 1px rgba(64, 82, 116, 0.72);
 }
 
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-field--focused) {
+.create-dialog-card-dark :deep(.create-field .v-field--focused) {
   background: rgba(22, 31, 48, 0.98);
   box-shadow:
     inset 0 0 0 1px rgba(97, 155, 255, 0.74),
     0 0 0 4px var(--admin-accent-ring);
 }
 
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field input),
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field textarea),
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-field__input),
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-autocomplete__selection),
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-select__selection-text),
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-select__selection) {
+.create-dialog-card-dark :deep(.create-field input),
+.create-dialog-card-dark :deep(.create-field textarea),
+.create-dialog-card-dark :deep(.create-field .v-field__input),
+.create-dialog-card-dark :deep(.create-field .v-autocomplete__selection),
+.create-dialog-card-dark :deep(.create-field .v-select__selection-text),
+.create-dialog-card-dark :deep(.create-field .v-select__selection) {
   color: #eef4ff;
 }
 
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-chip),
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-chip__content),
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-chip .v-icon),
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-chip .v-chip__close) {
+.create-dialog-card-dark :deep(.create-field .v-chip),
+.create-dialog-card-dark :deep(.create-field .v-chip__content),
+.create-dialog-card-dark :deep(.create-field .v-chip .v-icon),
+.create-dialog-card-dark :deep(.create-field .v-chip .v-chip__close) {
   color: #eef4ff;
 }
 
-.admin-sessions-shell-dark .create-dialog-card :deep(.weekdays-field .v-chip) {
+.create-dialog-card-dark :deep(.weekdays-field .v-chip) {
   background: rgba(31, 72, 133, 0.42);
   border: 1px solid rgba(83, 122, 188, 0.62);
 }
 
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-label),
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-field__append-inner),
-.admin-sessions-shell-dark .create-dialog-card :deep(.create-field .v-messages__message) {
+.create-dialog-card-dark :deep(.create-field .v-label),
+.create-dialog-card-dark :deep(.create-field .v-field__append-inner),
+.create-dialog-card-dark :deep(.create-field .v-messages__message),
+.create-dialog-card-dark :deep(.create-field input::placeholder),
+.create-dialog-card-dark :deep(.create-field textarea::placeholder) {
   color: #94a6c4;
 }
 
-.admin-sessions-shell-dark .create-dialog-card :deep(.time-field input[type='time']::-webkit-calendar-picker-indicator) {
+.create-dialog-card-dark :deep(.time-field input[type='time']::-webkit-calendar-picker-indicator) {
   filter: invert(1);
 }
 
-.admin-sessions-shell-dark .create-dialog-card :deep(.price-field .v-field__prepend-inner),
-.admin-sessions-shell-dark .create-dialog-card :deep(.price-field .v-field__prepend-inner .v-icon) {
+.create-dialog-card-dark :deep(.price-field .v-field__prepend-inner),
+.create-dialog-card-dark :deep(.price-field .v-field__prepend-inner .v-icon) {
   color: #eef4ff;
 }
 

@@ -160,7 +160,7 @@ class DashboardController extends Controller
             ? $upcomingSessions
                 ->filter(fn (TrainingSession $session) => $sessionStartsAt($session)->lessThanOrEqualTo($coachUpcomingWindowEnd))
                 ->values()
-            : $upcomingSessions->take(5);
+            : $threeDaySessions->values();
         $roleSpecificOverviewStat = match ($user->role) {
             User::ROLE_COACH => [
                 'label' => 'Training hours in 3 days',

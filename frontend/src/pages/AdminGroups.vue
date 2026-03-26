@@ -319,11 +319,13 @@
         </div>
 
         <v-dialog v-model="groupDialog" max-width="760">
-          <v-card class="dialog-card create-dialog-card">
-            <div class="create-dialog-header">
+          <v-card class="dialog-card create-dialog-card" :class="{ 'create-dialog-card-dark': darkMode }">
+            <div class="create-dialog-header" :class="{ 'create-dialog-header-dark': darkMode }">
               <div>
-                <div class="create-dialog-title">{{ editingGroupId ? 'Edit Group' : 'Create Group' }}</div>
-                <div class="create-dialog-subtitle">
+                <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">
+                  {{ editingGroupId ? 'Edit Group' : 'Create Group' }}
+                </div>
+                <div class="create-dialog-subtitle" :class="{ 'create-dialog-subtitle-dark': darkMode }">
                   Manage group details, assign a coach and link children from the admin panel.
                 </div>
               </div>
@@ -409,7 +411,7 @@
               </div>
             </v-card-text>
 
-            <v-card-actions class="create-dialog-actions">
+            <v-card-actions class="create-dialog-actions" :class="{ 'create-dialog-actions-dark': darkMode }">
               <v-spacer></v-spacer>
               <v-btn color="primary" class="apply-filter-btn" :loading="saving" @click="saveGroup">
                 {{ editingGroupId ? 'Save changes' : 'Create group' }}
@@ -477,7 +479,7 @@ const ageOptions = Array.from({ length: 15 }, (_, index) => {
 })
 
 const selectMenuProps = computed(() => ({
-  contentClass: darkMode.value ? 'admin-groups-select-menu admin-groups-select-menu-dark' : 'admin-groups-select-menu',
+  contentClass: darkMode.value ? 'admin-select-menu admin-select-menu-dark' : 'admin-select-menu',
   theme: darkMode.value ? 'dark' : 'light'
 }))
 
@@ -1480,7 +1482,7 @@ async function handleMobileLogout() {
   box-shadow: 0 28px 70px rgba(79, 106, 154, 0.22);
 }
 
-.admin-groups-shell-dark :deep(.v-overlay__content .create-dialog-card) {
+.create-dialog-card-dark {
   border-color: rgba(66, 84, 118, 0.64);
   background:
     radial-gradient(circle at top left, rgba(55, 116, 255, 0.18), transparent 34%),
@@ -1500,7 +1502,7 @@ async function handleMobileLogout() {
   border-bottom: 1px solid rgba(219, 230, 246, 0.78);
 }
 
-.admin-groups-shell-dark .create-dialog-header {
+.create-dialog-header-dark {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
   border-bottom-color: rgba(64, 82, 116, 0.68);
 }
@@ -1511,7 +1513,7 @@ async function handleMobileLogout() {
   color: #172033;
 }
 
-.admin-groups-shell-dark .create-dialog-title {
+.create-dialog-title-dark {
   color: #f3f7ff;
 }
 
@@ -1521,7 +1523,7 @@ async function handleMobileLogout() {
   max-width: 430px;
 }
 
-.admin-groups-shell-dark .create-dialog-subtitle {
+.create-dialog-subtitle-dark {
   color: #94a6c4;
 }
 
@@ -1556,7 +1558,7 @@ async function handleMobileLogout() {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.28));
 }
 
-.admin-groups-shell-dark .create-dialog-actions {
+.create-dialog-actions-dark {
   border-top-color: rgba(64, 82, 116, 0.62);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.03));
 }
@@ -1591,7 +1593,7 @@ async function handleMobileLogout() {
   border: 1px solid rgba(219, 230, 246, 0.92);
 }
 
-.admin-groups-shell-dark .create-dialog-card :deep(.v-btn--icon) {
+.create-dialog-card-dark :deep(.v-btn--icon) {
   color: #eef4ff;
   background: rgba(18, 27, 43, 0.72);
   border-color: rgba(64, 82, 116, 0.62);
@@ -1666,41 +1668,44 @@ async function handleMobileLogout() {
   color: #6f7f96;
 }
 
-.admin-groups-shell-dark .create-dialog-card :deep(.create-field .v-field) {
+.create-dialog-card-dark :deep(.create-field .v-field) {
   background: rgba(17, 25, 40, 0.86);
   box-shadow: inset 0 0 0 1px rgba(64, 82, 116, 0.72);
 }
 
-.admin-groups-shell-dark .create-dialog-card :deep(.create-field .v-field--focused) {
+.create-dialog-card-dark :deep(.create-field .v-field--focused) {
   background: rgba(22, 31, 48, 0.98);
   box-shadow:
     inset 0 0 0 1px rgba(97, 155, 255, 0.74),
     0 0 0 4px var(--admin-accent-ring);
 }
 
-.admin-groups-shell-dark .create-dialog-card :deep(.price-field .v-field__prepend-inner) {
+.create-dialog-card-dark :deep(.price-field .v-field__prepend-inner) {
   color: #eef4ff;
 }
 
-.admin-groups-shell-dark .create-dialog-card :deep(.children-autocomplete-field .v-chip) {
+.create-dialog-card-dark :deep(.children-autocomplete-field .v-chip) {
   color: #dce9ff;
   background: rgba(31, 72, 133, 0.42);
   border-color: rgba(83, 122, 188, 0.62);
 }
 
-.admin-groups-shell-dark .create-dialog-card :deep(.children-autocomplete-field .v-chip .v-chip__close) {
+.create-dialog-card-dark :deep(.children-autocomplete-field .v-chip .v-chip__close) {
   color: #dce9ff;
 }
 
-.admin-groups-shell-dark .create-dialog-card :deep(.create-field input),
-.admin-groups-shell-dark .create-dialog-card :deep(.create-field textarea),
-.admin-groups-shell-dark .create-dialog-card :deep(.create-field .v-select__selection-text),
-.admin-groups-shell-dark .create-dialog-card :deep(.create-field .v-select__selection) {
+.create-dialog-card-dark :deep(.create-field input),
+.create-dialog-card-dark :deep(.create-field textarea),
+.create-dialog-card-dark :deep(.create-field .v-select__selection-text),
+.create-dialog-card-dark :deep(.create-field .v-select__selection),
+.create-dialog-card-dark :deep(.create-field .v-field__input) {
   color: #eef4ff;
 }
 
-.admin-groups-shell-dark .create-dialog-card :deep(.create-field .v-label),
-.admin-groups-shell-dark .create-dialog-card :deep(.create-field .v-field__append-inner) {
+.create-dialog-card-dark :deep(.create-field .v-label),
+.create-dialog-card-dark :deep(.create-field .v-field__append-inner),
+.create-dialog-card-dark :deep(.create-field input::placeholder),
+.create-dialog-card-dark :deep(.create-field textarea::placeholder) {
   color: #94a6c4;
 }
 

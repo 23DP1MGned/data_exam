@@ -898,7 +898,7 @@ const refundLoadingId = ref(null)
 const paymentActionError = ref('')
 const darkModeStorageKey = 'app-dark-mode'
 const selectMenuProps = computed(() => ({
-  contentClass: darkMode.value ? 'app-select-menu app-select-menu-dark' : 'app-select-menu',
+  contentClass: darkMode.value ? 'admin-select-menu admin-select-menu-dark' : 'admin-select-menu',
   theme: darkMode.value ? 'dark' : 'light'
 }))
 
@@ -1915,15 +1915,21 @@ async function handleMobileLogout() {
   color: #172033;
 }
 
-.admin-payments-shell-dark .person-field :deep(.v-field) {
+.list-dialog-card-dark .person-field :deep(.v-field) {
   background: rgba(17, 25, 40, 0.86);
   box-shadow: inset 0 0 0 1px rgba(64, 82, 116, 0.72);
 }
 
-.admin-payments-shell-dark .person-field :deep(input),
-.admin-payments-shell-dark .person-field :deep(.v-field__input),
-.admin-payments-shell-dark .person-field :deep(.v-select__selection-text) {
+.list-dialog-card-dark .person-field :deep(input),
+.list-dialog-card-dark .person-field :deep(.v-field__input),
+.list-dialog-card-dark .person-field :deep(.v-select__selection-text) {
   color: #eef4ff;
+}
+
+.list-dialog-card-dark .person-field :deep(.v-label),
+.list-dialog-card-dark .person-field :deep(.v-field__append-inner),
+.list-dialog-card-dark .person-field :deep(input::placeholder) {
+  color: #94a6c4;
 }
 
 .overview-stat-card,
@@ -1935,7 +1941,8 @@ async function handleMobileLogout() {
 }
 
 .admin-payments-shell-dark .overview-stat-card,
-.admin-payments-shell-dark .list-card {
+.admin-payments-shell-dark .list-card,
+.list-dialog-card-dark .list-card {
   background: rgba(13, 20, 34, 0.88);
   border-color: rgba(63, 80, 114, 0.58);
 }
@@ -1949,7 +1956,9 @@ async function handleMobileLogout() {
 
 .admin-payments-shell-dark .summary-value,
 .admin-payments-shell-dark .payment-name,
-.admin-payments-shell-dark .payment-amount {
+.admin-payments-shell-dark .payment-amount,
+.list-dialog-card-dark .payment-name,
+.list-dialog-card-dark .payment-amount {
   color: #f3f7ff;
 }
 
@@ -1967,7 +1976,8 @@ async function handleMobileLogout() {
 }
 
 .admin-payments-shell-dark .state-wrap,
-.admin-payments-shell-dark .empty-state {
+.admin-payments-shell-dark .empty-state,
+.list-dialog-card-dark .empty-state {
   background: rgba(13, 20, 34, 0.72);
   border-color: rgba(78, 97, 132, 0.58);
   color: #aac0df;

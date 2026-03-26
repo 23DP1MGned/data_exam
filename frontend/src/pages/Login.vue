@@ -33,13 +33,6 @@
             <div class="showcase-card-value">Per training, monthly plans and refunds</div>
           </article>
         </div>
-
-        <div class="showcase-roles">
-          <span class="showcase-role">Admin</span>
-          <span class="showcase-role">Coach</span>
-          <span class="showcase-role">Parent</span>
-          <span class="showcase-role">Child</span>
-        </div>
       </section>
 
       <section class="login-panel">
@@ -311,25 +304,6 @@ async function submit() {
   line-height: 1.5;
 }
 
-.showcase-roles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.showcase-role {
-  min-height: 38px;
-  padding: 0 14px;
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  border: 1px solid rgba(209, 223, 244, 0.96);
-  background: rgba(255, 255, 255, 0.66);
-  color: #405d86;
-  font-size: 0.92rem;
-  font-weight: 700;
-}
-
 .login-panel {
   display: flex;
   flex-direction: column;
@@ -384,6 +358,18 @@ async function submit() {
 .login-field :deep(.v-field__append-inner),
 .login-field :deep(.v-field__prepend-inner) {
   background: transparent;
+}
+
+.login-field :deep(input),
+.login-field :deep(textarea),
+.login-field :deep(.v-field__input) {
+  color: #172033;
+}
+
+.login-field :deep(input::placeholder),
+.login-field :deep(textarea::placeholder) {
+  color: #7b8798;
+  opacity: 1;
 }
 
 .login-field :deep(.v-field--focused) {
@@ -467,10 +453,15 @@ async function submit() {
   .login-grid {
     grid-template-columns: 1fr;
     min-height: auto;
+    max-width: 620px;
+  }
+
+  .login-panel {
+    order: 1;
   }
 
   .login-showcase {
-    gap: 24px;
+    display: none;
   }
 }
 
@@ -485,24 +476,164 @@ async function submit() {
     border-radius: 28px;
   }
 
+  .login-grid {
+    gap: 16px;
+  }
+
+  .showcase-copy,
+  .login-panel-head {
+    max-width: none;
+  }
+
+  .showcase-title {
+    font-size: 2.2rem;
+  }
+
+  .showcase-text,
+  .login-subtitle {
+    font-size: 0.96rem;
+  }
+
   .showcase-highlights {
     grid-template-columns: 1fr;
   }
 
-}
-
-@media (max-width: 420px) {
-  .login-title {
-    font-size: 1.9rem;
+  .showcase-card {
+    min-height: 0;
   }
 
-  .showcase-title {
-    font-size: 2rem;
+  .login-note {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .login-note-contacts {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .login-note-contact {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .login-page {
+    padding: 10px;
+  }
+
+  .login-grid {
+    gap: 12px;
   }
 
   .login-showcase,
   .login-panel {
-    padding: 20px 16px;
+    padding: 18px 14px;
+    border-radius: 22px;
+  }
+
+  .showcase-badge {
+    min-height: 36px;
+    padding: 0 14px;
+    font-size: 0.88rem;
+  }
+
+  .showcase-title {
+    margin-top: 14px;
+    font-size: 1.85rem;
+  }
+
+  .showcase-text {
+    margin-top: 14px;
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+
+  .showcase-highlights {
+    gap: 10px;
+  }
+
+  .showcase-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .showcase-card-value {
+    font-size: 0.92rem;
+  }
+
+  .login-title {
+    margin-top: 12px;
+    font-size: 1.75rem;
+  }
+
+  .login-subtitle {
+    margin-top: 12px;
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
+  .login-alert {
+    margin-bottom: 14px;
+  }
+
+  .login-btn {
+    min-height: 50px;
+    font-size: 0.96rem;
+  }
+
+  .login-note {
+    margin-top: 18px;
+    padding: 14px;
+    border-radius: 18px;
+    line-height: 1.6;
+  }
+
+  .login-note-contact {
+    min-height: 40px;
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .login-page {
+    padding: 8px;
+  }
+
+  .login-title {
+    font-size: 1.62rem;
+  }
+
+  .showcase-title {
+    font-size: 1.68rem;
+  }
+
+  .login-showcase,
+  .login-panel {
+    padding: 16px 12px;
+    border-radius: 20px;
+  }
+
+  .showcase-badge {
+    font-size: 0.84rem;
+  }
+
+  .showcase-eyebrow,
+  .showcase-card-label,
+  .login-eyebrow {
+    font-size: 0.76rem;
+  }
+
+  .showcase-text,
+  .login-subtitle,
+  .login-note {
+    font-size: 0.88rem;
+  }
+
+  .login-note-contact {
+    padding: 0 10px;
+    font-size: 0.84rem;
   }
 }
 </style>

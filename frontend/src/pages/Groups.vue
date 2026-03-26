@@ -27,7 +27,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Coach workspace</div>
+                <div class="brand-caption">{{ workspaceCaption }}</div>
               </div>
             </div>
 
@@ -51,7 +51,7 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
+                <img :src="avatarFor(profileSeed, profileName)" :alt="profileAlt">
               </v-avatar>
               <div>
                 <div class="profile-name">{{ profileName }}</div>
@@ -78,7 +78,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Coach workspace</div>
+                <div class="brand-caption">{{ workspaceCaption }}</div>
               </div>
             </div>
 
@@ -140,7 +140,7 @@
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" :alt="profileAlt">
                   </v-avatar>
                   <div>
                     <div class="profile-name">{{ profileName }}</div>
@@ -196,7 +196,7 @@
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" :alt="profileAlt">
                   </v-avatar>
                   <div>
                     <div class="profile-name">{{ profileName }}</div>
@@ -210,7 +210,7 @@
               <div class="groups-header">
                 <div>
                   <h1 class="groups-title">My Groups</h1>
-                  <div class="groups-subtitle">Groups you manage and their key training details</div>
+                  <div class="groups-subtitle">{{ groupsSubtitle }}</div>
                 </div>
 
                 <div v-if="isCoach" class="coach-header-stats">
@@ -291,7 +291,14 @@
         </div>
 
         <v-dialog v-model="filterDialog" max-width="520">
-          <v-card class="dialog-card filter-dialog-card">
+          <v-card
+            class="dialog-card filter-dialog-card"
+            :class="{
+              'filter-dialog-card-dark': darkMode,
+              'filter-dialog-card-coach': isCoach,
+              'filter-dialog-card-coach-dark': isCoach && darkMode
+            }"
+          >
             <div class="filter-dialog-header">
               <div>
                 <div class="filter-dialog-title">Filters</div>
@@ -406,6 +413,13 @@ const profileName = computed(() => {
 const isChild = computed(() => user.value?.role === 'child')
 const isParent = computed(() => user.value?.role === 'parent')
 const isCoach = computed(() => user.value?.role === 'coach')
+const profileAlt = computed(() => (isCoach.value ? 'Coach profile' : 'User profile'))
+const workspaceCaption = computed(() => (isCoach.value ? 'Coach workspace' : 'Sport Workspace'))
+const groupsSubtitle = computed(() => {
+  if (isCoach.value) return 'Groups you lead and their key training details'
+  if (isParent.value) return 'Groups linked to your selected child and their key training details'
+  return 'Groups you attend and their key training details'
+})
 const pageTheme = computed(() => (isCoach.value ? (darkMode.value ? 'coachDark' : 'coachLight') : undefined))
 const navItems = computed(() => [
   { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
@@ -676,7 +690,7 @@ async function handleMobileLogout() {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: auto;
+  margin-top: 12px;
   padding: 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.78);
@@ -1252,7 +1266,8 @@ async function handleMobileLogout() {
   border-radius: 24px;
 }
 
-.groups-shell-dark :deep(.v-overlay__content .dialog-card) {
+.filter-dialog-card-dark,
+.create-dialog-card-dark {
   background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
   color: #eff5ff;
   border: 1px solid rgba(74, 92, 126, 0.42);
@@ -1265,8 +1280,8 @@ async function handleMobileLogout() {
   box-shadow: 0 20px 45px rgba(76, 104, 148, 0.18);
 }
 
-.groups-shell-dark :deep(.v-overlay__content .create-dialog-card),
-.groups-shell-dark :deep(.v-overlay__content .filter-dialog-card) {
+.create-dialog-card-dark,
+.filter-dialog-card-dark {
   background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
   box-shadow: 0 24px 48px rgba(4, 10, 24, 0.42);
 }
@@ -1285,8 +1300,8 @@ async function handleMobileLogout() {
   color: #172033;
 }
 
-.groups-shell-dark .create-dialog-title,
-.groups-shell-dark .filter-dialog-title {
+.create-dialog-card-dark .create-dialog-title,
+.filter-dialog-card-dark .filter-dialog-title {
   color: #f3f7ff;
 }
 
@@ -1296,8 +1311,8 @@ async function handleMobileLogout() {
   line-height: 1.5;
 }
 
-.groups-shell-dark .create-dialog-subtitle,
-.groups-shell-dark .filter-dialog-subtitle {
+.create-dialog-card-dark .create-dialog-subtitle,
+.filter-dialog-card-dark .filter-dialog-subtitle {
   color: #8fa3c1;
 }
 
@@ -1471,6 +1486,12 @@ async function handleMobileLogout() {
   box-shadow: 0 20px 45px rgba(76, 104, 148, 0.18);
 }
 
+.filter-dialog-card.filter-dialog-card-dark {
+  background: linear-gradient(180deg, rgba(22, 31, 48, 0.98), rgba(16, 24, 38, 0.96));
+  border-color: rgba(74, 92, 126, 0.42);
+  box-shadow: 0 24px 48px rgba(4, 10, 24, 0.42);
+}
+
 .filter-dialog-header {
   display: flex;
   align-items: flex-start;
@@ -1489,6 +1510,14 @@ async function handleMobileLogout() {
   margin-top: 8px;
   color: #64748b;
   line-height: 1.5;
+}
+
+.filter-dialog-card-dark .filter-dialog-title {
+  color: #f3f7ff;
+}
+
+.filter-dialog-card-dark .filter-dialog-subtitle {
+  color: #8fa3c1;
 }
 
 .filter-options {
@@ -1511,7 +1540,7 @@ async function handleMobileLogout() {
   transition: all 0.2s ease;
 }
 
-.groups-shell-dark .filter-option {
+.filter-dialog-card-dark .filter-option {
   background: rgba(12, 19, 32, 0.88);
   border-color: rgba(63, 80, 114, 0.58);
 }
@@ -1545,7 +1574,7 @@ async function handleMobileLogout() {
   color: #172033;
 }
 
-.groups-shell-dark .filter-option-title {
+.filter-dialog-card-dark .filter-option-title {
   color: #eef4ff;
 }
 
@@ -1556,7 +1585,7 @@ async function handleMobileLogout() {
   line-height: 1.45;
 }
 
-.groups-shell-dark .filter-option-text {
+.filter-dialog-card-dark .filter-option-text {
   color: #8ea3c7;
 }
 
@@ -1580,10 +1609,70 @@ async function handleMobileLogout() {
   font-weight: 600;
 }
 
-.groups-shell-dark .reset-filter-btn {
+.filter-dialog-card-dark .reset-filter-btn {
   background: rgba(18, 27, 43, 0.92);
   color: #7fbcff;
   border-color: rgba(82, 156, 255, 0.32);
+}
+
+.filter-dialog-card-dark :deep(.v-btn--icon) {
+  color: #eef4ff;
+  background: rgba(18, 27, 43, 0.72);
+  border: 1px solid rgba(64, 82, 116, 0.62);
+}
+
+.filter-dialog-card-coach-dark {
+  border-color: rgba(183, 156, 255, 0.26);
+  box-shadow: 0 24px 52px rgba(14, 10, 28, 0.48);
+}
+
+.filter-dialog-card-coach-dark .filter-option {
+  background: rgba(21, 17, 38, 0.92);
+  border-color: rgba(121, 96, 196, 0.38);
+}
+
+.filter-dialog-card-coach-dark .filter-option:hover {
+  background: rgba(27, 22, 47, 0.96);
+  border-color: rgba(156, 124, 255, 0.38);
+}
+
+.filter-dialog-card-coach-dark .filter-option-title {
+  color: #f2ebff;
+}
+
+.filter-dialog-card-coach-dark .filter-option-text {
+  color: #b7a8d9;
+}
+
+.filter-dialog-card-coach-dark .filter-option-icon {
+  color: var(--coach-accent-dark-text);
+  background: rgba(183, 156, 255, 0.16);
+}
+
+.filter-dialog-card-coach-dark .filter-option-active {
+  border-color: var(--coach-accent-border-strong);
+  background: linear-gradient(180deg, rgba(70, 54, 121, 0.94), rgba(49, 37, 91, 0.98));
+  box-shadow: 0 14px 28px rgba(120, 92, 210, 0.18);
+}
+
+.filter-dialog-card.filter-dialog-card-dark .filter-option.filter-option-active {
+  background: linear-gradient(180deg, rgba(31, 67, 125, 0.96), rgba(18, 47, 95, 0.98)) !important;
+  border-color: rgba(82, 156, 255, 0.42) !important;
+  box-shadow: 0 14px 28px rgba(22, 119, 255, 0.18) !important;
+}
+
+.filter-dialog-card.filter-dialog-card-coach-dark .filter-option.filter-option-active {
+  background: linear-gradient(180deg, rgba(70, 54, 121, 0.96), rgba(49, 37, 91, 0.99)) !important;
+  border-color: var(--coach-accent-border-strong) !important;
+  box-shadow: 0 14px 28px rgba(120, 92, 210, 0.18) !important;
+}
+
+.filter-dialog-card-coach-dark .filter-option-active .filter-option-title {
+  color: #f7f2ff;
+}
+
+.filter-dialog-card-coach-dark .filter-option-active .filter-option-text {
+  color: #d8c9ff;
 }
 
 .apply-filter-btn {
@@ -1877,28 +1966,33 @@ async function handleMobileLogout() {
 }
 
 .groups-shell-coach .toolbar-btn,
-.groups-shell-coach .reset-filter-btn {
+.groups-shell-coach .reset-filter-btn,
+.filter-dialog-card-coach .reset-filter-btn {
   color: var(--coach-accent-text);
   border-color: var(--coach-accent-border);
 }
 
 .groups-shell-coach.groups-shell-dark .toolbar-btn,
-.groups-shell-coach.groups-shell-dark .reset-filter-btn {
+.groups-shell-coach.groups-shell-dark .reset-filter-btn,
+.filter-dialog-card-coach-dark .reset-filter-btn {
   color: var(--coach-accent-dark-text);
   border-color: var(--coach-accent-border);
 }
 
-.groups-shell-coach .filter-option:hover {
+.groups-shell-coach .filter-option:hover,
+.filter-dialog-card-coach .filter-option:hover {
   border-color: var(--coach-accent-border);
 }
 
-.groups-shell-coach .filter-option-active {
+.groups-shell-coach .filter-option-active,
+.filter-dialog-card-coach .filter-option-active {
   border-color: var(--coach-accent-border-strong);
   background: linear-gradient(180deg, rgba(246, 241, 255, 0.98), rgba(238, 231, 255, 0.96));
   box-shadow: 0 14px 28px var(--coach-accent-shadow-soft);
 }
 
-.groups-shell-coach .filter-option-icon {
+.groups-shell-coach .filter-option-icon,
+.filter-dialog-card-coach .filter-option-icon {
   color: var(--coach-accent-text);
   background: rgba(156, 124, 255, 0.12);
 }

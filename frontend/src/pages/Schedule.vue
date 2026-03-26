@@ -27,7 +27,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Coach workspace</div>
+                <div class="brand-caption">{{ workspaceCaption }}</div>
               </div>
             </div>
 
@@ -51,7 +51,7 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
+                <img :src="avatarFor(profileSeed, profileName)" :alt="profileAlt">
               </v-avatar>
               <div>
                 <div class="profile-name">{{ profileName }}</div>
@@ -78,7 +78,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Coach workspace</div>
+                <div class="brand-caption">{{ workspaceCaption }}</div>
               </div>
             </div>
 
@@ -140,7 +140,7 @@
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" :alt="profileAlt">
                   </v-avatar>
                   <div>
                     <div class="profile-name">{{ profileName }}</div>
@@ -206,7 +206,7 @@
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" :alt="profileAlt">
                   </v-avatar>
                   <div>
                     <div class="profile-name">{{ profileName }}</div>
@@ -488,6 +488,8 @@ const profileName = computed(() => {
 })
 const isParent = computed(() => user.value?.role === 'parent')
 const isCoach = computed(() => user.value?.role === 'coach')
+const profileAlt = computed(() => (isCoach.value ? 'Coach profile' : 'User profile'))
+const workspaceCaption = computed(() => (isCoach.value ? 'Coach workspace' : 'Sport Workspace'))
 const pageTheme = computed(() => (isCoach.value ? (darkMode.value ? 'coachDark' : 'coachLight') : undefined))
 const canManageTrainingActions = computed(() => ['admin', 'coach'].includes(user.value?.role ?? ''))
 const navItems = computed(() => [
@@ -846,7 +848,7 @@ async function handleMobileLogout() {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: auto;
+  margin-top: 12px;
   padding: 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.78);
@@ -1408,6 +1410,10 @@ async function handleMobileLogout() {
   letter-spacing: 0;
   font-weight: 600;
   color: #111827;
+}
+
+.schedule-shell-dark .pagination-nav-btn {
+  color: #eef4ff;
 }
 
 .day-group + .day-group {

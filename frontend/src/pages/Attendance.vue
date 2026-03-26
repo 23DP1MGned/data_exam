@@ -18,7 +18,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Coach workspace</div>
+                <div class="brand-caption">{{ workspaceCaption }}</div>
               </div>
             </div>
 
@@ -42,7 +42,7 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
+                <img :src="avatarFor(profileSeed, profileName)" :alt="profileAlt">
               </v-avatar>
               <div>
                 <div class="profile-name">{{ profileName }}</div>
@@ -69,7 +69,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Coach workspace</div>
+                <div class="brand-caption">{{ workspaceCaption }}</div>
               </div>
             </div>
 
@@ -131,7 +131,7 @@
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" :alt="profileAlt">
                   </v-avatar>
                   <div>
                     <div class="profile-name">{{ profileName }}</div>
@@ -173,7 +173,7 @@
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img :src="avatarFor(profileSeed, profileName)" alt="Coach profile">
+                    <img :src="avatarFor(profileSeed, profileName)" :alt="profileAlt">
                   </v-avatar>
                   <div>
                     <div class="profile-name">{{ profileName }}</div>
@@ -187,9 +187,7 @@
               <div class="attendance-header">
                 <div>
                   <h1 class="attendance-title">Attendance Calendar</h1>
-                  <div class="attendance-subtitle">
-                    Track sessions, player presence and team workload in one view
-                  </div>
+                  <div class="attendance-subtitle">{{ attendanceSubtitle }}</div>
                 </div>
 
                 <v-btn
@@ -488,6 +486,16 @@ const navItems = computed(() => [
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
 const isParent = computed(() => user.value?.role === 'parent')
+const isCoach = computed(() => user.value?.role === 'coach')
+const profileAlt = computed(() => (isCoach.value ? 'Coach profile' : 'User profile'))
+const workspaceCaption = computed(() => (isCoach.value ? 'Coach workspace' : 'Sport Workspace'))
+const attendanceSubtitle = computed(() =>
+  isCoach.value
+    ? 'Track sessions, student attendance and group progress in one view'
+    : isParent.value
+      ? "Track your child's attendance history, planned sessions and monthly progress in one view"
+      : 'Track your attendance history, planned sessions and monthly progress in one view'
+)
 const attendanceChildren = computed(() =>
   Array.from(
     new Map(
@@ -956,7 +964,7 @@ function formatDateKey(date) {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: auto;
+  margin-top: 12px;
   padding: 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.78);

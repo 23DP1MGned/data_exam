@@ -87,6 +87,106 @@ body {
   color: white;
 }
 
+.admin-select-menu {
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(246, 199, 147, 0.92);
+  background: linear-gradient(180deg, rgba(255, 251, 246, 0.98), rgba(255, 244, 232, 0.98));
+  box-shadow: 0 22px 48px rgba(182, 103, 24, 0.18);
+}
+
+.admin-select-menu .v-list {
+  padding: 8px;
+  background: transparent;
+}
+
+.admin-select-menu .v-list-item {
+  min-height: 46px;
+  border-radius: 14px;
+  color: #2a1a0d;
+}
+
+.admin-select-menu .v-list-item-title {
+  color: inherit;
+  font-weight: 600;
+}
+
+.admin-select-menu .v-list-item-subtitle {
+  color: #85542a;
+}
+
+.admin-select-menu .v-list-item:hover {
+  background: rgba(255, 229, 198, 0.72);
+}
+
+.admin-select-menu .v-list-item--active {
+  background: linear-gradient(180deg, #f28c28 0%, #de6f12 100%);
+  color: white;
+}
+
+.admin-select-menu .v-list-item--active .v-list-item__overlay {
+  opacity: 0 !important;
+}
+
+.admin-select-menu .v-selection-control,
+.admin-select-menu .v-selection-control__wrapper,
+.admin-select-menu .v-selection-control__input,
+.admin-select-menu .v-checkbox-btn {
+  color: #bf6515;
+}
+
+.admin-select-menu .v-selection-control .v-icon,
+.admin-select-menu .v-checkbox-btn .v-icon {
+  color: inherit;
+}
+
+.admin-select-menu-dark {
+  border-color: rgba(113, 79, 42, 0.68);
+  background: linear-gradient(180deg, rgba(24, 19, 14, 0.99), rgba(35, 26, 17, 0.98));
+  box-shadow: 0 24px 56px rgba(8, 4, 1, 0.52);
+}
+
+.admin-select-menu-dark .v-list {
+  background: transparent;
+}
+
+.admin-select-menu-dark .v-list-item {
+  color: #fff1e3;
+}
+
+.admin-select-menu-dark .v-list-item-title {
+  color: inherit;
+}
+
+.admin-select-menu-dark .v-list-item-subtitle {
+  color: #d2b08f;
+}
+
+.admin-select-menu-dark .v-list-item:hover {
+  background: rgba(83, 49, 18, 0.54);
+}
+
+.admin-select-menu-dark .v-list-item--active {
+  background: linear-gradient(180deg, #ff9e3d 0%, #f08219 100%);
+  color: white;
+}
+
+.admin-select-menu-dark .v-list-item--active .v-list-item__overlay {
+  opacity: 0 !important;
+}
+
+.admin-select-menu-dark .v-selection-control,
+.admin-select-menu-dark .v-selection-control__wrapper,
+.admin-select-menu-dark .v-selection-control__input,
+.admin-select-menu-dark .v-checkbox-btn {
+  color: #ffc78f;
+}
+
+.admin-select-menu-dark .v-selection-control .v-icon,
+.admin-select-menu-dark .v-checkbox-btn .v-icon {
+  color: inherit;
+}
+
 .admin-theme-root {
   --admin-accent: #f28c28;
   --admin-accent-strong: #de6f12;
@@ -143,6 +243,51 @@ body {
   --coach-accent-text: #cfbdff;
   --coach-accent-muted: #b89df8;
   --coach-accent-dark-text: #e0d3ff;
+}
+
+.dashboard-page,
+.schedule-page,
+.groups-page,
+.attendance-page,
+.payments-page,
+.coach-attendance-page,
+.admin-home-page,
+.users-page,
+.admin-groups-page,
+.admin-sessions-page,
+.admin-payments-page {
+  min-height: 100dvh;
+  box-sizing: border-box;
+}
+
+.dashboard-shell,
+.schedule-shell,
+.groups-shell,
+.attendance-shell,
+.payments-shell,
+.coach-attendance-shell,
+.admin-home-shell,
+.users-shell,
+.admin-groups-shell,
+.admin-sessions-shell,
+.admin-payments-shell {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-panel,
+.schedule-panel,
+.groups-panel,
+.attendance-panel,
+.payments-panel,
+.coach-attendance-panel,
+.admin-home-panel,
+.users-panel,
+.admin-groups-panel,
+.admin-sessions-panel,
+.admin-payments-panel {
+  flex: 1;
 }
 
 @media (max-width: 380px) {

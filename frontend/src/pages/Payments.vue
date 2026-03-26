@@ -18,7 +18,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Parent workspace</div>
+                <div class="brand-caption">Sport Workspace</div>
               </div>
             </div>
 
@@ -69,7 +69,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Parent workspace</div>
+                <div class="brand-caption">Sport Workspace</div>
               </div>
             </div>
 
@@ -1706,7 +1706,7 @@ async function handleMobileLogout() {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: auto;
+  margin-top: 12px;
   padding: 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.78);
@@ -2805,6 +2805,11 @@ async function handleMobileLogout() {
   background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(22, 31, 48, 0.96));
   border-color: rgba(74, 92, 126, 0.42);
   box-shadow: 0 24px 54px rgba(4, 10, 24, 0.34);
+}
+
+.list-dialog-card-dark .payment-name,
+.list-dialog-card-dark .payment-amount {
+  color: #eef4ff;
 }
 
 .list-dialog-header {
