@@ -9,11 +9,17 @@ use App\Http\Requests\Attendance\UpdateAttendanceRequest;
 use App\Models\Attendance;
 use App\Models\TrainingSession;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class AttendanceController extends Controller
 {
+    public function __construct(
+        private readonly NotificationService $notificationService
+    ) {
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -80,7 +86,12 @@ class AttendanceController extends Controller
                     ]);
                 }
 
-                return Attendance::updateOrCreate(
+                $existing = Attendance::query()
+                    ->where('session_id', $session->id)
+                    ->where('user_id', $record['user_id'])
+                    ->first();
+
+                $attendance = Attendance::updateOrCreate(
                     [
                         'session_id' => $session->id,
                         'user_id' => $record['user_id'],
@@ -92,6 +103,14 @@ class AttendanceController extends Controller
                         'comment' => $record['comment'] ?? null,
                     ]
                 );
+
+                if (! $existing || $existing->status !== $attendance->status) {
+                    $this->notificationService->notifyAttendanceUpdated(
+                        $attendance->load(['session.group.coach', 'user.parents'])
+                    );
+                }
+
+                return $attendance;
             })
             ->map(fn (Attendance $attendance) => $this->formatAttendance($attendance->load(['session.group.coach', 'user'])))
             ->values();
@@ -120,6 +139,11 @@ class AttendanceController extends Controller
             return $this->error('Selected child does not belong to this training group.', [], 422);
         }
 
+        $existing = Attendance::query()
+            ->where('session_id', $request->validated('session_id'))
+            ->where('user_id', $request->validated('user_id'))
+            ->first();
+
         $attendance = Attendance::updateOrCreate(
             [
                 'session_id' => $request->validated('session_id'),
@@ -127,6 +151,12 @@ class AttendanceController extends Controller
             ],
             $request->validated()
         );
+
+        if (! $existing || $existing->status !== $attendance->status) {
+            $this->notificationService->notifyAttendanceUpdated(
+                $attendance->load(['session.group.coach', 'user.parents'])
+            );
+        }
 
         return $this->success($this->formatAttendance($attendance->load(['session.group', 'user'])), 'Attendance saved.', 201);
     }
@@ -143,7 +173,14 @@ class AttendanceController extends Controller
             return $this->error('Attendance cannot be marked for cancelled sessions.', [], 422);
         }
 
+        $beforeStatus = $attendance->status;
         $attendance->update($request->validated());
+
+        if ($beforeStatus !== $attendance->status) {
+            $this->notificationService->notifyAttendanceUpdated(
+                $attendance->load(['session.group.coach', 'user.parents'])
+            );
+        }
 
         return $this->success($this->formatAttendance($attendance->fresh()->load(['session.group', 'user'])), 'Attendance updated.');
     }

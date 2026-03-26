@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\SessionTemplateService;
+use App\Services\NotificationService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -21,10 +22,20 @@ Artisan::command('sessions:generate-upcoming', function () {
     $this->comment('Upcoming sessions generated.');
 })->purpose('Generate upcoming recurring session instances for active templates');
 
+Artisan::command('notifications:sync-parent-payments', function () {
+    app(NotificationService::class)->syncParentPaymentNotifications();
+
+    $this->comment('Parent payment notifications synchronized.');
+})->purpose('Create payment due and overdue notifications for parents');
+
 Schedule::command('sessions:sync-statuses')
     ->everyMinute()
     ->withoutOverlapping();
 
 Schedule::command('sessions:generate-upcoming')
+    ->hourly()
+    ->withoutOverlapping();
+
+Schedule::command('notifications:sync-parent-payments')
     ->hourly()
     ->withoutOverlapping();

@@ -9,9 +9,11 @@ use App\Models\Group;
 use App\Models\TrainingSession;
 use App\Models\User;
 use App\Services\AttendanceService;
+use App\Services\NotificationService;
 use App\Services\PaymentService;
 use App\Services\SessionTemplateService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class SessionController extends Controller
 {
@@ -19,6 +21,7 @@ class SessionController extends Controller
         private readonly SessionTemplateService $sessionTemplateService,
         private readonly AttendanceService $attendanceService,
         private readonly PaymentService $paymentService,
+        private readonly NotificationService $notificationService,
     )
     {
     }
@@ -102,6 +105,7 @@ class SessionController extends Controller
 
         if (! empty($validated['weekdays']) || $session->session_template_id) {
             $sessions = $this->sessionTemplateService->updateRecurring($session->load('sessionTemplate'), $validated);
+            $this->notificationService->notifyRecurringScheduleChanged($sessions);
 
             return $this->success([
                 'updated_count' => $sessions->count(),
@@ -109,9 +113,15 @@ class SessionController extends Controller
             ], 'Recurring sessions updated.');
         }
 
+        $before = $session->only(['title', 'date', 'start_time', 'end_time']);
         $session->update($validated);
+        $freshSession = $session->fresh()->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate']);
 
-        return $this->success($this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate'])), 'Session updated.');
+        if ($this->sessionScheduleChanged($before, $freshSession)) {
+            $this->notificationService->notifySessionScheduleChanged($freshSession);
+        }
+
+        return $this->success($this->formatSession($freshSession), 'Session updated.');
     }
 
     public function destroy(Request $request, TrainingSession $session)
@@ -147,6 +157,8 @@ class SessionController extends Controller
             'status' => $validated['status'],
         ]);
 
+        $freshSession = $session->fresh()->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate']);
+
         if ($validated['status'] === 'cancelled') {
             $this->paymentService->creditCancelledSession($session->fresh()->load(['group.children.parents', 'extraChildren.parents', 'paymentItems.payment.parent']));
         }
@@ -157,8 +169,15 @@ class SessionController extends Controller
             );
         }
 
+        if ($previousStatus !== $validated['status'] && in_array($validated['status'], ['cancelled', 'planned'], true)) {
+            $this->notificationService->notifySessionStatusChanged(
+                $freshSession->load(['group.children.parents', 'extraChildren.parents']),
+                $validated['status'] === 'cancelled' ? 'cancelled' : 'restored'
+            );
+        }
+
         return $this->success(
-            $this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate'])),
+            $this->formatSession($freshSession),
             'Session status updated.'
         );
     }
@@ -188,6 +207,10 @@ class SessionController extends Controller
         }
 
         $session->extraChildren()->attach($child->id);
+        $this->notificationService->notifyChildAddedToSession(
+            $session->fresh()->load(['group.coach', 'group.children.parents', 'extraChildren.parents']),
+            $child->loadMissing('parents')
+        );
 
         return $this->success(
             $this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate'])),
@@ -276,5 +299,17 @@ class SessionController extends Controller
             'group' => $session->group->display_name,
             'students' => $students,
         ];
+    }
+
+    private function sessionScheduleChanged(array $before, TrainingSession $after): bool
+    {
+        $beforeDate = $before['date'] instanceof Carbon
+            ? $before['date']->toDateString()
+            : (string) $before['date'];
+
+        return (string) $before['title'] !== (string) $after->title
+            || $beforeDate !== $after->date->toDateString()
+            || (string) $before['start_time'] !== (string) $after->start_time
+            || (string) $before['end_time'] !== (string) $after->end_time;
     }
 }

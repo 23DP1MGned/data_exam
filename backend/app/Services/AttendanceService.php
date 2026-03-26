@@ -7,6 +7,11 @@ use App\Models\TrainingSession;
 
 class AttendanceService
 {
+    public function __construct(
+        private readonly NotificationService $notificationService
+    ) {
+    }
+
     public function ensureCompletedSessionAttendance(TrainingSession $session): void
     {
         $session->loadMissing(['group.children', 'extraChildren', 'attendanceRecords']);
@@ -20,7 +25,7 @@ class AttendanceService
         $session->effectiveChildren()
             ->reject(fn ($child) => in_array($child->id, $existingChildIds, true))
             ->each(function ($child) use ($session) {
-                Attendance::query()->firstOrCreate(
+                $attendance = Attendance::query()->firstOrCreate(
                     [
                         'session_id' => $session->id,
                         'user_id' => $child->id,
@@ -30,6 +35,13 @@ class AttendanceService
                         'comment' => 'Auto-marked present after session completion.',
                     ]
                 );
+
+                if ($attendance->wasRecentlyCreated) {
+                    $this->notificationService->notifyAttendanceUpdated(
+                        $attendance->loadMissing(['session.group.coach', 'user.parents']),
+                        true
+                    );
+                }
             });
     }
 

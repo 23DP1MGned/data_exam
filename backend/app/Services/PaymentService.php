@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Group;
-use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\PaymentItem;
 use App\Models\PaymentMonthCoverage;
@@ -18,6 +17,11 @@ use Illuminate\Validation\ValidationException;
 
 class PaymentService
 {
+    public function __construct(
+        private readonly NotificationService $notificationService
+    ) {
+    }
+
     public function create(array $validated, int $parentId): Payment
     {
         return DB::transaction(function () use ($validated, $parentId) {
@@ -67,21 +71,7 @@ class PaymentService
             }
 
             if ($payment->status === 'paid') {
-                Notification::create([
-                    'user_id' => $payment->parent_id,
-                    'title' => 'Payment successful',
-                    'message' => 'Your payment was processed successfully.',
-                    'type' => 'payment',
-                    'is_read' => false,
-                ]);
-
-                Notification::create([
-                    'user_id' => $payment->child_id,
-                    'title' => 'Training payment added',
-                    'message' => 'A payment was added to your account activity.',
-                    'type' => 'payment',
-                    'is_read' => false,
-                ]);
+                $this->notificationService->notifyPaymentSuccessful($payment);
             }
 
             return $payment->load(['items.monthCoverage.group', 'monthCoverages.group']);
@@ -107,21 +97,7 @@ class PaymentService
                 $parent->parentProfile->increment('account_balance', $payment->amount);
             }
 
-            Notification::create([
-                'user_id' => $payment->parent_id,
-                'title' => 'Payment refunded',
-                'message' => 'A payment was refunded and returned to your account balance.',
-                'type' => 'payment',
-                'is_read' => false,
-            ]);
-
-            Notification::create([
-                'user_id' => $payment->child_id,
-                'title' => 'Training payment refunded',
-                'message' => 'A payment linked to your training activity was refunded.',
-                'type' => 'payment',
-                'is_read' => false,
-            ]);
+            $this->notificationService->notifyPaymentRefunded($payment);
 
             return $payment->fresh()->load(['parent', 'child', 'items.session.group', 'items.monthCoverage.group', 'monthCoverages.group']);
         });
@@ -249,21 +225,12 @@ class PaymentService
                     'reversed_at' => now(),
                 ]);
 
-                Notification::create([
-                    'user_id' => $parent->id,
-                    'title' => 'Cancelled training credit reversed',
-                    'message' => 'A restored training removed the previously issued cancellation credit from your account balance.',
-                    'type' => 'payment',
-                    'is_read' => false,
-                ]);
-
-                Notification::create([
-                    'user_id' => $child->id,
-                    'title' => 'Training restored',
-                    'message' => 'A restored training removed the cancellation credit that had been issued earlier.',
-                    'type' => 'payment',
-                    'is_read' => false,
-                ]);
+                $this->notificationService->notifyCancellationCreditReversed(
+                    $session,
+                    $parent,
+                    $child,
+                    (float) $credit->amount
+                );
             }
         });
     }
@@ -540,20 +507,6 @@ class PaymentService
             $parent->parentProfile->increment('account_balance', $amount);
         }
 
-        Notification::create([
-            'user_id' => $parent->id,
-            'title' => 'Cancelled training credit added',
-            'message' => 'A cancelled training was credited back to your account balance.',
-            'type' => 'payment',
-            'is_read' => false,
-        ]);
-
-        Notification::create([
-            'user_id' => $child->id,
-            'title' => 'Cancelled training refunded',
-            'message' => 'A cancelled training was credited back to your parent account balance.',
-            'type' => 'payment',
-            'is_read' => false,
-        ]);
+        $this->notificationService->notifyCancellationCreditIssued($session, $parent, $child, $amount);
     }
 }

@@ -12,11 +12,14 @@ class Notification extends Model
         'title',
         'message',
         'type',
+        'unique_key',
+        'payload',
         'is_read',
     ];
 
     protected $casts = [
         'is_read' => 'boolean',
+        'payload' => 'array',
     ];
 
     public function user(): BelongsTo
