@@ -146,7 +146,7 @@
               </div>
             </div>
 
-            <div class="topbar-card">
+            <div v-if="!isCompactNav" class="topbar-card">
               <div class="search-wrap">
                 <div class="search-shell">
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
@@ -403,7 +403,7 @@
                   <div class="session-card-actions">
                     <v-btn
                       variant="outlined"
-                      class="action-btn"
+                      class="action-btn action-btn-manage"
                       prepend-icon="mdi-account-plus-outline"
                       @click="openChildrenDialog(session)"
                     >
@@ -1956,7 +1956,7 @@ async function handleMobileLogout() {
 
 .overview-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 22px;
 }
@@ -2248,6 +2248,27 @@ async function handleMobileLogout() {
 
 .action-btn-edit {
   box-shadow: 0 14px 28px var(--admin-accent-shadow-soft);
+}
+
+.action-btn-manage {
+  border-color: rgba(242, 140, 40, 0.48);
+  background: rgba(242, 140, 40, 0.14);
+  color: #c76612;
+}
+
+.action-btn-manage:hover {
+  background: rgba(242, 140, 40, 0.2);
+  border-color: rgba(242, 140, 40, 0.62);
+}
+
+.admin-sessions-shell-dark .action-btn-manage {
+  border-color: rgba(242, 140, 40, 0.5);
+  background: rgba(242, 140, 40, 0.16);
+  color: #ffb56e;
+}
+
+.admin-sessions-shell-dark .action-btn-manage:hover {
+  background: rgba(242, 140, 40, 0.22);
 }
 
 .action-btn-delete {

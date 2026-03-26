@@ -144,4 +144,115 @@ body {
   --coach-accent-muted: #b89df8;
   --coach-accent-dark-text: #e0d3ff;
 }
+
+@media (max-width: 380px) {
+  .content-shell {
+    gap: 8px !important;
+  }
+
+  .mobile-header-card,
+  .mobile-utility-card {
+    padding: 10px !important;
+    border-radius: 18px !important;
+  }
+
+  .mobile-header-card {
+    gap: 8px !important;
+  }
+
+  .mobile-profile-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .profile-pill,
+  .mobile-profile-pill {
+    width: 100%;
+    gap: 10px !important;
+    padding: 8px 10px !important;
+    border-radius: 18px !important;
+  }
+
+  .mobile-brand-inline {
+    gap: 8px !important;
+    min-width: 0;
+  }
+
+  .mobile-brand-icon {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 12px !important;
+  }
+
+  .mobile-brand-copy .brand-name {
+    font-size: 0.92rem !important;
+  }
+
+  .mobile-brand-copy .brand-caption {
+    font-size: 0.68rem !important;
+  }
+
+  .mobile-menu-btn,
+  .mobile-header-actions .top-icon-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+  }
+
+  .mobile-header-actions {
+    gap: 8px !important;
+  }
+
+  .profile-name {
+    font-size: 0.88rem !important;
+  }
+
+  .profile-email {
+    font-size: 0.78rem !important;
+  }
+
+  .icon-badge {
+    top: -1px !important;
+    right: -1px !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    padding: 0 4px !important;
+    font-size: 0.64rem !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .content-shell {
+    gap: 6px !important;
+  }
+
+  .mobile-header-card,
+  .mobile-utility-card {
+    padding: 8px !important;
+    border-radius: 16px !important;
+  }
+
+  .mobile-brand-inline {
+    min-width: 0;
+  }
+
+  .mobile-brand-copy .brand-name {
+    font-size: 0.86rem !important;
+  }
+
+  .mobile-brand-copy .brand-caption {
+    font-size: 0.64rem !important;
+  }
+
+  .mobile-header-actions {
+    gap: 6px !important;
+  }
+
+  .mobile-menu-btn,
+  .mobile-header-actions .top-icon-btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+  }
+}
 </style>

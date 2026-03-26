@@ -146,7 +146,7 @@
               </div>
             </div>
 
-            <div class="topbar-card">
+            <div v-if="!isCompactNav" class="topbar-card">
               <div class="search-wrap">
                 <div class="search-shell">
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>

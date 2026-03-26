@@ -145,7 +145,7 @@
               </div>
             </div>
 
-            <div class="topbar-card">
+            <div v-if="!isCompactNav" class="topbar-card">
               <div class="topbar-tools">
                 <div class="icon-badge-wrap">
                   <v-btn
@@ -1363,12 +1363,24 @@ async function handleMobileLogout() {
   align-items: center;
   gap: 12px;
   min-width: 0;
+  flex: 1;
 }
 
 .mobile-brand-icon {
   width: 46px;
   height: 46px;
   border-radius: 15px;
+}
+
+.mobile-brand-copy {
+  min-width: 0;
+}
+
+.mobile-brand-copy .brand-name,
+.mobile-brand-copy .brand-caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mobile-header-actions,
@@ -1379,6 +1391,7 @@ async function handleMobileLogout() {
 
 .mobile-header-actions {
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .mobile-utility-card {
@@ -2333,14 +2346,60 @@ async function handleMobileLogout() {
     grid-template-columns: 1fr;
   }
 
+  .calendar-card {
+    padding: 16px;
+  }
+
+  .calendar-title {
+    font-size: 1rem;
+  }
+
+  .legend-item {
+    font-size: 0.84rem;
+  }
+
+  .calendar-grid {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+  }
+
   .calendar-days,
   .calendar-week {
+    min-width: 620px;
     gap: 8px;
   }
 
+  .day-name {
+    padding: 0 4px 6px;
+    font-size: 0.72rem;
+  }
+
   .calendar-cell {
-    min-height: 116px;
-    padding: 10px;
+    min-height: 74px;
+    padding: 6px 5px;
+    border-radius: 13px;
+  }
+
+  .cell-date {
+    font-size: 0.78rem;
+  }
+
+  .cell-sessions {
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .cell-session-item,
+  .cell-status {
+    gap: 4px;
+    font-size: 0.62rem;
+    line-height: 1.15;
+  }
+
+  .cell-more {
+    margin-top: 4px;
+    font-size: 0.62rem;
   }
 
   .group-selector {
@@ -2366,8 +2425,71 @@ async function handleMobileLogout() {
     font-size: 1.6rem;
   }
 
+  .calendar-card {
+    padding: 14px;
+  }
+
+  .legend-item {
+    font-size: 0.8rem;
+  }
+
+  .day-name {
+    font-size: 0.72rem;
+    padding: 0 4px 6px;
+  }
+
   .calendar-cell {
-    min-height: 104px;
+    min-height: 64px;
+    padding: 5px 4px;
+    border-radius: 11px;
+  }
+
+  .cell-date {
+    font-size: 0.72rem;
+  }
+
+  .cell-sessions {
+    margin-top: 5px;
+    gap: 3px;
+  }
+
+  .cell-session-item,
+  .cell-status,
+  .cell-more {
+    font-size: 0.56rem;
+    gap: 3px;
+  }
+}
+
+@media (max-width: 380px) {
+  .calendar-card {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .calendar-title {
+    font-size: 0.94rem;
+  }
+
+  .calendar-days,
+  .calendar-week {
+    min-width: 560px;
+  }
+
+  .calendar-cell {
+    min-height: 60px;
+  }
+}
+
+@media (max-width: 320px) {
+  .calendar-card {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .calendar-days,
+  .calendar-week {
+    min-width: 520px;
   }
 }
 .coach-attendance-shell .brand-icon,
