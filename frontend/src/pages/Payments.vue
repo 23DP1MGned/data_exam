@@ -18,7 +18,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Sport Workspace</div>
+                <div class="brand-caption">{{ t('workspace.sport') }}</div>
               </div>
             </div>
 
@@ -56,7 +56,7 @@
               prepend-icon="mdi-logout"
               @click="handleMobileLogout"
             >
-              Log out
+              {{ t('common.logout') }}
             </v-btn>
           </div>
         </v-navigation-drawer>
@@ -69,7 +69,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Sport Workspace</div>
+                <div class="brand-caption">{{ t('workspace.sport') }}</div>
               </div>
             </div>
 
@@ -103,11 +103,13 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Payments</div>
+                  <div class="brand-caption">{{ t('pages.payments.caption') }}</div>
                 </div>
               </div>
 
               <div class="mobile-header-actions">
+                <AppLanguageSwitch :dark-mode="darkMode" />
+
                 <v-btn
                   icon
                   variant="text"
@@ -147,7 +149,7 @@
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
                   <v-text-field
                     v-model="search"
-                    placeholder="Search payments"
+                    :placeholder="t('pages.payments.searchPlaceholder')"
                     variant="plain"
                     hide-details
                     density="comfortable"
@@ -157,6 +159,8 @@
               </div>
 
               <div class="topbar-tools">
+                <AppLanguageSwitch :dark-mode="darkMode" />
+
                 <div class="icon-badge-wrap">
                   <v-btn
                     icon
@@ -200,8 +204,8 @@
             <div class="payments-card">
               <div class="payments-header">
                 <div>
-                  <h1 class="payments-title">Payments</h1>
-                  <div class="payments-subtitle">Pay for individual trainings or a full month, then review receipts and recent payment activity.</div>
+                  <h1 class="payments-title">{{ t('pages.payments.title') }}</h1>
+                  <div class="payments-subtitle">{{ t('pages.payments.subtitle') }}</div>
                 </div>
               </div>
 
@@ -216,24 +220,24 @@
                 <section class="feature-card balance-card">
                   <div class="feature-header">
                     <div>
-                      <div class="feature-title">Balance</div>
+                      <div class="feature-title">{{ t('pages.payments.balance') }}</div>
                       <div class="feature-value">{{ formatCurrency(accountBalance) }}</div>
                     </div>
                   </div>
                   <div class="feature-text">
-                    This balance is credited for missed trainings and can be used to pay for other upcoming sessions.
+                    {{ t('pages.payments.balanceText') }}
                   </div>
 
                   <div class="balance-source-card">
                     <div class="balance-source-header">
-                      <div class="balance-source-title">Balance source</div>
+                      <div class="balance-source-title">{{ t('pages.payments.balanceSource') }}</div>
                       <button
                         v-if="balanceSources.length > 3"
                         type="button"
                         class="show-all-btn"
                         @click="balanceSourcesDialog = true"
                       >
-                        Show all
+                        {{ t('common.showAll') }}
                       </button>
                     </div>
 
@@ -252,7 +256,7 @@
                     </div>
 
                     <div v-else class="balance-source-empty">
-                      No recent credits have been added to the balance yet.
+                      {{ t('pages.payments.noRecentCredits') }}
                     </div>
                   </div>
                 </section>
@@ -260,8 +264,8 @@
                 <section class="feature-card">
                   <div class="chart-card-header">
                     <div>
-                      <div class="feature-title">Payment chart</div>
-                      <div class="feature-text">Paid amounts by month for the selected half-year.</div>
+                      <div class="feature-title">{{ t('pages.payments.paymentChart') }}</div>
+                      <div class="feature-text">{{ t('pages.payments.paymentChartText') }}</div>
                     </div>
 
                     <div class="chart-period-switch">
@@ -290,11 +294,11 @@
 
                   <div class="chart-summary-row">
                     <div class="chart-summary-pill">
-                      <span>Paid this half-year</span>
+                      <span>{{ t('pages.payments.paidThisHalfYear') }}</span>
                       <strong>{{ formatCurrency(chartPeriodTotal) }}</strong>
                     </div>
                     <div class="chart-summary-pill">
-                      <span>Peak month</span>
+                      <span>{{ t('pages.payments.peakMonth') }}</span>
                       <strong>{{ formatCompactCurrency(chartPeriodPeak) }}</strong>
                     </div>
                   </div>
@@ -353,7 +357,7 @@
                     :class="{ 'view-switch-btn-active': activePaymentTab === 'training' }"
                     @click="activePaymentTab = 'training'"
                   >
-                    Pay Per Training
+                    {{ t('pages.payments.payPerTraining') }}
                   </v-btn>
                   <v-btn
                     variant="text"
@@ -361,7 +365,7 @@
                     :class="{ 'view-switch-btn-active': activePaymentTab === 'month' }"
                     @click="activePaymentTab = 'month'"
                   >
-                    Pay Per Month
+                    {{ t('pages.payments.payPerMonth') }}
                   </v-btn>
                 </div>
               </div>
@@ -369,12 +373,12 @@
               <section class="list-card due-payments-card">
                 <div class="list-header">
                   <div>
-                    <div class="list-title">{{ activePaymentTab === 'training' ? 'Trainings to pay' : 'Months to pay' }}</div>
+                    <div class="list-title">{{ activePaymentTab === 'training' ? t('pages.payments.trainingsToPay') : t('pages.payments.monthsToPay') }}</div>
                     <div class="list-dialog-subtitle">
                       {{
                         activePaymentTab === 'training'
-                          ? 'Pay one or a few individual trainings that are currently open for payment.'
-                          : 'Pay the full monthly group price before the month starts.'
+                          ? t('pages.payments.trainingsToPayText')
+                          : t('pages.payments.monthsToPayText')
                       }}
                     </div>
                   </div>
@@ -385,7 +389,7 @@
                       class="show-all-btn"
                       @click="activePaymentTab === 'training' ? dueTrainingsDialog = true : monthlyPaymentsDialog = true"
                     >
-                      Show all
+                      {{ t('common.showAll') }}
                     </button>
 
                     <v-btn
@@ -395,7 +399,7 @@
                       :disabled="!selectedSingleDueIds.length"
                       @click="openSinglePayDialog()"
                     >
-                      Pay selected
+                      {{ t('common.paySelected') }}
                     </v-btn>
                   </div>
                 </div>
@@ -414,13 +418,13 @@
                           :checked="isTrainingSelected(item.id)"
                           @change="toggleTrainingSelection(item)"
                         >
-                        <span>Select</span>
+                        <span>{{ t('pages.payments.select') }}</span>
                       </label>
                       <div class="payment-name">{{ item.name }}</div>
                       <div class="payment-meta">{{ item.date }} · {{ item.group }}</div>
                       <div class="payment-secondary">{{ item.child_name }}</div>
-                      <div class="payment-secondary">Coach: {{ item.trainer }}</div>
-                      <div class="payment-deadline">Payment deadline: {{ item.deadline }}</div>
+                      <div class="payment-secondary">{{ t('pages.payments.coachPrefix') }}: {{ item.trainer }}</div>
+                      <div class="payment-deadline">{{ t('pages.payments.paymentDeadline') }}: {{ item.deadline }}</div>
                     </div>
 
                     <div class="payment-side payment-action-side">
@@ -447,8 +451,8 @@
                       <div class="payment-name">{{ item.group }}</div>
                       <div class="payment-meta">{{ item.month_label }}</div>
                       <div class="payment-secondary">{{ item.child_name }}</div>
-                      <div class="payment-secondary">{{ item.covered_sessions_count }} trainings included</div>
-                      <div class="payment-deadline">Monthly deadline: {{ item.deadline }}</div>
+                      <div class="payment-secondary">{{ item.covered_sessions_count }} {{ t('pages.payments.trainingsIncluded') }}</div>
+                      <div class="payment-deadline">{{ t('pages.payments.monthlyDeadline') }}: {{ item.deadline }}</div>
                     </div>
 
                     <div class="payment-side payment-action-side">
@@ -468,8 +472,8 @@
                 <div v-else class="empty-state">
                   {{
                     activePaymentTab === 'training'
-                      ? 'No individual trainings are available for payment right now.'
-                      : 'No monthly payments are available right now.'
+                      ? t('pages.payments.noIndividualPayments')
+                      : t('pages.payments.noMonthlyPayments')
                   }}
                 </div>
               </section>
@@ -477,9 +481,9 @@
               <div class="lists-grid">
                 <section class="list-card">
                   <div class="list-header">
-                    <div class="list-title">Payment History</div>
+                    <div class="list-title">{{ t('pages.payments.paymentHistory') }}</div>
                     <button type="button" class="show-all-btn" @click="historyDialog = true">
-                      Show all
+                      {{ t('common.showAll') }}
                     </button>
                   </div>
 
@@ -501,19 +505,19 @@
                           {{ capitalize(item.status) }}
                         </v-chip>
                         <v-btn variant="text" class="history-action-btn" @click="openReceipt(item)">
-                          View receipt
+                          {{ t('common.viewReceipt') }}
                         </v-btn>
                       </div>
                     </article>
                   </div>
-                  <div v-else class="empty-state">No payment history yet.</div>
+                  <div v-else class="empty-state">{{ t('pages.payments.noPaymentHistory') }}</div>
                 </section>
 
                 <section class="list-card">
                   <div class="list-header">
-                    <div class="list-title">Recent Activity</div>
+                    <div class="list-title">{{ t('pages.payments.recentActivity') }}</div>
                     <button type="button" class="show-all-btn" @click="transactionsDialog = true">
-                      Show all
+                      {{ t('common.showAll') }}
                     </button>
                   </div>
 
@@ -540,7 +544,7 @@
                       </div>
                     </article>
                   </div>
-                  <div v-else class="empty-state">No recent activity found.</div>
+                  <div v-else class="empty-state">{{ t('pages.payments.noRecentActivity') }}</div>
                 </section>
               </div>
             </div>
@@ -551,8 +555,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Recent Activity</div>
-                <div class="list-dialog-subtitle">Unified timeline of training, monthly and refund payment actions.</div>
+                <div class="list-dialog-title">{{ t('pages.payments.allRecentActivity') }}</div>
+                <div class="list-dialog-subtitle">{{ t('pages.payments.allRecentActivitySubtitle') }}</div>
               </div>
 
               <v-btn icon variant="text" @click="transactionsDialog = false">
@@ -590,8 +594,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Trainings To Pay</div>
-                <div class="list-dialog-subtitle">Pay one or several available trainings with your card or account balance.</div>
+                <div class="list-dialog-title">{{ t('pages.payments.allTrainingsToPay') }}</div>
+                <div class="list-dialog-subtitle">{{ t('pages.payments.allTrainingsToPaySubtitle') }}</div>
               </div>
 
               <v-btn icon variant="text" @click="dueTrainingsDialog = false">
@@ -612,13 +616,13 @@
                       :checked="isTrainingSelected(item.id)"
                       @change="toggleTrainingSelection(item)"
                     >
-                    <span>Select</span>
+                    <span>{{ t('pages.payments.select') }}</span>
                   </label>
                   <div class="payment-name">{{ item.name }}</div>
                   <div class="payment-meta">{{ item.date }} · {{ item.group }}</div>
                   <div class="payment-secondary">{{ item.child_name }}</div>
-                  <div class="payment-secondary">Coach: {{ item.trainer }}</div>
-                  <div class="payment-deadline">Payment deadline: {{ item.deadline }}</div>
+                  <div class="payment-secondary">{{ t('pages.payments.coachPrefix') }}: {{ item.trainer }}</div>
+                  <div class="payment-deadline">{{ t('pages.payments.paymentDeadline') }}: {{ item.deadline }}</div>
                 </div>
 
                 <div class="payment-side payment-action-side">
@@ -642,7 +646,7 @@
                 :disabled="!selectedSingleDueIds.length"
                 @click="openSinglePayDialog()"
               >
-                Pay selected
+                {{ t('common.paySelected') }}
               </v-btn>
             </div>
           </v-card>
@@ -652,8 +656,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Monthly Payments</div>
-                <div class="list-dialog-subtitle">Pay the monthly group price for one child and one group at a time.</div>
+                <div class="list-dialog-title">{{ t('pages.payments.allMonthlyPayments') }}</div>
+                <div class="list-dialog-subtitle">{{ t('pages.payments.allMonthlyPaymentsSubtitle') }}</div>
               </div>
 
               <v-btn icon variant="text" @click="monthlyPaymentsDialog = false">
@@ -671,8 +675,8 @@
                   <div class="payment-name">{{ item.group }}</div>
                   <div class="payment-meta">{{ item.month_label }}</div>
                   <div class="payment-secondary">{{ item.child_name }}</div>
-                  <div class="payment-secondary">{{ item.covered_sessions_count }} trainings included</div>
-                  <div class="payment-deadline">Monthly deadline: {{ item.deadline }}</div>
+                  <div class="payment-secondary">{{ item.covered_sessions_count }} {{ t('pages.payments.trainingsIncluded') }}</div>
+                  <div class="payment-deadline">{{ t('pages.payments.monthlyDeadline') }}: {{ item.deadline }}</div>
                 </div>
 
                 <div class="payment-side payment-action-side">
@@ -693,8 +697,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Payment History</div>
-                <div class="list-dialog-subtitle">See session and monthly payments with receipts and statuses.</div>
+                <div class="list-dialog-title">{{ t('pages.payments.allPaymentHistory') }}</div>
+                <div class="list-dialog-subtitle">{{ t('pages.payments.allPaymentHistorySubtitle') }}</div>
               </div>
 
               <v-btn icon variant="text" @click="historyDialog = false">
@@ -720,7 +724,7 @@
                     {{ capitalize(item.status) }}
                   </v-chip>
                   <v-btn variant="text" class="history-action-btn" @click="openReceipt(item)">
-                    View receipt
+                    {{ t('common.viewReceipt') }}
                   </v-btn>
                 </div>
               </article>
@@ -732,8 +736,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Balance Sources</div>
-                <div class="list-dialog-subtitle">All credits currently contributing to the parent account balance.</div>
+                <div class="list-dialog-title">{{ t('pages.payments.allBalanceSources') }}</div>
+                <div class="list-dialog-subtitle">{{ t('pages.payments.allBalanceSourcesSubtitle') }}</div>
               </div>
 
               <v-btn icon variant="text" @click="balanceSourcesDialog = false">
@@ -759,7 +763,7 @@
             </div>
 
             <div v-else class="empty-state">
-              No recent credits have been added to the balance yet.
+              {{ t('pages.payments.noRecentCredits') }}
             </div>
           </v-card>
         </v-dialog>
@@ -768,7 +772,7 @@
           <v-card class="dialog-card list-dialog-card pay-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">{{ payDialogMode === 'month' ? 'Pay Month' : 'Pay Trainings' }}</div>
+                <div class="list-dialog-title">{{ payDialogMode === 'month' ? t('pages.payments.payMonth') : t('pages.payments.payTrainings') }}</div>
                 <div class="list-dialog-subtitle">{{ payDialogSubtitle }}</div>
               </div>
 
@@ -799,17 +803,17 @@
                   </div>
                   <div class="payment-secondary">{{ item.child_name }}</div>
                   <div v-if="payDialogMode === 'month'" class="payment-secondary">
-                    {{ item.covered_sessions_count }} trainings included
+                    {{ item.covered_sessions_count }} {{ t('pages.payments.trainingsIncluded') }}
                   </div>
-                  <div v-else class="payment-secondary">Coach: {{ item.trainer }}</div>
+                  <div v-else class="payment-secondary">{{ t('pages.payments.coachPrefix') }}: {{ item.trainer }}</div>
                   <div class="payment-deadline">
-                    {{ payDialogMode === 'month' ? 'Monthly deadline' : 'Payment deadline' }}: {{ item.deadline }}
+                    {{ payDialogMode === 'month' ? t('pages.payments.monthlyDeadline') : t('pages.payments.paymentDeadline') }}: {{ item.deadline }}
                   </div>
                 </div>
 
-              <div class="pay-training-amount">Total: {{ formatCurrency(payDialogTotal) }}</div>
+              <div class="pay-training-amount">{{ t('pages.payments.total') }}: {{ formatCurrency(payDialogTotal) }}</div>
 
-              <div class="pay-methods-title">Payment method</div>
+              <div class="pay-methods-title">{{ t('pages.payments.paymentMethod') }}</div>
               <div class="method-options">
                 <button
                   type="button"
@@ -817,8 +821,8 @@
                   :class="{ 'method-option-active': selectedPaymentMethod === 'Card' }"
                   @click="selectedPaymentMethod = 'Card'"
                 >
-                  <span class="method-option-label">Card</span>
-                  <span class="method-option-meta">Fast one-time payment</span>
+                  <span class="method-option-label">{{ t('pages.payments.card') }}</span>
+                  <span class="method-option-meta">{{ t('pages.payments.cardMeta') }}</span>
                 </button>
 
                 <button
@@ -831,17 +835,17 @@
                   :disabled="payDialogTotal > accountBalance"
                   @click="selectedPaymentMethod = 'Account balance'"
                 >
-                  <span class="method-option-label">Account balance</span>
-                  <span class="method-option-meta">Available: {{ formatCurrency(accountBalance) }}</span>
+                  <span class="method-option-label">{{ t('pages.payments.accountBalanceMethod') }}</span>
+                  <span class="method-option-meta">{{ t('pages.payments.availablePrefix') }}: {{ formatCurrency(accountBalance) }}</span>
                 </button>
               </div>
 
               <div class="pay-dialog-actions">
                 <v-btn variant="outlined" class="dialog-secondary-btn" @click="payDialog = false">
-                  Cancel
+                  {{ t('common.cancel') }}
                 </v-btn>
                 <v-btn color="primary" class="dialog-primary-btn" @click="confirmPayment">
-                  Pay now
+                  {{ t('common.payNow') }}
                 </v-btn>
               </div>
             </div>
@@ -852,8 +856,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">Payment Receipt</div>
-                <div class="list-dialog-subtitle">Receipt details for the selected payment.</div>
+                <div class="list-dialog-title">{{ t('common.paymentReceipt') }}</div>
+                <div class="list-dialog-subtitle">{{ t('pages.payments.receiptSubtitle') }}</div>
               </div>
               <v-btn icon variant="text" @click="receiptDialog = false">
                 <v-icon>mdi-close</v-icon>
@@ -864,8 +868,8 @@
               <div class="receipt-summary-card">
                 <div class="receipt-top-row">
                   <div>
-                    <div class="payment-name">{{ selectedPaymentRecord.child_name || `Child #${selectedPaymentRecord.child_id}` }}</div>
-                    <div class="payment-meta">Parent: {{ selectedPaymentRecord.parent_name || `User #${selectedPaymentRecord.parent_id}` }}</div>
+                    <div class="payment-name">{{ selectedPaymentRecord.child_name || `${t('pages.payments.child')} #${selectedPaymentRecord.child_id}` }}</div>
+                    <div class="payment-meta">{{ t('pages.payments.parent') }}: {{ selectedPaymentRecord.parent_name || `User #${selectedPaymentRecord.parent_id}` }}</div>
                   </div>
                   <v-chip size="small" :color="getStatusColor(capitalize(selectedPaymentRecord.status))" class="payment-chip" dark>
                     {{ capitalize(selectedPaymentRecord.status) }}
@@ -874,25 +878,25 @@
 
                 <div class="receipt-grid">
                   <div class="info-item">
-                    <span class="info-label">Amount</span>
+                    <span class="info-label">{{ t('pages.payments.amount') }}</span>
                     <span class="info-value">{{ formatCurrency(selectedPaymentRecord.amount) }}</span>
                   </div>
                   <div class="info-item">
-                    <span class="info-label">Method</span>
-                    <span class="info-value">{{ selectedPaymentRecord.method || 'Not set' }}</span>
+                    <span class="info-label">{{ t('pages.payments.method') }}</span>
+                    <span class="info-value">{{ selectedPaymentRecord.method || t('pages.payments.notSet') }}</span>
                   </div>
                   <div class="info-item">
-                    <span class="info-label">Transaction ID</span>
-                    <span class="info-value">{{ selectedPaymentRecord.transaction_id || 'Not set' }}</span>
+                    <span class="info-label">{{ t('pages.payments.transactionId') }}</span>
+                    <span class="info-value">{{ selectedPaymentRecord.transaction_id || t('pages.payments.notSet') }}</span>
                   </div>
                   <div class="info-item">
-                    <span class="info-label">Created</span>
-                    <span class="info-value">{{ selectedPaymentRecord.created_at ? formatDateTime(selectedPaymentRecord.created_at) : 'Not set' }}</span>
+                    <span class="info-label">{{ t('pages.payments.created') }}</span>
+                    <span class="info-value">{{ selectedPaymentRecord.created_at ? formatDateTime(selectedPaymentRecord.created_at) : t('pages.payments.notSet') }}</span>
                   </div>
                 </div>
               </div>
 
-              <div class="list-title receipt-items-title">Receipt items</div>
+              <div class="list-title receipt-items-title">{{ t('pages.payments.receiptItems') }}</div>
               <div class="dialog-list-wrap receipt-items-wrap">
                 <article
                   v-for="item in selectedPaymentRecord.items || []"
@@ -917,7 +921,7 @@
                   prepend-icon="mdi-download-outline"
                   @click="downloadReceipt(selectedPaymentRecord)"
                 >
-                  Download receipt
+                  {{ t('pages.payments.downloadReceipt') }}
                 </v-btn>
               </div>
             </div>
@@ -944,8 +948,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import AppPageFooter from '../components/AppPageFooter.vue'
+import AppLanguageSwitch from '../components/AppLanguageSwitch.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedChild } from '../composables/useSelectedChild'
+import { useLocale } from '../i18n'
 import { paymentsApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
@@ -971,6 +977,7 @@ const selectedMonthlyDueId = ref(null)
 const selectedPaymentRecordId = ref(null)
 const selectedPaymentMethod = ref('Card')
 const darkModeStorageKey = 'app-dark-mode'
+const { t } = useLocale()
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
 const paymentError = ref('')
 const loading = ref(false)
@@ -1009,12 +1016,12 @@ const profileName = computed(() => {
 })
 const isParent = computed(() => user.value?.role === 'parent')
 const navItems = computed(() => [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
-  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
+  { label: t('common.home'), icon: 'mdi-home-outline', to: '/home' },
+  { label: t('common.schedule'), icon: 'mdi-calendar-month-outline', to: '/schedule' },
+  { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/groups' },
+  { label: t('common.attendance'), icon: 'mdi-check-circle-outline', to: '/attendance' },
   ...(user.value?.role === 'parent'
-    ? [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }]
+    ? [{ label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/payments' }]
     : [])
 ])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
@@ -1108,18 +1115,18 @@ const chartAreaPath = computed(() => {
 const normalizedSearch = computed(() => search.value.trim().toLowerCase())
 const summaryCards = computed(() => [
   {
-    label: 'Total Paid',
+    label: t('pages.payments.statTotalPaid'),
     value: formatCurrency(paymentRecords.value.filter((item) => item.status === 'paid').reduce((sum, item) => sum + Number(item.amount || 0), 0))
   },
   {
-    label: 'Pending',
+    label: t('pages.payments.statPending'),
     value: formatCurrency(
       dueTrainings.value.filter((item) => item.status === 'Pending').reduce((sum, item) => sum + Number(item.amount || 0), 0)
       + monthlyDuePayments.value.filter((item) => item.status === 'Pending').reduce((sum, item) => sum + Number(item.amount || 0), 0)
     )
   },
   {
-    label: 'Overdue',
+    label: t('pages.payments.statOverdue'),
     value: formatCurrency(
       dueTrainings.value.filter((item) => item.status === 'Overdue').reduce((sum, item) => sum + Number(item.amount || 0), 0)
       + monthlyDuePayments.value.filter((item) => item.status === 'Overdue').reduce((sum, item) => sum + Number(item.amount || 0), 0)
@@ -1154,8 +1161,8 @@ const balanceSources = computed(() => {
   if (carryoverAmount > 0) {
     refundedCredits.push({
       id: 'carryover-credit',
-      label: 'Carryover credit',
-      meta: 'Existing balance from previous training credits',
+      label: t('pages.payments.balanceCarryover'),
+      meta: t('pages.payments.existingBalanceCredit'),
       amount: carryoverAmount,
     })
   }
@@ -1245,10 +1252,10 @@ const previewRecentActivity = computed(() => filteredRecentActivity.value.slice(
 
 const payDialogSubtitle = computed(() => {
   if (payDialogMode.value === 'month') {
-    return 'Pay the full monthly group price. Covered trainings from that month will be hidden from single-payment options.'
+    return t('pages.payments.payMonthSubtitle')
   }
 
-  return 'Pay one or several selected trainings that are currently open for payment.'
+  return t('pages.payments.payTrainingsSubtitle')
 })
 
 const payDialogTotal = computed(() =>
@@ -1335,7 +1342,7 @@ function changeChartHalfYear(direction) {
 }
 
 function formatDateTime(value) {
-  if (!value) return 'Not set'
+  if (!value) return t('pages.payments.notSet')
   return new Date(value).toLocaleString('en-US', {
     day: '2-digit',
     month: 'short',
@@ -1384,7 +1391,7 @@ function toggleTrainingSelection(item) {
   const selectedChildId = currentItems[0]?.child_id ?? null
 
   if (selectedChildId && selectedChildId !== item.child_id) {
-    paymentError.value = 'You can only pay selected trainings for one child at a time.'
+    paymentError.value = t('pages.payments.oneChildAtATime')
     return
   }
 
@@ -1457,7 +1464,7 @@ async function confirmPayment() {
     openReceipt(payment)
   } catch (error) {
     const errors = error?.response?.data?.errors ?? {}
-    paymentError.value = errors.method?.[0] || error?.response?.data?.message || 'Payment failed.'
+    paymentError.value = errors.method?.[0] || error?.response?.data?.message || t('pages.payments.paymentFailed')
   }
 }
 
@@ -1468,42 +1475,42 @@ function capitalize(value) {
 
 function formatReceiptItemName(item) {
   if (item.type === 'month') {
-    return item.group_name || 'Monthly payment'
+    return item.group_name || t('pages.payments.monthlyPayment')
   }
 
-  return item.session_name || 'Training payment'
+  return item.session_name || t('pages.payments.trainingPayment')
 }
 
 function formatReceiptItemMeta(item) {
   if (item.type === 'month') {
     const parts = [item.month, item.group_name]
     if (item.covered_sessions_count) {
-      parts.push(`${item.covered_sessions_count} trainings`)
+      parts.push(`${item.covered_sessions_count} ${t('pages.payments.trainingsIncluded')}`)
     }
 
     return parts.filter(Boolean).join(' · ')
   }
 
-  return [item.group_name, 'Single training'].filter(Boolean).join(' · ')
+  return [item.group_name, t('pages.payments.singleTraining')].filter(Boolean).join(' · ')
 }
 
 function formatHistoryItemName(item) {
   const firstItem = item.items?.[0]
 
   if (item.payment_type === 'month') {
-    return firstItem?.group_name || 'Monthly payment'
+    return firstItem?.group_name || t('pages.payments.monthlyPayment')
   }
 
   if (item.items?.length > 1) {
-    return `${item.items.length} trainings paid`
+    return `${item.items.length} ${t('pages.payments.trainingsPaid')}`
   }
 
-  return firstItem?.session_name || 'Training payment'
+  return firstItem?.session_name || t('pages.payments.trainingPayment')
 }
 
 function formatHistoryItemMeta(item) {
   const firstItem = item.items?.[0]
-  const date = item.created_at ? formatDateTime(item.created_at) : 'Not set'
+  const date = item.created_at ? formatDateTime(item.created_at) : t('pages.payments.notSet')
 
   if (item.payment_type === 'month') {
     return [firstItem?.month, firstItem?.group_name, date].filter(Boolean).join(' · ')
@@ -1513,11 +1520,11 @@ function formatHistoryItemMeta(item) {
 }
 
 function formatHistoryItemSecondary(item) {
-  const childName = item.child_name || `Child #${item.child_id}`
+  const childName = item.child_name || `${t('pages.payments.child')} #${item.child_id}`
   const firstItem = item.items?.[0]
 
   if (item.payment_type === 'month') {
-    const trainingsCount = firstItem?.covered_sessions_count ? `${firstItem.covered_sessions_count} trainings` : null
+    const trainingsCount = firstItem?.covered_sessions_count ? `${firstItem.covered_sessions_count} ${t('pages.payments.trainingsIncluded')}` : null
     return [childName, trainingsCount].filter(Boolean).join(' · ')
   }
 
@@ -1570,30 +1577,30 @@ function downloadReceipt(payment) {
         <div class="top">
           <div>
             <div class="brand">SportSystem</div>
-            <div class="muted">Payment receipt</div>
+            <div class="muted">${escapeHtml(t('pages.payments.receiptDocumentSubtitle'))}</div>
           </div>
           <div style="text-align:right;">
-            <div><strong>Status:</strong> ${escapeHtml(capitalize(payment.status || ''))}</div>
+            <div><strong>${escapeHtml(t('pages.schedule.statusLabel'))}:</strong> ${escapeHtml(capitalize(payment.status || ''))}</div>
             <div class="muted">${escapeHtml(formatDateTime(payment.created_at))}</div>
           </div>
         </div>
         <div class="grid">
-          <div class="card"><strong>Child</strong><br>${escapeHtml(payment.child_name || `Child #${payment.child_id}`)}</div>
-          <div class="card"><strong>Parent</strong><br>${escapeHtml(payment.parent_name || `User #${payment.parent_id}`)}</div>
-          <div class="card"><strong>Method</strong><br>${escapeHtml(payment.method || 'Not set')}</div>
-          <div class="card"><strong>Transaction ID</strong><br>${escapeHtml(payment.transaction_id || 'Not set')}</div>
+          <div class="card"><strong>${escapeHtml(t('pages.payments.child'))}</strong><br>${escapeHtml(payment.child_name || `Child #${payment.child_id}`)}</div>
+          <div class="card"><strong>${escapeHtml(t('pages.payments.parent'))}</strong><br>${escapeHtml(payment.parent_name || `User #${payment.parent_id}`)}</div>
+          <div class="card"><strong>${escapeHtml(t('pages.payments.method'))}</strong><br>${escapeHtml(payment.method || t('pages.payments.notSet'))}</div>
+          <div class="card"><strong>${escapeHtml(t('pages.payments.transactionId'))}</strong><br>${escapeHtml(payment.transaction_id || t('pages.payments.notSet'))}</div>
         </div>
         <table>
           <thead>
             <tr>
-              <th style="text-align:left;padding-bottom:12px;">Item</th>
-              <th style="text-align:left;padding-bottom:12px;">Details</th>
-              <th style="text-align:right;padding-bottom:12px;">Amount</th>
+              <th style="text-align:left;padding-bottom:12px;">${escapeHtml(t('pages.payments.item'))}</th>
+              <th style="text-align:left;padding-bottom:12px;">${escapeHtml(t('pages.payments.details'))}</th>
+              <th style="text-align:right;padding-bottom:12px;">${escapeHtml(t('pages.payments.amount'))}</th>
             </tr>
           </thead>
           <tbody>${itemsMarkup}</tbody>
         </table>
-        <div style="margin-top:20px;text-align:right;font-size:22px;font-weight:700;">Total: ${escapeHtml(formatCurrency(payment.amount))}</div>
+        <div style="margin-top:20px;text-align:right;font-size:22px;font-weight:700;">${escapeHtml(t('pages.payments.total'))}: ${escapeHtml(formatCurrency(payment.amount))}</div>
       </div>
     </body>
   </html>`

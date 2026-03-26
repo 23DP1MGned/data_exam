@@ -56,7 +56,7 @@
               prepend-icon="mdi-logout"
               @click="handleMobileLogout"
             >
-              Log out
+              {{ t('common.logout') }}
             </v-btn>
           </div>
         </v-navigation-drawer>
@@ -103,11 +103,13 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Attendance</div>
+                  <div class="brand-caption">{{ t('pages.attendance.caption') }}</div>
                 </div>
               </div>
 
               <div class="mobile-header-actions">
+                <AppLanguageSwitch :dark-mode="darkMode" :accent="isCoach ? 'coach' : 'default'" />
+
                 <v-btn
                   icon
                   variant="text"
@@ -143,6 +145,8 @@
 
             <div class="topbar-card">
               <div class="topbar-tools">
+                <AppLanguageSwitch :dark-mode="darkMode" :accent="isCoach ? 'coach' : 'default'" />
+
                 <div class="icon-badge-wrap">
                   <v-btn
                     icon
@@ -186,7 +190,7 @@
             <div class="attendance-card">
               <div class="attendance-header">
                 <div>
-                  <h1 class="attendance-title">Attendance Calendar</h1>
+                  <h1 class="attendance-title">{{ t('pages.attendance.calendarTitle') }}</h1>
                   <div class="attendance-subtitle">{{ attendanceSubtitle }}</div>
                 </div>
 
@@ -196,7 +200,7 @@
                   prepend-icon="mdi-check-circle-outline"
                   @click="openMarkDialog"
                 >
-                  Mark attendance
+                  {{ t('pages.attendance.markAttendance') }}
                 </v-btn>
               </div>
 
@@ -216,7 +220,7 @@
                 <div class="overview-main">
                   <div class="overview-top">
                     <div class="status-badge">
-                      Attendance overview
+                      {{ t('pages.attendance.attendanceOverview') }}
                     </div>
                   </div>
 
@@ -230,9 +234,9 @@
                   <div class="timeline-wrap">
                     <div class="timeline-head">
                       <div>
-                        <div class="timeline-title">Session attendance split</div>
+                        <div class="timeline-title">{{ t('pages.attendance.splitTitle') }}</div>
                         <div class="timeline-caption">
-                          This bar shows how all scheduled sessions are split between attended and missed sessions this month.
+                          {{ t('pages.attendance.splitCaption') }}
                         </div>
                       </div>
                       <div class="timeline-percent">{{ summary.attendance_rate ?? 0 }}%</div>
@@ -264,7 +268,7 @@
 
               <div class="attendance-toolbar">
                 <div class="toolbar-label-wrap">
-                  <div class="toolbar-section-label">Calendar</div>
+                  <div class="toolbar-section-label">{{ t('pages.attendance.calendarSection') }}</div>
                 </div>
 
                 <div class="toolbar-meta">
@@ -285,23 +289,23 @@
 
               <div class="calendar-card">
                 <div class="calendar-header">
-                  <div class="calendar-title">Recent attendance calendar</div>
+                  <div class="calendar-title">{{ t('pages.attendance.recentCalendar') }}</div>
                   <div class="calendar-legend">
                     <span class="legend-item">
                       <span class="legend-dot legend-dot-green"></span>
-                      Present
+                      {{ t('pages.attendance.present') }}
                     </span>
                     <span class="legend-item">
                       <span class="legend-dot legend-dot-red"></span>
-                      Absent
+                      {{ t('pages.attendance.absent') }}
                     </span>
                     <span class="legend-item">
                       <span class="legend-dot legend-dot-blue"></span>
-                      Planned
+                      {{ t('pages.attendance.planned') }}
                     </span>
                     <span class="legend-item">
                       <span class="legend-dot legend-dot-gray"></span>
-                      No training
+                      {{ t('pages.attendance.noTraining') }}
                     </span>
                   </div>
                 </div>
@@ -351,7 +355,7 @@
 
                       <div v-else class="cell-status">
                         <span class="cell-dot cell-dot-gray"></span>
-                        No training
+                        {{ t('pages.attendance.noTraining') }}
                       </div>
                     </div>
                   </div>
@@ -363,11 +367,11 @@
 
         <v-dialog v-model="markDialog" max-width="560">
           <v-card class="dialog-card mark-dialog-card">
-            <v-card-title class="mark-dialog-title">Mark Attendance</v-card-title>
+            <v-card-title class="mark-dialog-title">{{ t('pages.attendance.markDialogTitle') }}</v-card-title>
             <v-card-text class="mark-dialog-content">
               <v-select
                 v-model="markForm.session_id"
-                label="Session"
+                :label="t('pages.attendance.sessionLabel')"
                 :items="sessionOptions"
                 item-title="label"
                 item-value="id"
@@ -376,7 +380,7 @@
               />
               <v-select
                 v-model="markForm.user_id"
-                label="Child"
+                :label="t('pages.attendance.childLabel')"
                 :items="selectedSessionChildren"
                 item-title="name"
                 item-value="id"
@@ -385,17 +389,17 @@
               />
               <v-select
                 v-model="markForm.status"
-                label="Status"
+                :label="t('pages.attendance.statusField')"
                 :items="attendanceStatusOptions"
                 class="mark-field"
                 :menu-props="selectMenuProps"
               />
-              <v-text-field v-model="markForm.comment" label="Comment" class="mark-field" />
+              <v-text-field v-model="markForm.comment" :label="t('pages.attendance.commentLabel')" class="mark-field" />
             </v-card-text>
             <v-card-actions class="mark-dialog-actions">
               <v-spacer />
-              <v-btn variant="outlined" class="mark-cancel-btn" @click="markDialog = false">Cancel</v-btn>
-              <v-btn color="primary" class="mark-save-btn" @click="submitAttendance">Save</v-btn>
+              <v-btn variant="outlined" class="mark-cancel-btn" @click="markDialog = false">{{ t('common.cancel') }}</v-btn>
+              <v-btn color="primary" class="mark-save-btn" @click="submitAttendance">{{ t('common.save') }}</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -419,8 +423,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import AppPageFooter from '../components/AppPageFooter.vue'
+import AppLanguageSwitch from '../components/AppLanguageSwitch.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedChild } from '../composables/useSelectedChild'
+import { useLocale } from '../i18n'
 import { attendanceApi, sessionsApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
@@ -436,6 +442,7 @@ const focusedDate = ref(null)
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const darkModeStorageKey = 'app-dark-mode'
+const { t } = useLocale()
 const selectMenuProps = computed(() => ({
   contentClass: darkMode.value ? 'app-select-menu app-select-menu-dark' : 'app-select-menu',
   theme: darkMode.value ? 'dark' : 'light'
@@ -475,12 +482,12 @@ const profileName = computed(() => {
   return `${user.value.name} ${user.value.surname}`.trim()
 })
 const navItems = computed(() => [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
-  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/attendance' },
+  { label: t('common.home'), icon: 'mdi-home-outline', to: '/home' },
+  { label: t('common.schedule'), icon: 'mdi-calendar-month-outline', to: '/schedule' },
+  { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/groups' },
+  { label: t('common.attendance'), icon: 'mdi-check-circle-outline', to: '/attendance' },
   ...(user.value?.role === 'parent'
-    ? [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }]
+    ? [{ label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/payments' }]
     : [])
 ])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
@@ -488,13 +495,13 @@ const profileSeed = computed(() => user.value?.email ?? profileName.value)
 const isParent = computed(() => user.value?.role === 'parent')
 const isCoach = computed(() => user.value?.role === 'coach')
 const profileAlt = computed(() => (isCoach.value ? 'Coach profile' : 'User profile'))
-const workspaceCaption = computed(() => (isCoach.value ? 'Coach workspace' : 'Sport Workspace'))
+const workspaceCaption = computed(() => (isCoach.value ? t('workspace.coach') : t('workspace.sport')))
 const attendanceSubtitle = computed(() =>
   isCoach.value
-    ? 'Track sessions, student attendance and group progress in one view'
+    ? t('pages.attendance.coachSubtitle')
     : isParent.value
-      ? "Track your child's attendance history, planned sessions and monthly progress in one view"
-      : 'Track your attendance history, planned sessions and monthly progress in one view'
+      ? t('pages.attendance.parentSubtitle')
+      : t('pages.attendance.childSubtitle')
 )
 const attendanceChildren = computed(() =>
   Array.from(
@@ -564,10 +571,10 @@ const scopedCalendarSessions = computed(() =>
 )
 
 const stats = computed(() => [
-  { label: 'Total training time', value: formatMinutes(summary.value.total_training_time_minutes ?? 0) },
-  { label: 'Total sessions', value: String(summary.value.total_sessions ?? 0) },
-  { label: 'Attended sessions', value: String(summary.value.attended_sessions ?? 0) },
-  { label: 'Missed sessions', value: String(summary.value.missed_sessions ?? 0) }
+  { label: t('pages.attendance.statTotalTrainingTime'), value: formatMinutes(summary.value.total_training_time_minutes ?? 0) },
+  { label: t('pages.attendance.statTotalSessions'), value: String(summary.value.total_sessions ?? 0) },
+  { label: t('pages.attendance.statAttendedSessions'), value: String(summary.value.attended_sessions ?? 0) },
+  { label: t('pages.attendance.statMissedSessions'), value: String(summary.value.missed_sessions ?? 0) }
 ])
 
 const timelineSegments = computed(() => {
@@ -577,20 +584,28 @@ const timelineSegments = computed(() => {
 
   if (!totalSessions) {
     return [
-      { label: 'Attended sessions', color: '#39b980', width: '0%' },
-      { label: 'Missed sessions', color: '#ef6b73', width: '0%' }
+      { label: t('pages.attendance.statAttendedSessions'), color: '#39b980', width: '0%' },
+      { label: t('pages.attendance.statMissedSessions'), color: '#ef6b73', width: '0%' }
     ]
   }
 
   return [
-    { label: 'Attended sessions', color: '#39b980', width: `${Math.round((attendedSessions / totalSessions) * 100)}%` },
-    { label: 'Missed sessions', color: '#ef6b73', width: `${Math.round((missedSessions / totalSessions) * 100)}%` }
+    { label: t('pages.attendance.statAttendedSessions'), color: '#39b980', width: `${Math.round((attendedSessions / totalSessions) * 100)}%` },
+    { label: t('pages.attendance.statMissedSessions'), color: '#ef6b73', width: `${Math.round((missedSessions / totalSessions) * 100)}%` }
   ]
 })
 
 const timelineLabels = ['0%', '25%', '50%', '75%', '100%']
 
-const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const weekDays = computed(() => [
+  t('pages.attendance.weekMon'),
+  t('pages.attendance.weekTue'),
+  t('pages.attendance.weekWed'),
+  t('pages.attendance.weekThu'),
+  t('pages.attendance.weekFri'),
+  t('pages.attendance.weekSat'),
+  t('pages.attendance.weekSun')
+])
 const attendanceStatusBySession = computed(() =>
   records.value.reduce((map, item) => {
     if (!map[item.session_id]) {

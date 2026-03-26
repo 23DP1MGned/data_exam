@@ -19,7 +19,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Admin workspace</div>
+                <div class="brand-caption">{{ t('workspace.admin') }}</div>
               </div>
             </div>
 
@@ -57,7 +57,7 @@
               prepend-icon="mdi-logout"
               @click="handleMobileLogout"
             >
-              Log out
+              {{ t('common.logout') }}
             </v-btn>
           </div>
         </v-navigation-drawer>
@@ -70,7 +70,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Admin workspace</div>
+                <div class="brand-caption">{{ t('workspace.admin') }}</div>
               </div>
             </div>
 
@@ -104,11 +104,13 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Users</div>
+                  <div class="brand-caption">{{ t('pages.adminUsers.caption') }}</div>
                 </div>
               </div>
 
               <div class="mobile-header-actions">
+                <AppLanguageSwitch :dark-mode="darkMode" accent="admin" />
+
                 <v-btn
                   icon
                   variant="text"
@@ -141,7 +143,7 @@
                 </div>
 
                 <v-btn color="primary" class="mobile-create-btn" prepend-icon="mdi-plus" @click="openCreateDialog">
-                  Create user
+                  {{ t('common.createUser') }}
                 </v-btn>
               </div>
             </div>
@@ -162,6 +164,8 @@
               </div>
 
               <div class="topbar-tools">
+                <AppLanguageSwitch :dark-mode="darkMode" accent="admin" />
+
                 <div class="icon-badge-wrap">
                   <v-btn
                     icon
@@ -205,14 +209,14 @@
             <div class="users-card">
               <div class="users-header">
                 <div>
-                  <h1 class="users-title">Users</h1>
+                  <h1 class="users-title">{{ t('pages.adminUsers.title') }}</h1>
                   <div class="users-subtitle">
                     Create, update and manage all system users from one admin panel.
                   </div>
                 </div>
 
                 <v-btn color="primary" class="desktop-only-btn" prepend-icon="mdi-plus" @click="openCreateDialog">
-                  Create user
+                  {{ t('common.createUser') }}
                 </v-btn>
               </div>
 
@@ -224,7 +228,7 @@
               </div>
 
               <div class="toolbar-row">
-                <div class="toolbar-label">User overview</div>
+                <div class="toolbar-label">{{ t('pages.adminUsers.userOverview') }}</div>
 
                 <div class="toolbar-actions role-filter-group">
                   <v-btn
@@ -248,11 +252,11 @@
 
               <div v-else-if="loading" class="state-wrap loading-state">
                 <v-progress-circular indeterminate color="primary" size="28" />
-                <span>Loading users...</span>
+                <span>{{ t('pages.adminUsers.loadingUsers') }}</span>
               </div>
 
               <div v-else-if="!filteredUsers.length" class="state-wrap empty-state">
-                No users found for the current search or role filter.
+                {{ t('pages.adminUsers.noUsersFound') }}
               </div>
 
               <div v-else class="users-grid">
@@ -281,44 +285,44 @@
                   <div class="user-card-body">
                     <div class="user-meta-list">
                       <div class="meta-row">
-                        <span class="meta-label">Role</span>
+                        <span class="meta-label">{{ t('pages.adminUsers.role') }}</span>
                         <span class="meta-value">{{ formatRole(item.role) }}</span>
                       </div>
 
                       <div class="meta-row">
-                        <span class="meta-label">Email</span>
-                        <span class="meta-value">{{ item.email || 'Not set' }}</span>
+                        <span class="meta-label">{{ t('pages.adminUsers.email') }}</span>
+                        <span class="meta-value">{{ item.email || t('pages.adminUsers.notSet') }}</span>
                       </div>
 
                       <div v-if="item.role !== 'admin'" class="meta-row">
-                        <span class="meta-label">Phone</span>
-                        <span class="meta-value">{{ item.phone || 'Not set' }}</span>
+                        <span class="meta-label">{{ t('pages.adminUsers.phone') }}</span>
+                        <span class="meta-value">{{ item.phone || t('pages.adminUsers.notSet') }}</span>
                       </div>
 
                       <div v-if="item.role !== 'admin'" class="meta-row">
-                        <span class="meta-label">Birth date</span>
-                        <span class="meta-value">{{ item.birth_date || 'Not set' }}</span>
+                        <span class="meta-label">{{ t('pages.adminUsers.birthDate') }}</span>
+                        <span class="meta-value">{{ item.birth_date || t('pages.adminUsers.notSet') }}</span>
                       </div>
 
                       <div v-if="item.role === 'coach'" class="meta-row">
-                        <span class="meta-label">Specialization</span>
-                        <span class="meta-value">{{ item.specialization || 'Not set' }}</span>
+                        <span class="meta-label">{{ t('pages.adminUsers.specialization') }}</span>
+                        <span class="meta-value">{{ item.specialization || t('pages.adminUsers.notSet') }}</span>
                       </div>
 
                       <div v-if="item.role !== 'admin'" class="meta-row">
-                        <span class="meta-label">Personal code</span>
-                        <span class="meta-value">{{ item.personal_code || 'Not set' }}</span>
+                        <span class="meta-label">{{ t('pages.adminUsers.personalCode') }}</span>
+                        <span class="meta-value">{{ item.personal_code || t('pages.adminUsers.notSet') }}</span>
                       </div>
 
                       <div v-if="item.role !== 'admin' && item.role !== 'child'" class="meta-row">
-                        <span class="meta-label">Balance</span>
+                        <span class="meta-label">{{ t('pages.adminUsers.balance') }}</span>
                         <span class="meta-value">
-                          {{ item.role === 'parent' ? formatCurrency(item.account_balance) : 'Not set' }}
+                          {{ item.role === 'parent' ? formatCurrency(item.account_balance) : t('pages.adminUsers.notSet') }}
                         </span>
                       </div>
 
                       <div v-if="item.role === 'parent'" class="meta-row meta-row-span linked-relatives-row">
-                        <span class="meta-label">Linked children</span>
+                        <span class="meta-label">{{ t('pages.adminUsers.linkedChildren') }}</span>
                         <div v-if="item.children?.length" class="children-chips">
                           <v-chip
                             v-for="child in item.children"
@@ -330,11 +334,11 @@
                             {{ child.name }}
                           </v-chip>
                         </div>
-                        <span v-else class="meta-value">Not set</span>
+                        <span v-else class="meta-value">{{ t('pages.adminUsers.notSet') }}</span>
                       </div>
 
                       <div v-if="item.role === 'child'" class="meta-row meta-row-span linked-relatives-row">
-                        <span class="meta-label">Linked parents</span>
+                        <span class="meta-label">{{ t('pages.adminUsers.linkedParents') }}</span>
                         <div v-if="item.parents?.length" class="children-chips">
                           <v-chip
                             v-for="parent in item.parents"
@@ -346,7 +350,7 @@
                             {{ parent.name }}
                           </v-chip>
                         </div>
-                        <span v-else class="meta-value">Not set</span>
+                        <span v-else class="meta-value">{{ t('pages.adminUsers.notSet') }}</span>
                       </div>
                     </div>
                   </div>
@@ -358,7 +362,7 @@
                       prepend-icon="mdi-pencil-outline"
                       @click="openEditDialog(item)"
                     >
-                      Edit
+                      {{ t('common.edit') }}
                     </v-btn>
                     <v-btn
                       variant="outlined"
@@ -367,7 +371,7 @@
                       :disabled="item.id === currentUserId"
                       @click="deleteUser(item)"
                     >
-                      {{ item.id === currentUserId ? 'Current account' : 'Delete' }}
+                      {{ item.id === currentUserId ? t('common.currentAccount') : t('common.delete') }}
                     </v-btn>
                   </div>
                 </article>
@@ -381,10 +385,10 @@
             <div class="create-dialog-header" :class="{ 'create-dialog-header-dark': darkMode }">
               <div>
                 <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">
-                  {{ editingUserId ? 'Edit User' : 'Create User' }}
+                  {{ editingUserId ? t('common.editUser') : t('common.createUser') }}
                 </div>
                 <div class="create-dialog-subtitle" :class="{ 'create-dialog-subtitle-dark': darkMode }">
-                  Manage account details and role-specific profile fields without leaving the admin panel.
+                  {{ t('pages.adminUsers.dialogSubtitle') }}
                 </div>
               </div>
 
@@ -405,12 +409,12 @@
               </v-alert>
 
               <div class="create-fields-grid">
-                <v-text-field v-model="form.name" label="Name" variant="outlined" class="create-field" />
-                <v-text-field v-model="form.surname" label="Surname" variant="outlined" class="create-field" />
-                <v-text-field v-model="form.email" label="Email" variant="outlined" class="create-field" />
+                <v-text-field v-model="form.name" :label="t('pages.adminUsers.name')" variant="outlined" class="create-field" />
+                <v-text-field v-model="form.surname" :label="t('pages.adminUsers.surname')" variant="outlined" class="create-field" />
+                <v-text-field v-model="form.email" :label="t('pages.adminUsers.email')" variant="outlined" class="create-field" />
                 <v-text-field
                   v-model="form.password"
-                  :label="editingUserId ? 'Password (leave blank to keep current)' : 'Password'"
+                  :label="editingUserId ? t('pages.adminUsers.passwordKeep') : t('pages.adminUsers.password')"
                   :type="showPassword ? 'text' : 'password'"
                   :append-inner-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
                   variant="outlined"
@@ -423,24 +427,24 @@
                   :items="roleOptions"
                   item-title="label"
                   item-value="value"
-                  label="Role"
+                  :label="t('pages.adminUsers.roleLabel')"
                   variant="outlined"
                   class="create-field create-field-full role-select-field"
                   :menu-props="roleMenuProps"
                 />
 
                 <template v-if="form.role === 'coach'">
-                  <v-text-field v-model="form.phone" label="Phone" variant="outlined" class="create-field" />
-                  <v-text-field v-model="form.birth_date" label="Birth date" type="date" variant="outlined" class="create-field" />
-                  <v-text-field v-model="form.specialization" label="Specialization" variant="outlined" class="create-field" />
+                  <v-text-field v-model="form.phone" :label="t('pages.adminUsers.phone')" variant="outlined" class="create-field" />
+                  <v-text-field v-model="form.birth_date" :label="t('pages.adminUsers.birthDate')" type="date" variant="outlined" class="create-field" />
+                  <v-text-field v-model="form.specialization" :label="t('pages.adminUsers.specialization')" variant="outlined" class="create-field" />
                 </template>
 
                 <template v-if="form.role === 'parent'">
-                  <v-text-field v-model="form.phone" label="Phone" variant="outlined" class="create-field" />
-                  <v-text-field v-model="form.birth_date" label="Birth date" type="date" variant="outlined" class="create-field" />
+                  <v-text-field v-model="form.phone" :label="t('pages.adminUsers.phone')" variant="outlined" class="create-field" />
+                  <v-text-field v-model="form.birth_date" :label="t('pages.adminUsers.birthDate')" type="date" variant="outlined" class="create-field" />
                   <v-text-field
                     v-model="form.account_balance"
-                    label="Account balance"
+                    :label="t('pages.adminUsers.accountBalance')"
                     type="number"
                     min="0"
                     variant="outlined"
@@ -448,15 +452,15 @@
                   />
                   <v-text-field
                     v-model="form.child_identifier"
-                    label="Child email or personal code"
+                    :label="t('pages.adminUsers.childIdentifier')"
                     variant="outlined"
                     class="create-field"
                   />
                 </template>
 
                 <template v-if="form.role === 'child'">
-                  <v-text-field v-model="form.birth_date" label="Birth date" type="date" variant="outlined" class="create-field" />
-                  <v-text-field v-model="form.personal_code" label="Personal code" variant="outlined" class="create-field" />
+                  <v-text-field v-model="form.birth_date" :label="t('pages.adminUsers.birthDate')" type="date" variant="outlined" class="create-field" />
+                  <v-text-field v-model="form.personal_code" :label="t('pages.adminUsers.personalCode')" variant="outlined" class="create-field" />
                 </template>
               </div>
             </v-card-text>
@@ -464,9 +468,9 @@
             <v-card-actions class="create-dialog-actions" :class="{ 'create-dialog-actions-dark': darkMode }">
               <v-spacer></v-spacer>
               <v-btn color="primary" class="apply-filter-btn" :loading="saving" @click="saveUser">
-                {{ editingUserId ? 'Save changes' : 'Create user' }}
+                {{ editingUserId ? t('common.saveChanges') : t('common.createUser') }}
               </v-btn>
-              <v-btn variant="text" class="reset-filter-btn" @click="closeDialog">Cancel</v-btn>
+              <v-btn variant="text" class="reset-filter-btn" @click="closeDialog">{{ t('common.cancel') }}</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -492,7 +496,9 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import AppPageFooter from '../components/AppPageFooter.vue'
+import AppLanguageSwitch from '../components/AppLanguageSwitch.vue'
 import { useNotifications } from '../composables/useNotifications'
+import { useLocale } from '../i18n'
 import { usersApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
@@ -513,29 +519,30 @@ const errorMessage = ref('')
 const formError = ref('')
 const editingUserId = ref(null)
 const darkModeStorageKey = 'app-dark-mode'
+const { t, currentLocale } = useLocale()
 
-const navItems = [
-  { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-  { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
-  { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
-  { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/admin-payments' }
-]
+const navItems = computed(() => [
+  { label: t('pages.adminHome.caption'), icon: 'mdi-shield-crown-outline', to: '/admin' },
+  { label: t('common.users'), icon: 'mdi-account-multiple-outline', to: '/admin-users' },
+  { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/manage-groups' },
+  { label: t('common.sessions'), icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
+  { label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/admin-payments' }
+])
 
-const roleFilters = [
-  { label: 'All', value: 'all' },
-  { label: 'Admins', value: 'admin' },
-  { label: 'Coaches', value: 'coach' },
-  { label: 'Parents', value: 'parent' },
-  { label: 'Children', value: 'child' }
-]
+const roleFilters = computed(() => [
+  { label: t('pages.adminUsers.allRoles'), value: 'all' },
+  { label: getRoleFilterLabel('admin'), value: 'admin' },
+  { label: getRoleFilterLabel('coach'), value: 'coach' },
+  { label: getRoleFilterLabel('parent'), value: 'parent' },
+  { label: getRoleFilterLabel('child'), value: 'child' }
+])
 
-const roleOptions = [
-  { label: 'Admin', value: 'admin' },
-  { label: 'Coach', value: 'coach' },
-  { label: 'Parent', value: 'parent' },
-  { label: 'Child', value: 'child' }
-]
+const roleOptions = computed(() => [
+  { label: t('pages.adminUsers.adminRole'), value: 'admin' },
+  { label: t('pages.adminUsers.coachRole'), value: 'coach' },
+  { label: t('pages.adminUsers.parentRole'), value: 'parent' },
+  { label: t('pages.adminUsers.childRole'), value: 'child' }
+])
 
 const roleMenuProps = computed(() => ({
   contentClass: darkMode.value ? 'admin-select-menu admin-select-menu-dark' : 'admin-select-menu',
@@ -596,10 +603,10 @@ const overviewStats = computed(() => {
   }
 
   return [
-    { label: 'Total users', value: totals.total },
-    { label: 'Admins & coaches', value: totals.admin + totals.coach },
-    { label: 'Parents', value: totals.parent },
-    { label: 'Children', value: totals.child }
+    { label: t('pages.adminUsers.statTotalUsers'), value: totals.total },
+    { label: t('pages.adminUsers.statAdminsAndCoaches'), value: totals.admin + totals.coach },
+    { label: t('pages.adminUsers.statParents'), value: totals.parent },
+    { label: t('pages.adminUsers.statChildren'), value: totals.child }
   ]
 })
 
@@ -654,7 +661,23 @@ function updateViewportState() {
 }
 
 function formatRole(role) {
+  if (role === 'admin') return t('pages.adminUsers.adminRole')
+  if (role === 'coach') return t('pages.adminUsers.coachRole')
+  if (role === 'parent') return t('pages.adminUsers.parentRole')
+  if (role === 'child') return t('pages.adminUsers.childRole')
   return role.charAt(0).toUpperCase() + role.slice(1)
+}
+
+function getRoleFilterLabel(role) {
+  if (role === 'admin') return t('pages.adminUsers.adminRole')
+  if (role === 'coach') return currentLocaleLabel('Coaches', 'Treneri')
+  if (role === 'parent') return currentLocaleLabel('Parents', 'Vecāki')
+  if (role === 'child') return currentLocaleLabel('Children', 'Bērni')
+  return role
+}
+
+function currentLocaleLabel(en, lv) {
+  return currentLocale.value === 'en' ? en : lv
 }
 
 function formatCurrency(value) {
@@ -763,7 +786,7 @@ async function loadUsers() {
   try {
     users.value = await usersApi.list()
   } catch (error) {
-    errorMessage.value = extractErrorMessage(error, 'Failed to load users.')
+    errorMessage.value = extractErrorMessage(error, t('pages.adminUsers.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -777,7 +800,7 @@ async function saveUser() {
     const payload = buildPayload()
 
     if (!editingUserId.value && !payload.password) {
-      formError.value = 'Password is required when creating a user.'
+      formError.value = t('pages.adminUsers.passwordRequired')
       return
     }
 
@@ -790,7 +813,7 @@ async function saveUser() {
     await loadUsers()
     closeDialog()
   } catch (error) {
-    formError.value = extractErrorMessage(error, 'Failed to save user.')
+    formError.value = extractErrorMessage(error, t('pages.adminUsers.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -806,7 +829,7 @@ async function deleteUser(item) {
     await usersApi.remove(item.id)
     await loadUsers()
   } catch (error) {
-    errorMessage.value = extractErrorMessage(error, 'Failed to delete user.')
+    errorMessage.value = extractErrorMessage(error, t('pages.adminUsers.deleteFailed'))
   }
 }
 

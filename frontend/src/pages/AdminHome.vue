@@ -19,7 +19,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Admin workspace</div>
+                <div class="brand-caption">{{ t('workspace.admin') }}</div>
               </div>
             </div>
 
@@ -57,7 +57,7 @@
               prepend-icon="mdi-logout"
               @click="handleMobileLogout"
             >
-              Log out
+              {{ t('common.logout') }}
             </v-btn>
           </div>
         </v-navigation-drawer>
@@ -70,7 +70,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Admin workspace</div>
+                <div class="brand-caption">{{ t('workspace.admin') }}</div>
               </div>
             </div>
 
@@ -104,11 +104,13 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Admin Panel</div>
+                  <div class="brand-caption">{{ t('pages.adminHome.caption') }}</div>
                 </div>
               </div>
 
               <div class="mobile-header-actions">
+                <AppLanguageSwitch :dark-mode="darkMode" accent="admin" />
+
                 <v-btn
                   icon
                   variant="text"
@@ -146,6 +148,8 @@
               <div class="topbar-spacer" aria-hidden="true"></div>
 
               <div class="topbar-tools">
+                <AppLanguageSwitch :dark-mode="darkMode" accent="admin" />
+
                 <div class="icon-badge-wrap">
                   <v-btn
                     icon
@@ -189,15 +193,13 @@
             <div class="overview-shell-card">
               <div class="overview-header">
                 <div>
-                  <h1 class="overview-title">Admin Panel</h1>
-                  <div class="overview-subtitle">
-                    System-wide overview with users, groups, sessions, payments and notifications.
-                  </div>
+                  <h1 class="overview-title">{{ t('pages.adminHome.title') }}</h1>
+                  <div class="overview-subtitle">{{ t('pages.adminHome.subtitle') }}</div>
                 </div>
               </div>
 
               <div class="overview-stats-grid">
-                <article v-for="item in overviewStats" :key="item.label" class="overview-stat-card">
+                <article v-for="item in displayedOverviewStats" :key="item.label" class="overview-stat-card">
                   <div class="summary-label">{{ item.label }}</div>
                   <div class="summary-value">{{ item.value }}</div>
                 </article>
@@ -206,7 +208,7 @@
               <div class="overview-grid">
                 <section class="overview-card">
                   <div class="overview-card-header">
-                    <div class="list-title">Latest Groups</div>
+                    <div class="list-title">{{ t('pages.home.latestGroups') }}</div>
                   </div>
 
                   <div class="list-wrap">
@@ -217,22 +219,22 @@
                     >
                       <div>
                         <div class="payment-name">{{ group.name }}</div>
-                        <div class="payment-meta">{{ group.coach }} • {{ group.age_category || 'No age category' }}</div>
+                        <div class="payment-meta">{{ group.coach }} • {{ group.age_category || t('pages.home.noAgeCategory') }}</div>
                       </div>
                       <div class="payment-side">
-                        <div class="payment-amount">{{ group.students }} students</div>
+                        <div class="payment-amount">{{ formatStudentCount(group.students) }}</div>
                       </div>
                     </article>
 
                     <div v-if="!filteredAdminGroups.length" class="empty-state">
-                      No groups found.
+                      {{ t('pages.home.noGroupsFound') }}
                     </div>
                   </div>
                 </section>
 
                 <section class="overview-card">
                   <div class="overview-card-header">
-                    <div class="list-title">Upcoming Sessions</div>
+                    <div class="list-title">{{ t('pages.home.upcomingSessions') }}</div>
                   </div>
 
                   <div class="list-wrap">
@@ -251,14 +253,14 @@
                     </article>
 
                     <div v-if="!filteredAdminSessions.length" class="empty-state">
-                      No sessions found.
+                      {{ t('pages.home.noSessionsFound') }}
                     </div>
                   </div>
                 </section>
 
                 <section class="overview-card">
                   <div class="overview-card-header">
-                    <div class="list-title">Recent Payments</div>
+                    <div class="list-title">{{ t('pages.home.recentPayments') }}</div>
                   </div>
 
                   <div class="list-wrap">
@@ -279,14 +281,14 @@
                     </article>
 
                     <div v-if="!filteredAdminPayments.length" class="empty-state">
-                      No payments found.
+                      {{ t('pages.home.noPaymentsFound') }}
                     </div>
                   </div>
                 </section>
 
                 <section class="overview-card">
                   <div class="overview-card-header">
-                    <div class="list-title">System Notifications</div>
+                    <div class="list-title">{{ t('pages.home.systemNotifications') }}</div>
                   </div>
 
                   <div class="list-wrap">
@@ -311,7 +313,7 @@
                     </article>
 
                     <div v-if="!notifications.length" class="empty-state">
-                      No notifications available.
+                      {{ t('pages.home.noNotifications') }}
                     </div>
                   </div>
                 </section>
@@ -342,26 +344,29 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import AppPageFooter from '../components/AppPageFooter.vue'
+import AppLanguageSwitch from '../components/AppLanguageSwitch.vue'
 import { useNotifications } from '../composables/useNotifications'
+import { useLocale } from '../i18n'
 import { dashboardApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 import { isSameNotificationTarget, resolveNotificationTarget } from '../utils/notifications'
 
 const router = useRouter()
+const { t } = useLocale()
 const darkMode = ref(false)
 const notificationsDialog = ref(false)
 const mobileMenuOpen = ref(false)
 const isCompactNav = ref(false)
 const darkModeStorageKey = 'app-dark-mode'
 
-const navItems = [
-  { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-  { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
-  { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
-  { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/admin-payments' }
-]
+const navItems = computed(() => [
+  { label: t('pages.adminHome.caption'), icon: 'mdi-shield-crown-outline', to: '/admin' },
+  { label: t('common.users'), icon: 'mdi-account-multiple-outline', to: '/admin-users' },
+  { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/manage-groups' },
+  { label: t('common.sessions'), icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
+  { label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/admin-payments' }
+])
 
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
 const { user } = useAuth()
@@ -391,6 +396,12 @@ const filteredAdminGroups = computed(() => adminGroups.value.slice(0, 5))
 const filteredAdminSessions = computed(() => adminSessions.value.slice(0, 5))
 
 const filteredAdminPayments = computed(() => adminPayments.value.slice(0, 5))
+const displayedOverviewStats = computed(() =>
+  overviewStats.value.map((item) => ({
+    ...item,
+    label: translateOverviewStatLabel(item.label)
+  }))
+)
 
 onMounted(() => {
   darkMode.value = localStorage.getItem(darkModeStorageKey) === 'true'
@@ -440,10 +451,27 @@ function formatCurrency(value) {
 function formatNotificationPreview(text) {
   const normalized = String(text ?? '').trim()
 
-  if (!normalized) return 'Open notification to view more details.'
+  if (!normalized) return t('pages.home.notificationPreviewFallback')
   if (normalized.length <= 96) return normalized
 
   return `${normalized.slice(0, 93).trimEnd()}...`
+}
+
+function formatStudentCount(value) {
+  const count = Number(value ?? 0)
+  const label = count === 1 ? t('pages.home.studentSingular') : t('pages.home.studentPlural')
+  return `${count} ${label}`
+}
+
+function translateOverviewStatLabel(label) {
+  const map = {
+    'Total users': 'pages.home.statTotalUsers',
+    Coaches: 'pages.home.statCoaches',
+    Groups: 'pages.home.statGroups',
+    'Pending payments': 'pages.home.statPendingPayments'
+  }
+
+  return map[label] ? t(map[label]) : label
 }
 
 async function handleNotificationClick(item) {

@@ -9,15 +9,15 @@
     </div>
 
     <div class="app-page-footer-content">
-      <div class="app-page-footer-meta">© 2026 SportSystem. All rights reserved.</div>
+      <div class="app-page-footer-meta">{{ t('footer.copyright') }}</div>
 
       <nav class="app-page-footer-nav" aria-label="Footer navigation">
-        <button type="button" class="app-page-footer-link" @click="aboutDialog = true">About</button>
-        <button type="button" class="app-page-footer-link" @click="contactsDialog = true">Contacts</button>
+        <button type="button" class="app-page-footer-link" @click="aboutDialog = true">{{ t('footer.about') }}</button>
+        <button type="button" class="app-page-footer-link" @click="contactsDialog = true">{{ t('footer.contacts') }}</button>
       </nav>
 
       <div class="app-page-footer-side">
-        <div class="app-page-footer-meta">Created by Maksims Gnedovs</div>
+        <div class="app-page-footer-meta">{{ t('footer.createdBy') }}</div>
 
         <div class="app-page-footer-socials" aria-label="Social links">
           <button type="button" class="app-page-footer-link app-page-footer-link-icon" aria-label="Facebook">
@@ -40,8 +40,8 @@
       >
         <div class="footer-dialog-header">
           <div>
-            <div class="footer-dialog-eyebrow">About</div>
-            <h2 class="footer-dialog-title">SportSystem keeps the whole sports workflow together.</h2>
+            <div class="footer-dialog-eyebrow">{{ t('footer.about') }}</div>
+            <h2 class="footer-dialog-title">{{ t('footer.aboutTitle') }}</h2>
           </div>
 
           <button type="button" class="footer-dialog-close" @click="aboutDialog = false">
@@ -51,28 +51,27 @@
 
         <div class="footer-dialog-body">
           <p class="footer-dialog-copy">
-            SportSystem is designed for sports schools and training clubs that need one place for
-            managing groups, dated sessions, attendance tracking and parent payments.
+            {{ t('footer.aboutText') }}
           </p>
 
           <div class="footer-dialog-grid">
             <article class="footer-dialog-info-card">
-              <div class="footer-dialog-info-label">Built for</div>
-              <div class="footer-dialog-info-value">Admins, coaches, parents and children</div>
+              <div class="footer-dialog-info-label">{{ t('footer.builtFor') }}</div>
+              <div class="footer-dialog-info-value">{{ t('footer.builtForValue') }}</div>
             </article>
 
             <article class="footer-dialog-info-card">
-              <div class="footer-dialog-info-label">Core modules</div>
-              <div class="footer-dialog-info-value">Groups, sessions, attendance, payments</div>
+              <div class="footer-dialog-info-label">{{ t('footer.modules') }}</div>
+              <div class="footer-dialog-info-value">{{ t('footer.modulesValue') }}</div>
             </article>
 
             <article class="footer-dialog-info-card">
-              <div class="footer-dialog-info-label">Workflow</div>
-              <div class="footer-dialog-info-value">Scheduling, attendance tracking and payment management</div>
+              <div class="footer-dialog-info-label">{{ t('footer.workflow') }}</div>
+              <div class="footer-dialog-info-value">{{ t('footer.workflowValue') }}</div>
             </article>
 
             <article class="footer-dialog-info-card">
-              <div class="footer-dialog-info-label">Created by</div>
+              <div class="footer-dialog-info-label">{{ t('footer.createdByLabel') }}</div>
               <div class="footer-dialog-info-value">Maksims Gnedovs</div>
             </article>
           </div>
@@ -87,8 +86,8 @@
       >
         <div class="footer-dialog-header">
           <div>
-            <div class="footer-dialog-eyebrow">Contacts</div>
-            <h2 class="footer-dialog-title">Contact information</h2>
+            <div class="footer-dialog-eyebrow">{{ t('footer.contacts') }}</div>
+            <h2 class="footer-dialog-title">{{ t('footer.contactsTitle') }}</h2>
           </div>
 
           <button type="button" class="footer-dialog-close" @click="contactsDialog = false">
@@ -104,7 +103,7 @@
               :class="{ 'footer-dialog-tab-active': contactsTab === 'details' }"
               @click="contactsTab = 'details'"
             >
-              Contacts
+              {{ t('footer.contacts') }}
             </button>
             <button
               type="button"
@@ -112,42 +111,42 @@
               :class="{ 'footer-dialog-tab-active': contactsTab === 'support' }"
               @click="contactsTab = 'support'"
             >
-              Support
+              {{ t('footer.support') }}
             </button>
           </div>
 
           <div v-if="contactsTab === 'details'" class="footer-contact-list">
             <article class="footer-contact-card">
-              <div class="footer-contact-label">Email</div>
+              <div class="footer-contact-label">{{ t('footer.email') }}</div>
               <a class="footer-contact-link" href="mailto:maksims.gnedovs@sportsystem.app">
                 maksims.gnedovs@sportsystem.app
               </a>
             </article>
 
             <article class="footer-contact-card">
-              <div class="footer-contact-label">Phone</div>
+              <div class="footer-contact-label">{{ t('footer.phone') }}</div>
               <a class="footer-contact-link" href="tel:+37120000000">+371 20 000 000</a>
             </article>
 
             <article class="footer-contact-card">
-              <div class="footer-contact-label">Location</div>
+              <div class="footer-contact-label">{{ t('footer.location') }}</div>
               <div class="footer-contact-value">Riga, Latvia</div>
             </article>
 
             <article class="footer-contact-card">
-              <div class="footer-contact-label">Availability</div>
-              <div class="footer-contact-value">Mon-Fri, 09:00-18:00</div>
+              <div class="footer-contact-label">{{ t('footer.availability') }}</div>
+              <div class="footer-contact-value">{{ t('footer.availabilityValue') }}</div>
             </article>
           </div>
 
           <div v-else class="footer-support-wrap">
             <div v-if="supportSuccess" class="footer-support-success">
-              Support request is ready to send.
+              {{ t('footer.supportSuccess') }}
             </div>
 
             <div class="footer-support-grid">
               <label class="footer-support-field">
-                <span class="footer-contact-label">Your email</span>
+                <span class="footer-contact-label">{{ t('footer.yourEmail') }}</span>
                 <input
                   v-model="supportForm.email"
                   type="email"
@@ -157,32 +156,32 @@
               </label>
 
               <label class="footer-support-field">
-                <span class="footer-contact-label">Subject</span>
+                <span class="footer-contact-label">{{ t('footer.subject') }}</span>
                 <input
                   v-model="supportForm.subject"
                   type="text"
                   class="footer-support-input"
-                  placeholder="Describe the issue briefly"
+                  :placeholder="t('footer.subjectPlaceholder')"
                 >
               </label>
             </div>
 
             <label class="footer-support-field footer-support-field-full">
-              <span class="footer-contact-label">Message</span>
+              <span class="footer-contact-label">{{ t('footer.message') }}</span>
               <textarea
                 v-model="supportForm.message"
                 class="footer-support-textarea"
                 rows="5"
-                placeholder="Write your support request here..."
+                :placeholder="t('footer.messagePlaceholder')"
               ></textarea>
             </label>
 
             <div class="footer-support-actions">
               <button type="button" class="footer-support-btn footer-support-btn-secondary" @click="resetSupportForm">
-                Clear
+                {{ t('common.clear') }}
               </button>
               <button type="button" class="footer-support-btn footer-support-btn-primary" @click="handleSupportSubmit">
-                Send request
+                {{ t('footer.sendRequest') }}
               </button>
             </div>
           </div>
@@ -195,6 +194,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useAuth } from '../services/auth'
+import { useLocale } from '../i18n'
 
 defineProps({
   darkMode: {
@@ -204,6 +204,7 @@ defineProps({
 })
 
 const { user } = useAuth()
+const { t } = useLocale()
 const profileEmail = computed(() => user.value?.email ?? '')
 
 const aboutDialog = ref(false)

@@ -65,7 +65,7 @@
               prepend-icon="mdi-logout"
               @click="handleMobileLogout"
             >
-              Log out
+              {{ t('common.logout') }}
             </v-btn>
           </div>
         </v-navigation-drawer>
@@ -112,11 +112,13 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Home</div>
+                  <div class="brand-caption">{{ t('pages.home.caption') }}</div>
                 </div>
               </div>
 
               <div class="mobile-header-actions">
+                <AppLanguageSwitch :dark-mode="darkMode" :accent="isCoach ? 'coach' : 'default'" />
+
                 <v-btn
                   icon
                   variant="text"
@@ -198,13 +200,15 @@
                   prepend-icon="mdi-calendar-month-outline"
                   to="/schedule"
                 >
-                  Schedule
+                  {{ t('common.scheduleBtn') }}
                 </v-btn>
               </div>
             </div>
 
             <div class="topbar-card">
               <div class="topbar-tools">
+                <AppLanguageSwitch :dark-mode="darkMode" :accent="isCoach ? 'coach' : 'default'" />
+
                 <div class="icon-badge-wrap">
                   <v-btn
                     icon
@@ -248,11 +252,11 @@
             <div class="schedule-card">
               <div class="schedule-header">
                 <div>
-                  <h1 class="schedule-title">{{ isAdmin ? 'Admin Panel' : 'Home Overview' }}</h1>
+                  <h1 class="schedule-title">{{ isAdmin ? t('pages.home.adminOverviewTitle') : t('pages.home.overviewTitle') }}</h1>
                   <div class="schedule-subtitle">
                     {{ isAdmin
-                      ? 'System-wide admin overview with users, groups, sessions and payment activity'
-                      : 'Quick summary of trainings, groups, notifications and attendance' }}
+                      ? t('pages.home.adminOverviewSubtitle')
+                      : t('pages.home.overviewSubtitle') }}
                   </div>
                 </div>
 
@@ -306,7 +310,7 @@
                   prepend-icon="mdi-calendar-month-outline"
                   to="/schedule"
                 >
-                  View full schedule
+                  {{ t('pages.home.viewFullSchedule') }}
                 </v-btn>
               </div>
 
@@ -320,7 +324,7 @@
               <div v-if="isAdmin" class="overview-grid">
                 <section class="overview-card">
                   <div class="overview-card-header">
-                    <div class="list-title">Latest Groups</div>
+                    <div class="list-title">{{ t('pages.home.latestGroups') }}</div>
                   </div>
 
                   <div class="list-wrap">
@@ -331,22 +335,22 @@
                     >
                       <div>
                         <div class="payment-name">{{ group.name }}</div>
-                        <div class="payment-meta">{{ group.coach }} • {{ group.age_category || 'No age category' }}</div>
+                        <div class="payment-meta">{{ group.coach }} • {{ group.age_category || t('pages.home.noAgeCategory') }}</div>
                       </div>
                       <div class="payment-side">
-                        <div class="payment-amount">{{ group.students }} students</div>
+                        <div class="payment-amount">{{ formatStudentCount(group.students) }}</div>
                       </div>
                     </article>
 
                     <div v-if="!filteredAdminGroups.length" class="empty-state">
-                      No groups found.
+                      {{ t('pages.home.noGroupsFound') }}
                     </div>
                   </div>
                 </section>
 
                 <section class="overview-card">
                   <div class="overview-card-header">
-                    <div class="list-title">Upcoming Sessions</div>
+                    <div class="list-title">{{ t('pages.home.upcomingSessions') }}</div>
                   </div>
 
                   <div class="list-wrap">
@@ -365,14 +369,14 @@
                     </article>
 
                     <div v-if="!filteredAdminSessions.length" class="empty-state">
-                      No sessions found.
+                      {{ t('pages.home.noSessionsFound') }}
                     </div>
                   </div>
                 </section>
 
                 <section class="overview-card">
                   <div class="overview-card-header">
-                    <div class="list-title">Recent Payments</div>
+                    <div class="list-title">{{ t('pages.home.recentPayments') }}</div>
                   </div>
 
                   <div class="list-wrap">
@@ -393,14 +397,14 @@
                     </article>
 
                     <div v-if="!filteredAdminPayments.length" class="empty-state">
-                      No payments found.
+                      {{ t('pages.home.noPaymentsFound') }}
                     </div>
                   </div>
                 </section>
 
                 <section class="overview-card">
                   <div class="overview-card-header">
-                    <div class="list-title">System Notifications</div>
+                    <div class="list-title">{{ t('pages.home.systemNotifications') }}</div>
                   </div>
 
                   <div class="list-wrap">
@@ -425,7 +429,7 @@
                     </article>
 
                     <div v-if="!notifications.length" class="empty-state">
-                      No notifications available.
+                      {{ t('pages.home.noNotifications') }}
                     </div>
                   </div>
                 </section>
@@ -442,7 +446,7 @@
                       class="desktop-only-btn"
                       to="/schedule"
                     >
-                      View full schedule
+                      {{ t('pages.home.viewFullSchedule') }}
                     </v-btn>
                   </div>
 
@@ -469,7 +473,7 @@
 
                 <section class="overview-card">
                   <div class="overview-card-header">
-                    <div class="list-title">Notifications</div>
+                    <div class="list-title">{{ t('pages.home.notifications') }}</div>
                   </div>
 
                   <div class="list-wrap">
@@ -492,7 +496,7 @@
                     </article>
 
                     <div v-if="!notifications.length" class="empty-state">
-                      No notifications available.
+                      {{ t('pages.home.noNotifications') }}
                     </div>
                   </div>
                 </section>
@@ -518,9 +522,9 @@
 
             <v-card-actions class="base-dialog-actions">
               <v-spacer></v-spacer>
-              <v-btn variant="outlined" class="base-dialog-cancel-btn" @click="dialog = false">Cancel</v-btn>
+              <v-btn variant="outlined" class="base-dialog-cancel-btn" @click="dialog = false">{{ t('common.cancel') }}</v-btn>
               <v-btn color="primary" class="base-dialog-save-btn" @click="saveTraining">
-                {{ isEditing ? 'Update' : 'Save' }}
+                {{ isEditing ? t('common.update') : t('common.save') }}
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -530,9 +534,9 @@
           <v-card class="dialog-card filter-dialog-card">
             <div class="filter-dialog-header">
               <div>
-                <div class="filter-dialog-title">Filters</div>
+                <div class="filter-dialog-title">{{ t('pages.home.filterTitle') }}</div>
                 <div class="filter-dialog-subtitle">
-                  Sort trainings by time or title without leaving the home overview.
+                  {{ t('pages.home.filterSubtitle') }}
                 </div>
               </div>
 
@@ -552,8 +556,8 @@
                   <v-icon size="18">mdi-clock-outline</v-icon>
                 </span>
                 <span>
-                  <span class="filter-option-title">By time</span>
-                  <span class="filter-option-text">Show trainings from the earliest start time.</span>
+                  <span class="filter-option-title">{{ t('pages.home.sortByTimeTitle') }}</span>
+                  <span class="filter-option-text">{{ t('pages.home.sortByTimeText') }}</span>
                 </span>
               </button>
 
@@ -567,8 +571,8 @@
                   <v-icon size="18">mdi-sort-alphabetical-ascending</v-icon>
                 </span>
                 <span>
-                  <span class="filter-option-title">A to Z</span>
-                  <span class="filter-option-text">Order trainings alphabetically from A to Z.</span>
+                  <span class="filter-option-title">{{ t('pages.home.sortAzTitle') }}</span>
+                  <span class="filter-option-text">{{ t('pages.home.sortAzText') }}</span>
                 </span>
               </button>
 
@@ -582,18 +586,18 @@
                   <v-icon size="18">mdi-sort-alphabetical-descending</v-icon>
                 </span>
                 <span>
-                  <span class="filter-option-title">Z to A</span>
-                  <span class="filter-option-text">Order trainings alphabetically from Z to A.</span>
+                  <span class="filter-option-title">{{ t('pages.home.sortZaTitle') }}</span>
+                  <span class="filter-option-text">{{ t('pages.home.sortZaText') }}</span>
                 </span>
               </button>
             </div>
 
             <div class="filter-dialog-actions">
               <v-btn variant="outlined" class="reset-filter-btn" @click="resetSort">
-                Reset
+                {{ t('common.reset') }}
               </v-btn>
               <v-btn color="primary" class="apply-filter-btn" @click="applySelectedSort">
-                Apply filters
+                {{ t('common.applyFilters') }}
               </v-btn>
             </div>
           </v-card>
@@ -620,8 +624,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import AppPageFooter from '../components/AppPageFooter.vue'
+import AppLanguageSwitch from '../components/AppLanguageSwitch.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedChild } from '../composables/useSelectedChild'
+import { useLocale } from '../i18n'
 import { dashboardApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
@@ -643,27 +649,28 @@ const dashboardMode = ref('standard')
 const navItems = computed(() => {
   if (user.value?.role === 'admin') {
     return [
-      { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-      { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
-      { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
-      { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
-      { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/admin-payments' }
+      { label: t('pages.adminHome.caption'), icon: 'mdi-shield-crown-outline', to: '/admin' },
+      { label: t('common.users'), icon: 'mdi-account-multiple-outline', to: '/admin-users' },
+      { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/manage-groups' },
+      { label: t('common.sessions'), icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
+      { label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/admin-payments' }
     ]
   }
 
   return [
-    { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
-    { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
-    { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-    { label: 'Attendance', icon: 'mdi-check-circle-outline', to: user.value?.role === 'coach' ? '/coach-attendance' : '/attendance' },
+    { label: t('common.home'), icon: 'mdi-home-outline', to: '/home' },
+    { label: t('common.schedule'), icon: 'mdi-calendar-month-outline', to: '/schedule' },
+    { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/groups' },
+    { label: t('common.attendance'), icon: 'mdi-check-circle-outline', to: user.value?.role === 'coach' ? '/coach-attendance' : '/attendance' },
     ...(user.value?.role === 'parent'
-      ? [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }]
+      ? [{ label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/payments' }]
       : [])
   ]
 })
 
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
 const { user } = useAuth()
+const { t, currentLocale } = useLocale()
 const {
   items: notificationItems,
   loading: notificationsLoading,
@@ -702,7 +709,7 @@ const isAdmin = computed(() => (user.value?.role === 'admin') || dashboardMode.v
 const isParent = computed(() => user.value?.role === 'parent')
 const isCoach = computed(() => user.value?.role === 'coach')
 const profileAlt = computed(() => (isCoach.value ? 'Coach profile' : 'User profile'))
-const workspaceCaption = computed(() => (isCoach.value ? 'Coach workspace' : 'Sport Workspace'))
+const workspaceCaption = computed(() => (isCoach.value ? t('workspace.coach') : t('workspace.sport')))
 const pageTheme = computed(() => (isCoach.value ? (darkMode.value ? 'coachDark' : 'coachLight') : undefined))
 const selectedChild = computed(() =>
   linkedChildren.value.find((child) => child.id === selectedChildId.value) ?? linkedChildren.value[0] ?? null
@@ -728,13 +735,13 @@ const homeTrainings = computed(() => {
 })
 
 const trainingsBlockTitle = computed(() =>
-  isCoach.value ? 'My next trainings' : 'Next 3 Days Trainings'
+  isCoach.value ? t('pages.home.coachTrainings') : t('pages.home.nextThreeDays')
 )
 
 const trainingsBlockEmptyState = computed(() =>
   isCoach.value
-    ? 'No trainings scheduled for the next seven days.'
-    : 'No trainings scheduled for the next three days.'
+    ? t('pages.home.emptyCoach')
+    : t('pages.home.emptyThreeDays')
 )
 
 const notifications = computed(() => notificationItems.value.slice(0, 3))
@@ -775,12 +782,12 @@ const nextTrainingCountdown = computed(() => {
     .filter((training) => Number.isFinite(training.startAt) && training.startAt >= countdownNow.value)
     .sort((left, right) => left.startAt - right.startAt)[0]
 
-  if (!nextTraining) return 'No upcoming'
+  if (!nextTraining) return t('pages.home.noUpcoming')
 
   const diffMs = nextTraining.startAt - countdownNow.value
   const weekMs = 7 * 24 * 60 * 60 * 1000
 
-  if (diffMs > weekMs) return 'More than a week'
+  if (diffMs > weekMs) return t('pages.home.moreThanWeek')
 
   const totalMinutes = Math.max(0, Math.floor(diffMs / 60000))
   const totalHours = Math.floor(totalMinutes / 60)
@@ -792,16 +799,20 @@ const nextTrainingCountdown = computed(() => {
   if (totalHours > 0) return `${totalHours}h ${minutes}m`
   if (minutes > 0) return `${minutes}m`
 
-  return 'Now'
+  return t('pages.home.now')
 })
 
 const displayedOverviewStats = computed(() =>
   overviewStats.value.map((item) =>
-    item.label === 'Next training countdown'
-      ? { ...item, value: nextTrainingCountdown.value }
-      : isCoach.value && item.label === 'Training hours in 3 days'
-        ? { ...item, value: coachThreeDayTrainingHours.value }
-        : item
+    ({
+      ...item,
+      label: translateOverviewStatLabel(item.label),
+      value: item.label === 'Next training countdown'
+        ? nextTrainingCountdown.value
+        : isCoach.value && item.label === 'Training hours in 3 days'
+          ? coachThreeDayTrainingHours.value
+          : item.value
+    })
   )
 )
 
@@ -906,7 +917,7 @@ function formatDuration(totalMinutes) {
 }
 
 function formatOverviewDate(value) {
-  return new Date(`${value}T00:00:00`).toLocaleDateString('en-US', {
+  return new Date(`${value}T00:00:00`).toLocaleDateString(currentLocale.value === 'lv' ? 'lv-LV' : 'en-US', {
     month: 'short',
     day: 'numeric'
   })
@@ -917,7 +928,7 @@ function trainingMeta(training) {
 
   if (isCoach.value) {
     const count = Number(training.students_count ?? 0)
-    const label = count === 1 ? 'student' : 'students'
+    const label = count === 1 ? t('pages.home.studentSingular') : t('pages.home.studentPlural')
     return `${count} ${label} • ${date}`
   }
 
@@ -931,10 +942,33 @@ function formatCurrency(value) {
 function formatNotificationPreview(text) {
   const normalized = String(text ?? '').trim()
 
-  if (!normalized) return 'Open notification to view more details.'
+  if (!normalized) return t('pages.home.notificationPreviewFallback')
   if (normalized.length <= 96) return normalized
 
   return `${normalized.slice(0, 93).trimEnd()}...`
+}
+
+function formatStudentCount(value) {
+  const count = Number(value ?? 0)
+  const label = count === 1 ? t('pages.home.studentSingular') : t('pages.home.studentPlural')
+  return `${count} ${label}`
+}
+
+function translateOverviewStatLabel(label) {
+  const map = {
+    'Total users': 'pages.home.statTotalUsers',
+    Coaches: 'pages.home.statCoaches',
+    Groups: 'pages.home.statGroups',
+    'Pending payments': 'pages.home.statPendingPayments',
+    'Trainings in 3 days': 'pages.home.statTrainingsIn3Days',
+    'Next training countdown': 'pages.home.statNextTrainingCountdown',
+    'Training hours in 3 days': 'pages.home.statTrainingHoursIn3Days',
+    'My groups': 'pages.home.statMyGroups',
+    'Attendance across my groups': 'pages.home.statAttendanceAcrossMyGroups',
+    'Attendance rate': 'pages.home.statAttendanceRate'
+  }
+
+  return map[label] ? t(map[label]) : label
 }
 
 function withTrainingAvatars(training) {

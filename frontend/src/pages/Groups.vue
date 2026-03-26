@@ -65,7 +65,7 @@
               prepend-icon="mdi-logout"
               @click="handleMobileLogout"
             >
-              Log out
+              {{ t('common.logout') }}
             </v-btn>
           </div>
         </v-navigation-drawer>
@@ -112,11 +112,13 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Groups</div>
+                  <div class="brand-caption">{{ t('pages.groups.caption') }}</div>
                 </div>
               </div>
 
               <div class="mobile-header-actions">
+                <AppLanguageSwitch :dark-mode="darkMode" :accent="isCoach ? 'coach' : 'default'" />
+
                 <v-btn
                   icon
                   variant="text"
@@ -156,7 +158,7 @@
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
                   <v-text-field
                     v-model="search"
-                    placeholder="Search groups"
+                    :placeholder="`${t('common.search')} ${t('pages.groups.title').toLowerCase()}`"
                     variant="plain"
                     hide-details
                     density="comfortable"
@@ -166,6 +168,8 @@
               </div>
 
               <div class="topbar-tools">
+                <AppLanguageSwitch :dark-mode="darkMode" :accent="isCoach ? 'coach' : 'default'" />
+
                 <div class="icon-badge-wrap">
                   <v-btn
                     icon
@@ -209,7 +213,7 @@
             <div class="groups-card">
               <div class="groups-header">
                 <div>
-                  <h1 class="groups-title">My Groups</h1>
+                  <h1 class="groups-title">{{ t('pages.groups.title') }}</h1>
                   <div class="groups-subtitle">{{ groupsSubtitle }}</div>
                 </div>
 
@@ -222,12 +226,12 @@
               </div>
 
               <div class="toolbar-row">
-                <div class="toolbar-label">Groups overview</div>
+                <div class="toolbar-label">{{ t('pages.groups.groupsOverview') }}</div>
 
                 <div class="toolbar-actions">
                   <v-btn variant="outlined" class="toolbar-btn" @click="filterDialog = true">
                     <v-icon start size="18">mdi-tune-variant</v-icon>
-                    Filters
+                    {{ t('common.filters') }}
                   </v-btn>
                 </div>
               </div>
@@ -253,22 +257,22 @@
 
                   <div class="group-info-grid">
                     <div class="info-item">
-                      <div class="label">Students</div>
+                      <div class="label">{{ t('pages.groups.labelStudents') }}</div>
                       <div class="value">{{ group.students }}</div>
                     </div>
 
                     <div class="info-item">
-                      <div class="label">Days</div>
+                      <div class="label">{{ t('pages.groups.labelDays') }}</div>
                       <div class="value">{{ group.days }}</div>
                     </div>
 
                     <div class="info-item">
-                      <div class="label">Completed this month</div>
+                      <div class="label">{{ t('pages.groups.labelCompletedThisMonth') }}</div>
                       <div class="value">{{ groupCompletedThisMonth(group.id) }}</div>
                     </div>
 
                     <div class="info-item">
-                      <div class="label">{{ isChild ? 'Coach' : 'Price' }}</div>
+                      <div class="label">{{ isChild ? t('pages.groups.labelCoach') : t('pages.groups.labelPrice') }}</div>
                       <div class="value">
                         {{ isChild ? group.trainer : `${group.price} € / month` }}
                       </div>
@@ -276,7 +280,7 @@
                   </div>
 
                   <div class="attendance-block">
-                    <div class="label">Attendance</div>
+                    <div class="label">{{ t('pages.groups.labelAttendance') }}</div>
                     <div class="attendance-row">
                       <div class="attendance-bar">
                         <div class="attendance-fill" :style="{ width: `${groupAttendanceRate(group)}%` }"></div>
@@ -301,9 +305,9 @@
           >
             <div class="filter-dialog-header">
               <div>
-                <div class="filter-dialog-title">Filters</div>
+                <div class="filter-dialog-title">{{ t('pages.groups.filterTitle') }}</div>
                 <div class="filter-dialog-subtitle">
-                  Sort groups by name without leaving the groups view.
+                  {{ t('pages.groups.filterSubtitle') }}
                 </div>
               </div>
 
@@ -323,8 +327,8 @@
                   <v-icon size="18">mdi-sort-alphabetical-ascending</v-icon>
                 </span>
                 <span>
-                  <span class="filter-option-title">A to Z</span>
-                  <span class="filter-option-text">Order groups alphabetically from A to Z.</span>
+                  <span class="filter-option-title">{{ t('pages.groups.sortAzTitle') }}</span>
+                  <span class="filter-option-text">{{ t('pages.groups.sortAzText') }}</span>
                 </span>
               </button>
 
@@ -338,18 +342,18 @@
                   <v-icon size="18">mdi-sort-alphabetical-descending</v-icon>
                 </span>
                 <span>
-                  <span class="filter-option-title">Z to A</span>
-                  <span class="filter-option-text">Order groups alphabetically from Z to A.</span>
+                  <span class="filter-option-title">{{ t('pages.groups.sortZaTitle') }}</span>
+                  <span class="filter-option-text">{{ t('pages.groups.sortZaText') }}</span>
                 </span>
               </button>
             </div>
 
             <div class="filter-dialog-actions">
               <v-btn variant="outlined" class="reset-filter-btn" @click="resetSort">
-                Reset
+                {{ t('common.reset') }}
               </v-btn>
               <v-btn color="primary" class="apply-filter-btn" @click="applySelectedSort">
-                Apply filters
+                {{ t('common.applyFilters') }}
               </v-btn>
             </div>
           </v-card>
@@ -376,8 +380,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import AppPageFooter from '../components/AppPageFooter.vue'
+import AppLanguageSwitch from '../components/AppLanguageSwitch.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedChild } from '../composables/useSelectedChild'
+import { useLocale } from '../i18n'
 import { groupsApi, sessionsApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
@@ -396,6 +402,7 @@ const loading = ref(false)
 
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
 const { user } = useAuth()
+const { t } = useLocale()
 const {
   items: notificationItems,
   loading: notificationsLoading,
@@ -414,20 +421,20 @@ const isChild = computed(() => user.value?.role === 'child')
 const isParent = computed(() => user.value?.role === 'parent')
 const isCoach = computed(() => user.value?.role === 'coach')
 const profileAlt = computed(() => (isCoach.value ? 'Coach profile' : 'User profile'))
-const workspaceCaption = computed(() => (isCoach.value ? 'Coach workspace' : 'Sport Workspace'))
+const workspaceCaption = computed(() => (isCoach.value ? t('workspace.coach') : t('workspace.sport')))
 const groupsSubtitle = computed(() => {
-  if (isCoach.value) return 'Groups you lead and their key training details'
-  if (isParent.value) return 'Groups linked to your selected child and their key training details'
-  return 'Groups you attend and their key training details'
+  if (isCoach.value) return t('pages.groups.coachSubtitle')
+  if (isParent.value) return t('pages.groups.parentSubtitle')
+  return t('pages.groups.childSubtitle')
 })
 const pageTheme = computed(() => (isCoach.value ? (darkMode.value ? 'coachDark' : 'coachLight') : undefined))
 const navItems = computed(() => [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
-  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: user.value?.role === 'coach' ? '/coach-attendance' : '/attendance' },
+  { label: t('common.home'), icon: 'mdi-home-outline', to: '/home' },
+  { label: t('common.schedule'), icon: 'mdi-calendar-month-outline', to: '/schedule' },
+  { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/groups' },
+  { label: t('common.attendance'), icon: 'mdi-check-circle-outline', to: user.value?.role === 'coach' ? '/coach-attendance' : '/attendance' },
   ...(user.value?.role === 'parent'
-    ? [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }]
+    ? [{ label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/payments' }]
     : [])
 ])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
@@ -479,8 +486,8 @@ const coachOverviewStats = computed(() => {
   const totalStudents = groups.value.reduce((sum, group) => sum + Number(group.students || 0), 0)
 
   return [
-    { label: 'My groups', value: String(groupCount) },
-    { label: 'Students total', value: String(totalStudents) }
+    { label: t('pages.groups.statMyGroups'), value: String(groupCount) },
+    { label: t('pages.groups.statStudentsTotal'), value: String(totalStudents) }
   ]
 })
 
@@ -587,10 +594,10 @@ function groupAttendanceRate(group) {
 
 function groupCardSubtitle(group) {
   if (isChild.value || isCoach.value) {
-    return `Group #${group.group_number}`
+    return `${t('pages.groups.groupNumber')} #${group.group_number}`
   }
 
-  return `Group #${group.group_number} • ${group.trainer}`
+  return `${t('pages.groups.groupNumber')} #${group.group_number} • ${group.trainer}`
 }
 
 async function handleNotificationClick(item) {

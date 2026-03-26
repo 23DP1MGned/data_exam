@@ -2,8 +2,8 @@
   <div class="login-bg">
     <v-container fluid class="fill-height d-flex align-center justify-center">
       <v-card width="460" class="login-card pa-8">
-        <h1 class="login-title">Register</h1>
-        <p class="login-subtitle">create your account</p>
+        <h1 class="login-title">{{ t('register.title') }}</h1>
+        <p class="login-subtitle">{{ t('register.subtitle') }}</p>
 
         <v-alert
           v-if="generalError"
@@ -18,14 +18,14 @@
         <div class="register-grid">
           <v-text-field
             v-model="form.name"
-            label="Name"
+            :label="t('pages.adminUsers.name')"
             variant="outlined"
             :error-messages="fieldErrors.name"
           />
 
           <v-text-field
             v-model="form.surname"
-            label="Surname"
+            :label="t('pages.adminUsers.surname')"
             variant="outlined"
             :error-messages="fieldErrors.surname"
           />
@@ -33,7 +33,7 @@
 
         <v-select
           v-model="form.role"
-          label="Role"
+          :label="t('pages.adminUsers.roleLabel')"
           :items="roleOptions"
           item-title="label"
           item-value="value"
@@ -44,7 +44,7 @@
 
         <v-text-field
           v-model="form.email"
-          label="Email"
+          :label="t('login.email')"
           type="email"
           variant="outlined"
           :error-messages="fieldErrors.email"
@@ -52,7 +52,7 @@
 
         <v-text-field
           v-model="form.password"
-          label="Password"
+          :label="t('login.password')"
           :type="showPassword ? 'text' : 'password'"
           variant="outlined"
           :error-messages="fieldErrors.password"
@@ -62,7 +62,7 @@
 
         <v-text-field
           v-model="form.password_confirmation"
-          label="Confirm Password"
+          :label="t('register.confirmPassword')"
           :type="showConfirmPassword ? 'text' : 'password'"
           variant="outlined"
           :error-messages="fieldErrors.password_confirmation"
@@ -73,7 +73,7 @@
         <v-text-field
           v-if="needsPhone"
           v-model="form.phone"
-          label="Phone"
+          :label="t('pages.adminUsers.phone')"
           variant="outlined"
           :error-messages="fieldErrors.phone"
         />
@@ -81,7 +81,7 @@
         <v-text-field
           v-if="needsBirthDate"
           v-model="form.birth_date"
-          label="Birth date"
+          :label="t('pages.adminUsers.birthDate')"
           type="date"
           variant="outlined"
           :error-messages="fieldErrors.birth_date"
@@ -90,7 +90,7 @@
         <v-text-field
           v-if="form.role === 'coach'"
           v-model="form.specialization"
-          label="Specialization"
+          :label="t('pages.adminUsers.specialization')"
           variant="outlined"
           :error-messages="fieldErrors.specialization"
         />
@@ -98,7 +98,7 @@
         <v-text-field
           v-if="form.role === 'child'"
           v-model="form.personal_code"
-          label="Personal code"
+          :label="t('pages.adminUsers.personalCode')"
           variant="outlined"
           :error-messages="fieldErrors.personal_code"
         />
@@ -106,9 +106,9 @@
         <v-text-field
           v-if="form.role === 'parent'"
           v-model="form.child_identifier"
-          label="Child email or personal code"
+          :label="t('pages.adminUsers.childIdentifier')"
           variant="outlined"
-          hint="Optional: link your child during registration"
+          :hint="t('register.optionalChildLink')"
           persistent-hint
           :error-messages="fieldErrors.child_identifier"
         />
@@ -121,12 +121,12 @@
           :loading="submitting"
           @click="submit"
         >
-          Create account →
+          {{ t('register.createAccount') }} →
         </v-btn>
 
         <div class="signup">
-          Already have an account?
-          <router-link to="/login">Login</router-link>
+          {{ t('register.alreadyHaveAccount') }}
+          <router-link to="/login">{{ t('register.loginLink') }}</router-link>
         </div>
       </v-card>
     </v-container>
@@ -136,16 +136,18 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useLocale } from '../i18n'
 import { register } from '../services/auth'
 
 const router = useRouter()
+const { t } = useLocale()
 
-const roleOptions = [
-  { label: 'Admin', value: 'admin' },
-  { label: 'Coach', value: 'coach' },
-  { label: 'Parent', value: 'parent' },
-  { label: 'Child', value: 'child' }
-]
+const roleOptions = computed(() => [
+  { label: t('pages.adminUsers.adminRole'), value: 'admin' },
+  { label: t('pages.adminUsers.coachRole'), value: 'coach' },
+  { label: t('pages.adminUsers.parentRole'), value: 'parent' },
+  { label: t('pages.adminUsers.childRole'), value: 'child' }
+])
 
 const roleMenuProps = {
   contentClass: 'app-select-menu',
@@ -206,16 +208,16 @@ function resetErrors() {
 function validateForm() {
   resetErrors()
 
-  if (!form.name) fieldErrors.name = ['Name is required.']
-  if (!form.surname) fieldErrors.surname = ['Surname is required.']
-  if (!form.email) fieldErrors.email = ['Email is required.']
-  if (!form.password) fieldErrors.password = ['Password is required.']
-  if (!form.password_confirmation) fieldErrors.password_confirmation = ['Please confirm your password.']
+  if (!form.name) fieldErrors.name = [t('register.nameRequired')]
+  if (!form.surname) fieldErrors.surname = [t('register.surnameRequired')]
+  if (!form.email) fieldErrors.email = [t('login.requiredEmail')]
+  if (!form.password) fieldErrors.password = [t('login.requiredPassword')]
+  if (!form.password_confirmation) fieldErrors.password_confirmation = [t('register.confirmPasswordRequired')]
   if (form.password && form.password_confirmation && form.password !== form.password_confirmation) {
-    fieldErrors.password_confirmation = ['Passwords do not match.']
+    fieldErrors.password_confirmation = [t('register.passwordMismatch')]
   }
   if (form.role === 'child' && !form.personal_code) {
-    fieldErrors.personal_code = ['Personal code is required for child registration.']
+    fieldErrors.personal_code = [t('register.childCodeRequired')]
   }
 
   return Object.values(fieldErrors).every((messages) => messages.length === 0)
@@ -239,7 +241,7 @@ async function submit() {
       fieldErrors[key] = errors[key] ?? []
     })
 
-    generalError.value = error?.response?.data?.message || 'Registration failed.'
+    generalError.value = error?.response?.data?.message || t('register.failed')
   } finally {
     submitting.value = false
   }

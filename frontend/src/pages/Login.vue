@@ -10,36 +10,34 @@
         </div>
 
         <div class="showcase-copy">
-          <p class="showcase-eyebrow">Training platform</p>
-          <h1 class="showcase-title">Manage sessions, attendance and payments in one calm workspace.</h1>
-          <p class="showcase-text">
-            Built for admins, coaches and families who need one reliable system for the daily training flow.
-          </p>
+          <p class="showcase-eyebrow">{{ t('login.platform') }}</p>
+          <h1 class="showcase-title">{{ t('login.title') }}</h1>
+          <p class="showcase-text">{{ t('login.subtitle') }}</p>
         </div>
 
         <div class="showcase-highlights">
           <article class="showcase-card">
-            <div class="showcase-card-label">Scheduling</div>
-            <div class="showcase-card-value">Weekly plans with real dated sessions</div>
+            <div class="showcase-card-label">{{ t('login.scheduling') }}</div>
+            <div class="showcase-card-value">{{ t('login.schedulingValue') }}</div>
           </article>
 
           <article class="showcase-card">
-            <div class="showcase-card-label">Attendance</div>
-            <div class="showcase-card-value">Coach marking, history and calendar view</div>
+            <div class="showcase-card-label">{{ t('login.attendance') }}</div>
+            <div class="showcase-card-value">{{ t('login.attendanceValue') }}</div>
           </article>
 
           <article class="showcase-card">
-            <div class="showcase-card-label">Payments</div>
-            <div class="showcase-card-value">Per training, monthly plans and refunds</div>
+            <div class="showcase-card-label">{{ t('login.payments') }}</div>
+            <div class="showcase-card-value">{{ t('login.paymentsValue') }}</div>
           </article>
         </div>
       </section>
 
       <section class="login-panel">
         <div class="login-panel-head">
-          <div class="login-eyebrow">Welcome back</div>
-          <h2 class="login-title">Log in to your workspace</h2>
-          <p class="login-subtitle">Use your account to open your role-based dashboard.</p>
+          <div class="login-eyebrow">{{ t('login.welcome') }}</div>
+          <h2 class="login-title">{{ t('login.loginTitle') }}</h2>
+          <p class="login-subtitle">{{ t('login.loginSubtitle') }}</p>
         </div>
 
         <v-alert
@@ -55,7 +53,7 @@
         <div class="login-form">
           <v-text-field
             v-model="form.email"
-            label="Email"
+            :label="t('login.email')"
             variant="outlined"
             type="email"
             autocomplete="email"
@@ -66,7 +64,7 @@
 
           <v-text-field
             v-model="form.password"
-            label="Password"
+            :label="t('login.password')"
             :type="showPassword ? 'text' : 'password'"
             variant="outlined"
             autocomplete="current-password"
@@ -85,13 +83,13 @@
             :loading="submitting"
             @click="submit"
           >
-            Log in
+            {{ t('login.loginButton') }}
           </v-btn>
         </div>
 
         <div class="login-note">
           <div class="login-note-copy">
-            User accounts are created by the administrator. If you need access, please contact your system admin.
+            {{ t('login.note') }}
           </div>
 
           <div class="login-note-contacts">
@@ -114,8 +112,10 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { login } from '../services/auth'
+import { useLocale } from '../i18n'
 
 const router = useRouter()
+const { t } = useLocale()
 
 const form = reactive({
   email: '',
@@ -140,8 +140,8 @@ function resetErrors() {
 async function submit() {
   resetErrors()
 
-  if (!form.email) fieldErrors.email = ['Email is required.']
-  if (!form.password) fieldErrors.password = ['Password is required.']
+  if (!form.email) fieldErrors.email = [t('login.requiredEmail')]
+  if (!form.password) fieldErrors.password = [t('login.requiredPassword')]
   if (fieldErrors.email.length || fieldErrors.password.length) return
 
   submitting.value = true
@@ -157,7 +157,7 @@ async function submit() {
     const errors = error?.response?.data?.errors ?? {}
     fieldErrors.email = errors.email ?? []
     fieldErrors.password = errors.password ?? []
-    generalError.value = error?.response?.data?.message || 'Login failed.'
+    generalError.value = error?.response?.data?.message || t('login.failed')
   } finally {
     submitting.value = false
   }

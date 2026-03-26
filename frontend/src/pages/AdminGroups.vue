@@ -19,7 +19,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Admin workspace</div>
+                <div class="brand-caption">{{ t('workspace.admin') }}</div>
               </div>
             </div>
 
@@ -57,7 +57,7 @@
               prepend-icon="mdi-logout"
               @click="handleMobileLogout"
             >
-              Log out
+              {{ t('common.logout') }}
             </v-btn>
           </div>
         </v-navigation-drawer>
@@ -70,7 +70,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Admin workspace</div>
+                <div class="brand-caption">{{ t('workspace.admin') }}</div>
               </div>
             </div>
 
@@ -104,11 +104,13 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Groups</div>
+                  <div class="brand-caption">{{ t('pages.adminGroups.caption') }}</div>
                 </div>
               </div>
 
               <div class="mobile-header-actions">
+                <AppLanguageSwitch :dark-mode="darkMode" accent="admin" />
+
                 <v-btn
                   icon
                   variant="text"
@@ -141,7 +143,7 @@
                 </div>
 
                 <v-btn color="primary" class="mobile-create-btn" prepend-icon="mdi-plus" @click="openCreateDialog">
-                  Create group
+                  {{ t('common.createGroup') }}
                 </v-btn>
               </div>
             </div>
@@ -152,7 +154,7 @@
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
                   <v-text-field
                     v-model="search"
-                    placeholder="Search groups"
+                    :placeholder="t('pages.adminGroups.searchPlaceholder')"
                     variant="plain"
                     hide-details
                     density="comfortable"
@@ -162,6 +164,8 @@
               </div>
 
               <div class="topbar-tools">
+                <AppLanguageSwitch :dark-mode="darkMode" accent="admin" />
+
                 <div class="icon-badge-wrap">
                   <v-btn
                     icon
@@ -205,14 +209,14 @@
             <div class="groups-card">
               <div class="groups-header">
                 <div>
-                  <h1 class="groups-title">Manage Groups</h1>
+                  <h1 class="groups-title">{{ t('pages.adminGroups.title') }}</h1>
                   <div class="groups-subtitle">
-                    Create, edit and organize all sports groups from the admin panel.
+                    {{ t('pages.adminGroups.subtitle') }}
                   </div>
                 </div>
 
                 <v-btn color="primary" class="desktop-only-btn" prepend-icon="mdi-plus" @click="openCreateDialog">
-                  Create group
+                  {{ t('common.createGroup') }}
                 </v-btn>
               </div>
 
@@ -231,11 +235,11 @@
 
               <div v-else-if="loading" class="state-wrap loading-state">
                 <v-progress-circular indeterminate color="primary" size="28" />
-                <span>Loading groups...</span>
+                <span>{{ t('pages.adminGroups.loadingGroups') }}</span>
               </div>
 
               <div v-else-if="!filteredGroups.length" class="state-wrap empty-state">
-                No groups found for the current search.
+                {{ t('pages.adminGroups.noGroupsFound') }}
               </div>
 
               <div v-else class="groups-grid">
@@ -258,28 +262,28 @@
 
                   <div class="group-info-grid">
                     <div class="info-item">
-                      <span class="info-label">Coach</span>
-                      <span class="info-value">{{ group.trainer || 'Coach not assigned' }}</span>
+                      <span class="info-label">{{ t('pages.adminGroups.labelCoach') }}</span>
+                      <span class="info-value">{{ group.trainer || t('pages.adminGroups.coachNotAssigned') }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">Age</span>
-                      <span class="info-value">{{ group.age_category || 'No age category' }}</span>
+                      <span class="info-label">{{ t('pages.adminGroups.labelAge') }}</span>
+                      <span class="info-value">{{ group.age_category || t('pages.adminGroups.noAgeCategory') }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">Students</span>
+                      <span class="info-label">{{ t('pages.adminGroups.labelStudents') }}</span>
                       <span class="info-value">{{ group.students }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">Price</span>
-                      <span class="info-value">{{ formatCurrency(group.price) }} / month</span>
+                      <span class="info-label">{{ t('pages.adminGroups.labelPrice') }}</span>
+                      <span class="info-value">{{ formatCurrency(group.price) }} / {{ t('pages.adminGroups.perMonthSuffix') }}</span>
                     </div>
                   </div>
 
                   <div class="group-linked">
-                    <div class="linked-title">Linked children</div>
+                    <div class="linked-title">{{ t('pages.adminGroups.linkedChildren') }}</div>
                     <div v-if="group.child_ids?.length" class="children-chips">
                       <v-chip
                         v-for="childId in group.child_ids"
@@ -291,7 +295,7 @@
                         {{ childNameById(childId) }}
                       </v-chip>
                     </div>
-                    <div v-else class="linked-empty">No children linked</div>
+                    <div v-else class="linked-empty">{{ t('pages.adminGroups.noChildrenLinked') }}</div>
                   </div>
 
                   <div class="group-card-actions">
@@ -301,7 +305,7 @@
                       prepend-icon="mdi-pencil-outline"
                       @click="openEditDialog(group)"
                     >
-                      Edit
+                      {{ t('common.edit') }}
                     </v-btn>
                     <v-btn
                       variant="outlined"
@@ -309,7 +313,7 @@
                       class="action-btn action-btn-delete"
                       @click="deleteGroup(group)"
                     >
-                      Delete
+                      {{ t('common.delete') }}
                     </v-btn>
                   </div>
                 </article>
@@ -323,10 +327,10 @@
             <div class="create-dialog-header" :class="{ 'create-dialog-header-dark': darkMode }">
               <div>
                 <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">
-                  {{ editingGroupId ? 'Edit Group' : 'Create Group' }}
+                  {{ editingGroupId ? t('common.editGroup') : t('common.createGroup') }}
                 </div>
                 <div class="create-dialog-subtitle" :class="{ 'create-dialog-subtitle-dark': darkMode }">
-                  Manage group details, assign a coach and link children from the admin panel.
+                  {{ t('pages.adminGroups.dialogSubtitle') }}
                 </div>
               </div>
 
@@ -347,14 +351,14 @@
               </v-alert>
 
               <div class="create-fields-grid">
-                <v-text-field v-model="form.name" label="Group name" variant="outlined" class="create-field" />
+                <v-text-field v-model="form.name" :label="t('common.groups')" variant="outlined" class="create-field" />
                 <div class="age-range-fields">
                   <v-select
                     v-model="form.age_from"
                     :items="ageOptions"
                     item-title="label"
                     item-value="value"
-                    label="Age from"
+                    :label="`${t('pages.adminGroups.labelAge')} ${t('pages.adminSessions.start').toLowerCase()}`"
                     variant="outlined"
                     class="create-field"
                     :menu-props="selectMenuProps"
@@ -364,7 +368,7 @@
                     :items="ageOptions"
                     item-title="label"
                     item-value="value"
-                    label="Age to"
+                    :label="`${t('pages.adminGroups.labelAge')} ${t('pages.adminSessions.end').toLowerCase()}`"
                     variant="outlined"
                     class="create-field"
                     :menu-props="selectMenuProps"
@@ -372,7 +376,7 @@
                 </div>
                 <v-text-field
                   v-model="form.price"
-                  label="Price"
+                  :label="t('pages.adminGroups.labelPrice')"
                   type="number"
                   min="0"
                   prepend-inner-icon="mdi-currency-eur"
@@ -385,11 +389,11 @@
                   :items="coachOptions"
                   item-title="label"
                   item-value="value"
-                  label="Coach"
+                  :label="t('pages.adminGroups.labelCoach')"
                   variant="outlined"
                   class="create-field"
                   :menu-props="selectMenuProps"
-                  placeholder="Search and select coach"
+                  :placeholder="t('pages.adminSessions.groupPlaceholder')"
                   clearable
                 />
 
@@ -398,11 +402,11 @@
                   :items="childOptions"
                   item-title="label"
                   item-value="value"
-                  label="Children"
+                  :label="t('pages.adminGroups.linkedChildren')"
                   variant="outlined"
                   class="create-field create-field-full children-autocomplete-field"
                   :menu-props="selectMenuProps"
-                  placeholder="Search and select children"
+                  :placeholder="t('pages.adminSessions.addChildPlaceholder')"
                   chips
                   multiple
                   closable-chips
@@ -414,9 +418,9 @@
             <v-card-actions class="create-dialog-actions" :class="{ 'create-dialog-actions-dark': darkMode }">
               <v-spacer></v-spacer>
               <v-btn color="primary" class="apply-filter-btn" :loading="saving" @click="saveGroup">
-                {{ editingGroupId ? 'Save changes' : 'Create group' }}
+                {{ editingGroupId ? t('common.saveChanges') : t('common.createGroup') }}
               </v-btn>
-              <v-btn variant="text" class="reset-filter-btn" @click="closeDialog">Cancel</v-btn>
+              <v-btn variant="text" class="reset-filter-btn" @click="closeDialog">{{ t('common.cancel') }}</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -442,7 +446,9 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import AppPageFooter from '../components/AppPageFooter.vue'
+import AppLanguageSwitch from '../components/AppLanguageSwitch.vue'
 import { useNotifications } from '../composables/useNotifications'
+import { useLocale } from '../i18n'
 import { groupsApi, usersApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
@@ -461,14 +467,15 @@ const errorMessage = ref('')
 const formError = ref('')
 const editingGroupId = ref(null)
 const darkModeStorageKey = 'app-dark-mode'
+const { t } = useLocale()
 
-const navItems = [
-  { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-  { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
-  { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
-  { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/admin-payments' }
-]
+const navItems = computed(() => [
+  { label: t('pages.adminHome.caption'), icon: 'mdi-shield-crown-outline', to: '/admin' },
+  { label: t('common.users'), icon: 'mdi-account-multiple-outline', to: '/admin-users' },
+  { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/manage-groups' },
+  { label: t('common.sessions'), icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
+  { label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/admin-payments' }
+])
 
 const ageOptions = Array.from({ length: 15 }, (_, index) => {
   const age = index + 4
@@ -539,10 +546,10 @@ const filteredGroups = computed(() => {
 })
 
 const overviewStats = computed(() => [
-  { label: 'Total groups', value: groups.value.length },
-  { label: 'Assigned coaches', value: new Set(groups.value.map((item) => item.trainer).filter(Boolean)).size },
-  { label: 'Children linked (total links, one child can be in multiple groups)', value: groups.value.reduce((acc, item) => acc + (item.students || 0), 0) },
-  { label: 'Average price', value: formatCurrency(averagePrice.value) }
+  { label: t('pages.adminGroups.statTotalGroups'), value: groups.value.length },
+  { label: t('pages.adminGroups.statAssignedCoaches'), value: new Set(groups.value.map((item) => item.trainer).filter(Boolean)).size },
+  { label: t('pages.adminGroups.statChildrenLinked'), value: groups.value.reduce((acc, item) => acc + (item.students || 0), 0) },
+  { label: t('pages.adminGroups.statAveragePrice'), value: formatCurrency(averagePrice.value) }
 ])
 
 const averagePrice = computed(() => {
@@ -677,7 +684,7 @@ async function initializePage() {
     groups.value = groupsResponse
     users.value = usersResponse
   } catch (error) {
-    errorMessage.value = extractErrorMessage(error, 'Failed to load groups.')
+    errorMessage.value = extractErrorMessage(error, t('pages.adminGroups.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -703,22 +710,22 @@ async function saveGroup() {
     const payload = buildPayload()
 
     if (!payload.name) {
-      formError.value = 'Group name is required.'
+      formError.value = t('pages.adminGroups.groupNameRequired')
       return
     }
 
     if (!payload.coach_id) {
-      formError.value = 'Please assign a coach to the group.'
+      formError.value = t('pages.adminGroups.assignCoachRequired')
       return
     }
 
     if ((form.value.age_from && !form.value.age_to) || (!form.value.age_from && form.value.age_to)) {
-      formError.value = 'Please select both age limits for the age category.'
+      formError.value = t('pages.adminGroups.bothAgeLimits')
       return
     }
 
     if (form.value.age_from && form.value.age_to && form.value.age_from > form.value.age_to) {
-      formError.value = 'Age from cannot be greater than age to.'
+      formError.value = t('pages.adminGroups.ageRangeInvalid')
       return
     }
 
@@ -731,21 +738,21 @@ async function saveGroup() {
     await initializePage()
     closeDialog()
   } catch (error) {
-    formError.value = extractErrorMessage(error, 'Failed to save group.')
+    formError.value = extractErrorMessage(error, t('pages.adminGroups.saveFailed'))
   } finally {
     saving.value = false
   }
 }
 
 async function deleteGroup(group) {
-  const confirmed = window.confirm(`Delete ${group.section}? This action cannot be undone.`)
+  const confirmed = window.confirm(t('pages.adminGroups.deleteConfirm', { name: group.section }))
   if (!confirmed) return
 
   try {
     await groupsApi.remove(group.id)
     await initializePage()
   } catch (error) {
-    errorMessage.value = extractErrorMessage(error, 'Failed to delete group.')
+    errorMessage.value = extractErrorMessage(error, t('pages.adminGroups.deleteFailed'))
   }
 }
 

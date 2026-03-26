@@ -22,7 +22,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Coach workspace</div>
+                <div class="brand-caption">{{ t('workspace.coach') }}</div>
               </div>
             </div>
 
@@ -60,7 +60,7 @@
               prepend-icon="mdi-logout"
               @click="handleMobileLogout"
             >
-              Log out
+              {{ t('common.logout') }}
             </v-btn>
           </div>
         </v-navigation-drawer>
@@ -73,7 +73,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Coach workspace</div>
+                <div class="brand-caption">{{ t('workspace.coach') }}</div>
               </div>
             </div>
 
@@ -107,11 +107,13 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Coach Attendance</div>
+                  <div class="brand-caption">{{ t('pages.coachAttendance.caption') }}</div>
                 </div>
               </div>
 
               <div class="mobile-header-actions">
+                <AppLanguageSwitch :dark-mode="darkMode" accent="coach" />
+
                 <v-btn
                   icon
                   variant="text"
@@ -147,6 +149,8 @@
 
             <div v-if="!isCompactNav" class="topbar-card">
               <div class="topbar-tools">
+                <AppLanguageSwitch :dark-mode="darkMode" accent="coach" />
+
                 <div class="icon-badge-wrap">
                   <v-btn
                     icon
@@ -189,12 +193,12 @@
 
             <div class="coach-page-card">
               <div class="coach-page-header">
-                <div>
-                  <h1 class="coach-page-title">Coach Attendance</h1>
-                  <div class="coach-page-subtitle">
-                    Pick a group, open a day and mark attendance for each real session instance.
+                  <div>
+                    <h1 class="coach-page-title">{{ t('pages.coachAttendance.title') }}</h1>
+                    <div class="coach-page-subtitle">
+                      {{ t('pages.coachAttendance.subtitle') }}
+                    </div>
                   </div>
-                </div>
 
                 <v-menu
                   :disabled="coachGroups.length <= 1"
@@ -211,12 +215,12 @@
                       <v-avatar size="44" class="group-selector-avatar">
                         <img
                           :src="avatarFor(`coach-group-${selectedGroup?.id ?? 'none'}`, selectedGroup?.section ?? 'Group')"
-                          :alt="selectedGroup?.section ?? 'Selected group'"
+                          :alt="selectedGroup?.section ?? t('pages.coachAttendance.selectedGroup')"
                         >
                       </v-avatar>
                       <div class="group-selector-copy">
-                        <div class="group-selector-label">Selected group</div>
-                        <div class="group-selector-name">{{ selectedGroup?.section || 'No groups assigned' }}</div>
+                        <div class="group-selector-label">{{ t('pages.coachAttendance.selectedGroup') }}</div>
+                        <div class="group-selector-name">{{ selectedGroup?.section || t('pages.coachAttendance.noGroupsAssigned') }}</div>
                       </div>
                       <v-icon v-if="coachGroups.length > 1" size="22" class="group-selector-chevron">
                         mdi-chevron-down
@@ -232,7 +236,7 @@
                     >
                       <v-list-item-title>{{ group.section }}</v-list-item-title>
                       <v-list-item-subtitle>
-                        {{ group.age_category ? `Age ${group.age_category}` : 'No age category' }}
+                        {{ group.age_category ? `${t('pages.schedule.ageLabel')} ${group.age_category}` : t('pages.coachAttendance.noAgeCategory') }}
                       </v-list-item-subtitle>
                     </v-list-item>
                   </v-list>
@@ -247,7 +251,7 @@
 
               <div v-else-if="loading" class="state-wrap loading-state">
                 <v-progress-circular indeterminate color="primary" size="28" />
-                <span>Loading coach attendance...</span>
+                <span>{{ t('pages.coachAttendance.loading') }}</span>
               </div>
 
               <template v-else>
@@ -262,9 +266,9 @@
                   <section class="workbench-card sessions-card">
                     <div class="section-head">
                       <div>
-                        <div class="section-title">Sessions on {{ selectedDateLabel }}</div>
+                        <div class="section-title">{{ t('pages.coachAttendance.sessionsOnDate', { date: selectedDateLabel }) }}</div>
                         <div class="section-caption">
-                          Click a day in the calendar to switch the training selector below.
+                          {{ t('pages.coachAttendance.sessionsCaption') }}
                         </div>
                       </div>
                     </div>
@@ -288,7 +292,7 @@
                       </button>
                     </div>
                     <div v-else class="empty-block">
-                      No trainings scheduled for this group on the selected day.
+                      {{ t('pages.coachAttendance.noTrainingsOnSelectedDay') }}
                     </div>
 
                     <template v-if="selectedSession">
@@ -300,7 +304,7 @@
                           </div>
                         </div>
                         <div class="selected-session-progress">
-                          <div class="summary-label">Progress</div>
+                          <div class="summary-label">{{ t('pages.coachAttendance.progress') }}</div>
                           <div class="summary-value small-value">
                             {{ selectedSessionMeta.markedCount }}/{{ selectedSession.students.length }}
                           </div>
@@ -312,8 +316,8 @@
                   <section class="workbench-card roster-card">
                     <div class="section-head">
                       <div>
-                        <div class="section-title">Students roster</div>
-                        <div class="section-caption">Mark the selected training.</div>
+                        <div class="section-title">{{ t('pages.coachAttendance.rosterTitle') }}</div>
+                        <div class="section-caption">{{ t('pages.coachAttendance.rosterSubtitle') }}</div>
                       </div>
                       <div class="roster-head-tools">
                         <div v-if="selectedSession" class="section-chip">{{ selectedSession.students.length }}</div>
@@ -321,7 +325,7 @@
                           <v-icon size="18" class="roster-search-icon">mdi-magnify</v-icon>
                           <v-text-field
                             v-model="rosterSearch"
-                            placeholder="Search student"
+                            :placeholder="t('pages.coachAttendance.searchStudent')"
                             variant="plain"
                             hide-details
                             density="comfortable"
@@ -333,7 +337,7 @@
 
                     <template v-if="selectedSession">
                       <div v-if="selectedSession.status === 'cancelled'" class="state-wrap roster-state">
-                        This session is cancelled. Attendance marking is disabled.
+                        {{ t('pages.coachAttendance.cancelledSessionAttendanceDisabled') }}
                       </div>
 
                       <template v-else>
@@ -364,7 +368,7 @@
                             prepend-icon="mdi-check-all"
                             @click="markAllPresent"
                           >
-                            Mark all present
+                            {{ t('common.markAllPresent') }}
                           </v-btn>
                           <v-btn
                             color="primary"
@@ -372,7 +376,7 @@
                             prepend-icon="mdi-content-save-outline"
                             @click="saveAttendance"
                           >
-                            Save attendance
+                            {{ t('common.saveAttendance') }}
                           </v-btn>
                         </div>
 
@@ -402,7 +406,7 @@
                                   :class="{ 'status-option-active status-option-present': sessionDraft[student.id] === 'present' }"
                                   @click="setStudentStatus(student.id, 'present')"
                                 >
-                                  Present
+                                  {{ t('pages.attendance.present') }}
                                 </button>
                                 <button
                                   type="button"
@@ -410,26 +414,26 @@
                                   :class="{ 'status-option-active status-option-absent': sessionDraft[student.id] === 'absent' }"
                                   @click="setStudentStatus(student.id, 'absent')"
                                 >
-                                  Absent
+                                  {{ t('pages.attendance.absent') }}
                                 </button>
                               </div>
                             </article>
                           </div>
                         </div>
                         <div v-if="!filteredRosterStudents.length" class="empty-block roster-empty">
-                          No students found for the current search.
+                          {{ t('pages.coachAttendance.noStudentsForSearch') }}
                         </div>
                       </template>
                     </template>
                     <div v-else class="empty-block">
-                      Select a training on the left to open the full roster.
+                      {{ t('pages.coachAttendance.selectTrainingHint') }}
                     </div>
                   </section>
                 </div>
 
                 <div class="attendance-toolbar">
                   <div class="toolbar-label-wrap">
-                    <div class="toolbar-section-label">Calendar</div>
+                    <div class="toolbar-section-label">{{ t('pages.coachAttendance.calendar') }}</div>
                   </div>
 
                   <div class="toolbar-meta">
@@ -450,19 +454,19 @@
 
                 <div class="calendar-card">
                   <div class="calendar-header">
-                    <div class="calendar-title">Group attendance calendar</div>
+                    <div class="calendar-title">{{ t('pages.coachAttendance.groupAttendanceCalendar') }}</div>
                     <div class="calendar-legend">
                       <span class="legend-item">
                         <span class="legend-dot legend-dot-green"></span>
-                        Marked
+                        {{ t('pages.coachAttendance.marked') }}
                       </span>
                       <span class="legend-item">
                       <span class="legend-dot legend-dot-blue"></span>
-                        Planned
+                        {{ t('pages.attendance.planned') }}
                       </span>
                       <span class="legend-item">
                         <span class="legend-dot legend-dot-gray"></span>
-                        Cancelled / no sessions
+                        {{ t('pages.coachAttendance.cancelledOrNoSessions') }}
                       </span>
                     </div>
                   </div>
@@ -498,13 +502,13 @@
                             <span class="cell-session-name">{{ session.title }}</span>
                           </div>
                           <div v-if="day.sessions.length > 2" class="cell-more">
-                            +{{ day.sessions.length - 2 }} more
+                            +{{ day.sessions.length - 2 }} {{ t('pages.coachAttendance.more') }}
                           </div>
                         </div>
 
                         <div v-else class="cell-status">
                           <span class="cell-dot cell-dot-gray"></span>
-                          No sessions
+                          {{ t('pages.coachAttendance.noSessions') }}
                         </div>
                       </button>
                     </div>
@@ -536,8 +540,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import AppPageFooter from '../components/AppPageFooter.vue'
+import AppLanguageSwitch from '../components/AppLanguageSwitch.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedCoachGroup } from '../composables/useSelectedCoachGroup'
+import { useLocale } from '../i18n'
 import { attendanceApi, groupsApi, sessionsApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
@@ -545,6 +551,7 @@ import { isSameNotificationTarget, resolveNotificationTarget } from '../utils/no
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useLocale()
 const darkMode = ref(false)
 const notificationsDialog = ref(false)
 const mobileMenuOpen = ref(false)
@@ -588,12 +595,12 @@ const profileName = computed(() => {
 const profileEmail = computed(() => user.value?.email ?? 'coach@sportsystem.app')
 const profileSeed = computed(() => user.value?.email ?? profileName.value)
 
-const navItems = [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
-  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: '/coach-attendance' }
-]
+const navItems = computed(() => [
+  { label: t('common.home'), icon: 'mdi-home-outline', to: '/home' },
+  { label: t('common.schedule'), icon: 'mdi-calendar-month-outline', to: '/schedule' },
+  { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/groups' },
+  { label: t('common.attendance'), icon: 'mdi-check-circle-outline', to: '/coach-attendance' }
+])
 
 const selectedGroup = computed(() =>
   coachGroups.value.find((group) => group.id === selectedCoachGroupId.value) ?? null
@@ -734,10 +741,10 @@ const overviewStats = computed(() => {
   }).length
 
   return [
-    { label: 'Average attendance rate', value: `${averageAttendanceRate}%` },
-    { label: 'Cancelled this month', value: String(cancelledThisMonth) },
-    { label: 'Sessions this month', value: String(sessionsThisMonth) },
-    { label: 'Marked this month', value: String(markedRecordsThisMonth) }
+    { label: t('pages.coachAttendance.statAverageAttendanceRate'), value: `${averageAttendanceRate}%` },
+    { label: t('pages.coachAttendance.statCancelledThisMonth'), value: String(cancelledThisMonth) },
+    { label: t('pages.coachAttendance.statSessionsThisMonth'), value: String(sessionsThisMonth) },
+    { label: t('pages.coachAttendance.statMarkedThisMonth'), value: String(markedRecordsThisMonth) }
   ]
 })
 
@@ -877,7 +884,7 @@ async function initializePage() {
       await loadGroupAttendance(resolvedGroupId)
     }
   } catch (error) {
-    errorMessage.value = extractErrorMessage(error, 'Failed to load coach groups.')
+    errorMessage.value = extractErrorMessage(error, t('pages.coachAttendance.loadGroupsFailed'))
   } finally {
     loading.value = false
   }
@@ -900,7 +907,7 @@ async function loadGroupAttendance(groupId) {
     sessionDrafts.value = {}
     syncSelectedDate(groupSessions)
   } catch (error) {
-    errorMessage.value = extractErrorMessage(error, 'Failed to load attendance data.')
+    errorMessage.value = extractErrorMessage(error, t('pages.coachAttendance.loadAttendanceFailed'))
   } finally {
     loading.value = false
   }
@@ -1001,7 +1008,7 @@ async function saveAttendance() {
     await loadGroupAttendance(selectedCoachGroupId.value)
     saveSuccess.value = 'Attendance updated for this session.'
   } catch (error) {
-    saveError.value = extractErrorMessage(error, 'Failed to save attendance.')
+    saveError.value = extractErrorMessage(error, t('pages.coachAttendance.saveAttendanceFailed'))
   } finally {
     saving.value = false
   }

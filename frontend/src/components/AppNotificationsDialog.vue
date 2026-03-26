@@ -10,8 +10,8 @@
     >
       <div class="notifications-dialog-header">
         <div>
-          <div class="notifications-dialog-title">All Notifications</div>
-          <div class="notifications-dialog-subtitle">Recent updates about trainings, attendance and payments.</div>
+          <div class="notifications-dialog-title">{{ t('notifications.title') }}</div>
+          <div class="notifications-dialog-subtitle">{{ t('notifications.subtitle') }}</div>
         </div>
 
         <div class="notifications-dialog-actions">
@@ -22,7 +22,7 @@
             :loading="markAllLoading"
             @click="handleMarkAllRead"
           >
-            Mark all as read
+            {{ t('notifications.markAllRead') }}
           </v-btn>
 
           <v-btn icon variant="text" @click="emit('update:modelValue', false)">
@@ -49,11 +49,11 @@
         </article>
 
         <div v-if="loading" class="notifications-empty-state">
-          Loading notifications...
+          {{ t('notifications.loading') }}
         </div>
 
         <div v-else-if="!normalizedNotifications.length" class="notifications-empty-state">
-          No notifications yet.
+          {{ t('notifications.empty') }}
         </div>
       </div>
     </v-card>
@@ -63,6 +63,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useNotifications } from '../composables/useNotifications'
+import { useLocale } from '../i18n'
 
 const props = defineProps({
   modelValue: {
@@ -90,6 +91,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'notification-click'])
 
 const { markAllNotificationsRead } = useNotifications()
+const { t } = useLocale()
 const markAllLoading = ref(false)
 const normalizedNotifications = computed(() => props.notifications ?? [])
 const hasUnreadNotifications = computed(() => normalizedNotifications.value.some((item) => item.unread))

@@ -19,7 +19,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Admin workspace</div>
+                <div class="brand-caption">{{ t('workspace.admin') }}</div>
               </div>
             </div>
 
@@ -57,7 +57,7 @@
               prepend-icon="mdi-logout"
               @click="handleMobileLogout"
             >
-              Log out
+              {{ t('common.logout') }}
             </v-btn>
           </div>
         </v-navigation-drawer>
@@ -70,7 +70,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Admin workspace</div>
+                <div class="brand-caption">{{ t('workspace.admin') }}</div>
               </div>
             </div>
 
@@ -104,11 +104,13 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Sessions</div>
+                  <div class="brand-caption">{{ t('pages.adminSessions.caption') }}</div>
                 </div>
               </div>
 
               <div class="mobile-header-actions">
+                <AppLanguageSwitch :dark-mode="darkMode" accent="admin" />
+
                 <v-btn
                   icon
                   variant="text"
@@ -141,7 +143,7 @@
                 </div>
 
                 <v-btn color="primary" class="mobile-create-btn" prepend-icon="mdi-plus" @click="openCreateDialog">
-                  Create session
+                  {{ t('common.createSession') }}
                 </v-btn>
               </div>
             </div>
@@ -162,6 +164,8 @@
               </div>
 
               <div class="topbar-tools">
+                <AppLanguageSwitch :dark-mode="darkMode" accent="admin" />
+
                 <div class="icon-badge-wrap">
                   <v-btn
                     icon
@@ -205,14 +209,14 @@
             <div class="sessions-card">
               <div class="sessions-header">
                 <div>
-                  <h1 class="sessions-title">Manage Sessions</h1>
+                  <h1 class="sessions-title">{{ t('pages.adminSessions.title') }}</h1>
                   <div class="sessions-subtitle">
-                    Create, edit and manage all planned, completed and cancelled sessions.
+                    {{ t('pages.adminSessions.subtitle') }}
                   </div>
                 </div>
 
                 <v-btn color="primary" class="desktop-only-btn" prepend-icon="mdi-plus" @click="openCreateDialog">
-                  Create session
+                  {{ t('common.createSession') }}
                 </v-btn>
               </div>
 
@@ -231,7 +235,7 @@
                     :class="{ 'view-switch-btn-active': activeView === 'plans' }"
                     @click="activeView = 'plans'"
                   >
-                    Weekly trainings
+                    {{ t('pages.adminSessions.statWeeklyTrainings') }}
                   </v-btn>
                   <v-btn
                     variant="text"
@@ -239,7 +243,7 @@
                     :class="{ 'view-switch-btn-active': activeView === 'dates' }"
                     @click="activeView = 'dates'"
                   >
-                    Session dates
+                    {{ t('pages.adminSessions.statSessionDates') }}
                   </v-btn>
                 </div>
 
@@ -250,7 +254,7 @@
                   prepend-icon="mdi-tune-variant"
                   @click="sessionDatesFilterDialog = true"
                 >
-                  Filter
+                  {{ t('pages.adminSessions.filterButton') }}
                 </v-btn>
               </div>
 
@@ -262,15 +266,15 @@
 
               <div v-else-if="loading" class="state-wrap loading-state">
                 <v-progress-circular indeterminate color="primary" size="28" />
-                <span>Loading sessions...</span>
+                <span>{{ t('pages.adminSessions.loadingSessions') }}</span>
               </div>
 
               <div v-else-if="activeView === 'plans' && !filteredWeeklyTrainings.length" class="state-wrap empty-state">
-                No weekly trainings found for the current search.
+                {{ t('pages.adminSessions.noWeeklyTrainingsFound') }}
               </div>
 
               <div v-else-if="activeView === 'dates' && !filteredSessionDates.length" class="state-wrap empty-state">
-                No sessions found for the current search.
+                {{ t('pages.adminSessions.noSessionsFound') }}
               </div>
 
               <div v-else-if="activeView === 'plans'" class="sessions-grid">
@@ -294,32 +298,32 @@
 
                   <div class="session-info-grid">
                     <div class="info-item">
-                      <span class="info-label">Days</span>
+                      <span class="info-label">{{ t('pages.adminSessions.labelDays') }}</span>
                       <span class="info-value">{{ formatSessionWeekdays(session) }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">Nearest date</span>
+                      <span class="info-label">{{ t('pages.adminSessions.nearestDate') }}</span>
                       <span class="info-value">{{ formatNearestDate(session.nearest_date) }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">Coach</span>
-                      <span class="info-value">{{ session.trainer || 'Coach not assigned' }}</span>
+                      <span class="info-label">{{ t('pages.adminSessions.labelCoach') }}</span>
+                      <span class="info-value">{{ session.trainer || t('pages.adminSessions.coachNotAssigned') }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">Start</span>
+                      <span class="info-label">{{ t('pages.adminSessions.start') }}</span>
                       <span class="info-value">{{ session.start }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">End</span>
+                      <span class="info-label">{{ t('pages.adminSessions.end') }}</span>
                       <span class="info-value">{{ session.end }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">Price per training</span>
+                      <span class="info-label">{{ t('pages.adminSessions.pricePerTraining') }}</span>
                       <span class="info-value">{{ formatPrice(session.price) }}</span>
                     </div>
                   </div>
@@ -331,7 +335,7 @@
                       prepend-icon="mdi-pencil-outline"
                       @click="openEditDialog(session)"
                     >
-                      Edit
+                      {{ t('common.edit') }}
                     </v-btn>
                     <v-btn
                       variant="outlined"
@@ -339,7 +343,7 @@
                       class="action-btn action-btn-delete"
                       @click="deleteSession(session)"
                     >
-                      Delete
+                      {{ t('common.delete') }}
                     </v-btn>
                   </div>
                 </article>
@@ -370,32 +374,32 @@
 
                   <div class="session-info-grid">
                     <div class="info-item">
-                      <span class="info-label">Date</span>
+                      <span class="info-label">{{ t('pages.adminSessions.dateLabel') }}</span>
                       <span class="info-value">{{ formatDate(session.date) }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">Day</span>
+                      <span class="info-label">{{ t('pages.adminSessions.dayLabel') }}</span>
                       <span class="info-value">{{ formatDay(session.date) }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">Coach</span>
-                      <span class="info-value">{{ session.trainer || 'Coach not assigned' }}</span>
+                      <span class="info-label">{{ t('pages.adminSessions.labelCoach') }}</span>
+                      <span class="info-value">{{ session.trainer || t('pages.adminSessions.coachNotAssigned') }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">Start</span>
+                      <span class="info-label">{{ t('pages.adminSessions.start') }}</span>
                       <span class="info-value">{{ session.start }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">End</span>
+                      <span class="info-label">{{ t('pages.adminSessions.end') }}</span>
                       <span class="info-value">{{ session.end }}</span>
                     </div>
 
                     <div class="info-item">
-                      <span class="info-label">Price per training</span>
+                      <span class="info-label">{{ t('pages.adminSessions.pricePerTraining') }}</span>
                       <span class="info-value">{{ formatPrice(session.price) }}</span>
                     </div>
                   </div>
@@ -407,7 +411,7 @@
                       prepend-icon="mdi-account-plus-outline"
                       @click="openChildrenDialog(session)"
                     >
-                      Manage children
+                      {{ t('common.manageChildren') }}
                     </v-btn>
                     <v-btn
                       color="primary"
@@ -415,7 +419,7 @@
                       prepend-icon="mdi-flag-outline"
                       @click="openStatusDialog(session)"
                     >
-                      Change status
+                      {{ t('common.changeStatus') }}
                     </v-btn>
                   </div>
                 </article>
@@ -429,13 +433,13 @@
             <div class="create-dialog-header" :class="{ 'create-dialog-header-dark': darkMode }">
               <div>
                 <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">
-                  {{ editingSessionId ? 'Edit Session' : 'Create Session' }}
+                  {{ editingSessionId ? t('common.editSession') : t('common.createSession') }}
                 </div>
                 <div class="create-dialog-subtitle" :class="{ 'create-dialog-subtitle-dark': darkMode }">
                   {{
                     editingSessionId
-                      ? 'Update the training title, group, weekdays, time and price.'
-                      : 'Set the training title, choose its group, then define weekdays, time and price.'
+                      ? t('pages.adminSessions.editSubtitle')
+                      : t('pages.adminSessions.createSubtitle')
                   }}
                 </div>
               </div>
@@ -459,7 +463,7 @@
               <div class="create-fields-grid">
                 <v-text-field
                   v-model="form.title"
-                  label="Training title"
+                  :label="t('pages.adminSessions.trainingTitle')"
                   variant="outlined"
                   class="create-field create-field-full"
                 />
@@ -469,11 +473,11 @@
                   :items="groupOptions"
                   item-title="label"
                   item-value="value"
-                  label="Group"
+                  :label="t('pages.adminSessions.groupLabel')"
                   variant="outlined"
                   class="create-field create-field-full"
                   :menu-props="selectMenuProps"
-                  placeholder="Search and select group"
+                  :placeholder="t('pages.adminSessions.groupPlaceholder')"
                   clearable
                 />
 
@@ -482,7 +486,7 @@
                   :items="weekdayOptions"
                   item-title="label"
                   item-value="value"
-                  label="Days of week"
+                  :label="t('pages.adminSessions.weekdays')"
                   variant="outlined"
                   class="create-field create-field-full weekdays-field"
                   :menu-props="selectMenuProps"
@@ -496,7 +500,7 @@
 
                 <v-text-field
                   v-model="form.start_time"
-                  label="Start time"
+                  :label="t('pages.adminSessions.startTime')"
                   type="time"
                   variant="outlined"
                   class="create-field time-field"
@@ -504,7 +508,7 @@
 
                 <v-text-field
                   v-model="form.end_time"
-                  label="End time"
+                  :label="t('pages.adminSessions.endTime')"
                   type="time"
                   variant="outlined"
                   class="create-field time-field"
@@ -512,7 +516,7 @@
 
                 <v-text-field
                   v-model="form.price"
-                  label="Price per training"
+                  :label="t('pages.adminSessions.pricePerTraining')"
                   type="number"
                   variant="outlined"
                   class="create-field price-field"
@@ -526,9 +530,9 @@
             <v-card-actions class="create-dialog-actions" :class="{ 'create-dialog-actions-dark': darkMode }">
               <v-spacer></v-spacer>
               <v-btn color="primary" class="apply-filter-btn" :loading="saving" @click="saveSession">
-                {{ editingSessionId ? 'Save changes' : 'Create session' }}
+                {{ editingSessionId ? t('common.saveChanges') : t('common.createSession') }}
               </v-btn>
-              <v-btn variant="text" class="reset-filter-btn" :class="{ 'reset-filter-btn-dark': darkMode }" @click="closeDialog">Cancel</v-btn>
+              <v-btn variant="text" class="reset-filter-btn" :class="{ 'reset-filter-btn-dark': darkMode }" @click="closeDialog">{{ t('common.cancel') }}</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -537,9 +541,9 @@
           <v-card class="dialog-card create-dialog-card" :class="{ 'create-dialog-card-dark': darkMode }">
             <div class="create-dialog-header" :class="{ 'create-dialog-header-dark': darkMode }">
               <div>
-                <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">Update Session Status</div>
+                <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">{{ t('common.changeStatus') }}</div>
                 <div class="create-dialog-subtitle" :class="{ 'create-dialog-subtitle-dark': darkMode }">
-                  Change the status for one dated session without editing the weekly training plan.
+                  {{ t('pages.adminSessions.statusSubtitle') }}
                 </div>
               </div>
 
@@ -560,8 +564,8 @@
               </v-alert>
 
               <div class="status-instance-summary">
-                <div class="payment-name">{{ selectedInstanceSession?.title || 'Session instance' }}</div>
-                <div class="payment-meta">{{ selectedInstanceSession?.group || 'Group not set' }}</div>
+                <div class="payment-name">{{ selectedInstanceSession?.title || t('pages.adminSessions.sessionInstance') }}</div>
+                <div class="payment-meta">{{ selectedInstanceSession?.group || t('pages.adminSessions.groupNotSet') }}</div>
                 <div class="payment-secondary">
                   {{ selectedInstanceSession?.date ? formatDate(selectedInstanceSession.date) : '' }}
                 </div>
@@ -572,7 +576,7 @@
                 :items="statusOptions"
                 item-title="label"
                 item-value="value"
-                label="Status"
+                :label="t('pages.adminSessions.statusLabel')"
                 variant="outlined"
                 class="create-field"
                 :menu-props="selectMenuProps"
@@ -582,9 +586,9 @@
             <v-card-actions class="create-dialog-actions" :class="{ 'create-dialog-actions-dark': darkMode }">
               <v-spacer></v-spacer>
               <v-btn color="primary" class="apply-filter-btn" :loading="statusSaving" @click="saveInstanceStatus">
-                Save status
+                {{ t('common.saveStatus') }}
               </v-btn>
-              <v-btn variant="text" class="reset-filter-btn" :class="{ 'reset-filter-btn-dark': darkMode }" @click="closeStatusDialog">Cancel</v-btn>
+              <v-btn variant="text" class="reset-filter-btn" :class="{ 'reset-filter-btn-dark': darkMode }" @click="closeStatusDialog">{{ t('common.cancel') }}</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -593,9 +597,9 @@
           <v-card class="dialog-card create-dialog-card" :class="{ 'create-dialog-card-dark': darkMode }">
             <div class="create-dialog-header" :class="{ 'create-dialog-header-dark': darkMode }">
               <div>
-                <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">Filter Session Dates</div>
+                <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">{{ t('pages.adminSessions.filterSessionDates') }}</div>
                 <div class="create-dialog-subtitle" :class="{ 'create-dialog-subtitle-dark': darkMode }">
-                  Narrow concrete session instances by date range or sort order.
+                  {{ t('pages.adminSessions.filterSessionDatesSubtitle') }}
                 </div>
               </div>
 
@@ -608,7 +612,7 @@
               <div class="session-date-filters-dialog">
                 <v-text-field
                   v-model="sessionDateFrom"
-                  label="From date"
+                  :label="t('pages.adminSessions.fromDate')"
                   type="date"
                   variant="outlined"
                   hide-details
@@ -617,7 +621,7 @@
 
                 <v-text-field
                   v-model="sessionDateTo"
-                  label="To date"
+                  :label="t('pages.adminSessions.toDate')"
                   type="date"
                   variant="outlined"
                   hide-details
@@ -629,7 +633,7 @@
                   :items="sessionDatePeriodOptions"
                   item-title="label"
                   item-value="value"
-                  label="Session period"
+                  :label="t('pages.adminSessions.sessionPeriod')"
                   variant="outlined"
                   hide-details
                   class="create-field session-date-filter-field session-date-filter-full"
@@ -641,7 +645,7 @@
                   :items="sessionDateSortOptions"
                   item-title="label"
                   item-value="value"
-                  label="Sort by"
+                  :label="t('pages.adminSessions.sortBy')"
                   variant="outlined"
                   hide-details
                   class="create-field session-date-filter-field session-date-filter-full"
@@ -653,10 +657,10 @@
             <v-card-actions class="create-dialog-actions" :class="{ 'create-dialog-actions-dark': darkMode }">
               <v-spacer></v-spacer>
               <v-btn color="primary" class="apply-filter-btn" @click="sessionDatesFilterDialog = false">
-                Apply
+                {{ t('common.apply') }}
               </v-btn>
               <v-btn variant="text" class="reset-filter-btn" :class="{ 'reset-filter-btn-dark': darkMode }" @click="resetSessionDateFilters">
-                Reset
+                {{ t('common.reset') }}
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -666,9 +670,9 @@
           <v-card class="dialog-card create-dialog-card" :class="{ 'create-dialog-card-dark': darkMode }">
             <div class="create-dialog-header" :class="{ 'create-dialog-header-dark': darkMode }">
               <div>
-                <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">Manage Session Children</div>
+                <div class="create-dialog-title" :class="{ 'create-dialog-title-dark': darkMode }">{{ t('pages.adminSessions.manageSessionChildren') }}</div>
                 <div class="create-dialog-subtitle" :class="{ 'create-dialog-subtitle-dark': darkMode }">
-                  Add a child only to this dated session without changing the whole group membership.
+                  {{ t('pages.adminSessions.manageChildrenSubtitle') }}
                 </div>
               </div>
 
@@ -689,8 +693,8 @@
               </v-alert>
 
               <div class="status-instance-summary session-children-summary">
-                <div class="payment-name">{{ selectedChildrenSession?.title || 'Session instance' }}</div>
-                <div class="payment-meta">{{ selectedChildrenSession?.group || 'Group not set' }}</div>
+                <div class="payment-name">{{ selectedChildrenSession?.title || t('pages.adminSessions.sessionInstance') }}</div>
+                <div class="payment-meta">{{ selectedChildrenSession?.group || t('pages.adminSessions.groupNotSet') }}</div>
                 <div class="payment-secondary">
                   {{ selectedChildrenSession?.date ? `${formatDate(selectedChildrenSession.date)} · ${selectedChildrenSession.start}-${selectedChildrenSession.end}` : '' }}
                 </div>
@@ -702,11 +706,11 @@
                   :items="availableSessionChildOptions"
                   item-title="label"
                   item-value="value"
-                  label="Add child to this session"
+                  :label="t('pages.adminSessions.addChildToSession')"
                   variant="outlined"
                   class="create-field"
                   :menu-props="selectMenuProps"
-                  placeholder="Search and select child"
+                  :placeholder="t('pages.adminSessions.addChildPlaceholder')"
                   clearable
                 />
 
@@ -717,7 +721,7 @@
                   :loading="childAssignmentSaving"
                   @click="addChildToSession"
                 >
-                  Add child
+                  {{ t('pages.adminSessions.addChild') }}
                 </v-btn>
               </div>
 
@@ -734,7 +738,7 @@
                     <div>
                       <div class="session-child-name">{{ student.name }}</div>
                       <div class="session-child-meta">
-                        {{ student.is_session_specific ? 'Added only for this date' : 'Comes from group roster' }}
+                        {{ student.is_session_specific ? t('pages.adminSessions.addedOnlyForDate') : t('pages.adminSessions.comesFromGroupRoster') }}
                       </div>
                     </div>
                   </div>
@@ -745,7 +749,7 @@
                       class="session-child-chip"
                       :class="{ 'session-child-chip-extra': student.is_session_specific }"
                     >
-                      {{ student.is_session_specific ? 'One-time child' : 'Group child' }}
+                      {{ student.is_session_specific ? t('pages.adminSessions.oneTimeChild') : t('pages.adminSessions.groupChild') }}
                     </v-chip>
 
                     <v-btn
@@ -764,7 +768,7 @@
 
             <v-card-actions class="create-dialog-actions" :class="{ 'create-dialog-actions-dark': darkMode }">
               <v-spacer></v-spacer>
-              <v-btn variant="text" class="reset-filter-btn" :class="{ 'reset-filter-btn-dark': darkMode }" @click="closeChildrenDialog">Close</v-btn>
+              <v-btn variant="text" class="reset-filter-btn" :class="{ 'reset-filter-btn-dark': darkMode }" @click="closeChildrenDialog">{{ t('common.close') }}</v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
@@ -790,7 +794,9 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import AppPageFooter from '../components/AppPageFooter.vue'
+import AppLanguageSwitch from '../components/AppLanguageSwitch.vue'
 import { useNotifications } from '../composables/useNotifications'
+import { useLocale } from '../i18n'
 import { groupsApi, sessionsApi, usersApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
@@ -823,35 +829,36 @@ const editingSessionId = ref(null)
 const selectedInstanceId = ref(null)
 const selectedChildrenSessionId = ref(null)
 const darkModeStorageKey = 'app-dark-mode'
+const { t, currentLocale } = useLocale()
 
-const navItems = [
-  { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-  { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
-  { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
-  { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/admin-payments' }
-]
+const navItems = computed(() => [
+  { label: t('pages.adminHome.caption'), icon: 'mdi-shield-crown-outline', to: '/admin' },
+  { label: t('common.users'), icon: 'mdi-account-multiple-outline', to: '/admin-users' },
+  { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/manage-groups' },
+  { label: t('common.sessions'), icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
+  { label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/admin-payments' }
+])
 
-const statusOptions = [
-  { label: 'Planned', value: 'planned' },
-  { label: 'Completed', value: 'completed' },
-  { label: 'Cancelled', value: 'cancelled' }
-]
+const statusOptions = computed(() => [
+  { label: t('pages.attendance.planned'), value: 'planned' },
+  { label: t('pages.adminSessions.statCompleted'), value: 'completed' },
+  { label: t('pages.adminSessions.statCancelled'), value: 'cancelled' }
+])
 
-const sessionDateSortOptions = [
-  { label: 'Date: nearest first', value: 'date-asc' },
-  { label: 'Date: latest first', value: 'date-desc' },
-  { label: 'Alphabet: A-Z', value: 'alpha-asc' },
-  { label: 'Alphabet: Z-A', value: 'alpha-desc' },
-  { label: 'Time: earliest first', value: 'time-asc' },
-  { label: 'Time: latest first', value: 'time-desc' }
-]
+const sessionDateSortOptions = computed(() => [
+  { label: currentSortLabel('date-asc'), value: 'date-asc' },
+  { label: currentSortLabel('date-desc'), value: 'date-desc' },
+  { label: currentSortLabel('alpha-asc'), value: 'alpha-asc' },
+  { label: currentSortLabel('alpha-desc'), value: 'alpha-desc' },
+  { label: currentSortLabel('time-asc'), value: 'time-asc' },
+  { label: currentSortLabel('time-desc'), value: 'time-desc' }
+])
 
-const sessionDatePeriodOptions = [
-  { label: 'All sessions', value: 'all' },
-  { label: 'Past sessions', value: 'past' },
-  { label: 'Upcoming sessions', value: 'upcoming' }
-]
+const sessionDatePeriodOptions = computed(() => [
+  { label: currentPeriodLabel('all'), value: 'all' },
+  { label: currentPeriodLabel('past'), value: 'past' },
+  { label: currentPeriodLabel('upcoming'), value: 'upcoming' }
+])
 
 const weekdayOptions = [
   { label: 'Monday', value: 'Mon' },
@@ -1050,11 +1057,11 @@ const availableSessionChildOptions = computed(() => {
 })
 
 const overviewStats = computed(() => [
-  { label: 'Weekly trainings', value: filteredWeeklyTrainings.value.length },
-  { label: 'Session dates', value: sessions.value.length },
-  { label: 'Planned', value: sessions.value.filter((item) => item.status === 'planned').length },
-  { label: 'Completed', value: sessions.value.filter((item) => item.status === 'completed').length },
-  { label: 'Cancelled', value: sessions.value.filter((item) => item.status === 'cancelled').length }
+  { label: t('pages.adminSessions.statWeeklyTrainings'), value: filteredWeeklyTrainings.value.length },
+  { label: t('pages.adminSessions.statSessionDates'), value: sessions.value.length },
+  { label: t('pages.adminSessions.statPlanned'), value: sessions.value.filter((item) => item.status === 'planned').length },
+  { label: t('pages.adminSessions.statCompleted'), value: sessions.value.filter((item) => item.status === 'completed').length },
+  { label: t('pages.adminSessions.statCancelled'), value: sessions.value.filter((item) => item.status === 'cancelled').length }
 ])
 
 onMounted(() => {
@@ -1117,6 +1124,29 @@ function getDefaultStatusForm() {
 
 function updateViewportState() {
   isCompactNav.value = window.innerWidth <= 1024
+}
+
+function currentSortLabel(value) {
+  const labels = {
+    'date-asc': { en: 'Date: nearest first', lv: 'Datums: tuvākie vispirms' },
+    'date-desc': { en: 'Date: latest first', lv: 'Datums: jaunākie vispirms' },
+    'alpha-asc': { en: 'Alphabet: A-Z', lv: 'Alfabēts: A-Z' },
+    'alpha-desc': { en: 'Alphabet: Z-A', lv: 'Alfabēts: Z-A' },
+    'time-asc': { en: 'Time: earliest first', lv: 'Laiks: agrākie vispirms' },
+    'time-desc': { en: 'Time: latest first', lv: 'Laiks: vēlākie vispirms' },
+  }
+
+  return labels[value]?.[currentLocale.value === 'en' ? 'en' : 'lv'] ?? value
+}
+
+function currentPeriodLabel(value) {
+  const labels = {
+    all: { en: 'All sessions', lv: 'Visas nodarbības' },
+    past: { en: 'Past sessions', lv: 'Iepriekšējās nodarbības' },
+    upcoming: { en: 'Upcoming sessions', lv: 'Tuvākās nodarbības' },
+  }
+
+  return labels[value]?.[currentLocale.value === 'en' ? 'en' : 'lv'] ?? value
 }
 
 function formatStatus(status) {
@@ -1270,7 +1300,7 @@ async function initializePage() {
     groups.value = groupsResponse
     users.value = usersResponse
   } catch (error) {
-    errorMessage.value = extractErrorMessage(error, 'Failed to load sessions.')
+    errorMessage.value = extractErrorMessage(error, t('pages.adminSessions.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -1299,22 +1329,22 @@ async function saveSession() {
     const payload = buildPayload()
 
     if (!payload.group_id) {
-      formError.value = 'Please choose a group for the session.'
+      formError.value = t('pages.adminSessions.chooseGroupRequired')
       return
     }
 
     if (!payload.title) {
-      formError.value = 'Training title is required.'
+      formError.value = t('pages.adminSessions.titleRequired')
       return
     }
 
     if (!payload.weekdays.length || !payload.start_time || !payload.end_time) {
-      formError.value = 'Days of week, start time and end time are required.'
+      formError.value = t('pages.adminSessions.scheduleRequired')
       return
     }
 
     if (Number.isNaN(payload.price) || payload.price < 0) {
-      formError.value = 'Price per training must be a valid non-negative number.'
+      formError.value = t('pages.adminSessions.priceInvalid')
       return
     }
 
@@ -1327,7 +1357,7 @@ async function saveSession() {
     await initializePage()
     closeDialog()
   } catch (error) {
-    formError.value = extractErrorMessage(error, 'Failed to save session.')
+    formError.value = extractErrorMessage(error, t('pages.adminSessions.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -1336,8 +1366,8 @@ async function saveSession() {
 async function deleteSession(session) {
   const isWeeklyTraining = activeView.value === 'plans' && session.template_id
   const message = isWeeklyTraining
-    ? `Delete recurring training "${session.title}" for ${session.group}? This will stop future session dates from being generated.`
-    : `Delete session for ${session.group} on ${formatDate(session.date)}?`
+    ? t('pages.adminSessions.deleteRecurringConfirm', { title: session.title, group: session.group })
+    : t('pages.adminSessions.deleteSessionConfirm', { group: session.group, date: formatDate(session.date) })
   const confirmed = window.confirm(message)
   if (!confirmed) return
 
@@ -1351,7 +1381,7 @@ async function deleteSession(session) {
   } catch (error) {
     errorMessage.value = extractErrorMessage(
       error,
-      isWeeklyTraining ? 'Failed to delete recurring training.' : 'Failed to delete session.'
+      isWeeklyTraining ? t('pages.adminSessions.deleteRecurringFailed') : t('pages.adminSessions.deleteFailed')
     )
   }
 }
@@ -1362,12 +1392,12 @@ async function saveInstanceStatus() {
 
   try {
     if (!selectedInstanceId.value) {
-      statusError.value = 'Please choose a specific session instance.'
+      statusError.value = t('pages.adminSessions.chooseInstanceRequired')
       return
     }
 
     if (!statusForm.value.status) {
-      statusError.value = 'Status is required.'
+      statusError.value = t('pages.adminSessions.statusRequired')
       return
     }
 
@@ -1378,7 +1408,7 @@ async function saveInstanceStatus() {
     await initializePage()
     closeStatusDialog()
   } catch (error) {
-    statusError.value = extractErrorMessage(error, 'Failed to update session status.')
+    statusError.value = extractErrorMessage(error, t('pages.adminSessions.statusUpdateFailed'))
   } finally {
     statusSaving.value = false
   }
@@ -1390,12 +1420,12 @@ async function addChildToSession() {
 
   try {
     if (!selectedChildrenSessionId.value) {
-      sessionChildrenError.value = 'Please choose a specific dated session.'
+      sessionChildrenError.value = t('pages.adminSessions.chooseDatedSessionRequired')
       return
     }
 
     if (!sessionChildForm.value.child_id) {
-      sessionChildrenError.value = 'Please select a child to add.'
+      sessionChildrenError.value = t('pages.adminSessions.selectChildRequired')
       return
     }
 
@@ -1406,7 +1436,7 @@ async function addChildToSession() {
     await refreshSessions()
     sessionChildForm.value.child_id = null
   } catch (error) {
-    sessionChildrenError.value = extractErrorMessage(error, 'Failed to add child to session.')
+    sessionChildrenError.value = extractErrorMessage(error, t('pages.adminSessions.addChildFailed'))
   } finally {
     childAssignmentSaving.value = false
   }
@@ -1418,14 +1448,14 @@ async function removeChildFromSession(student) {
 
   try {
     if (!selectedChildrenSessionId.value) {
-      sessionChildrenError.value = 'Please choose a specific dated session.'
+      sessionChildrenError.value = t('pages.adminSessions.chooseDatedSessionRequired')
       return
     }
 
     await sessionsApi.removeChild(selectedChildrenSessionId.value, student.id)
     await refreshSessions()
   } catch (error) {
-    sessionChildrenError.value = extractErrorMessage(error, 'Failed to remove child from session.')
+    sessionChildrenError.value = extractErrorMessage(error, t('pages.adminSessions.removeChildFailed'))
   } finally {
     childAssignmentSaving.value = false
   }

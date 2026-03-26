@@ -65,7 +65,7 @@
               prepend-icon="mdi-logout"
               @click="handleMobileLogout"
             >
-              Log out
+              {{ t('common.logout') }}
             </v-btn>
           </div>
         </v-navigation-drawer>
@@ -112,11 +112,13 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Schedule</div>
+                  <div class="brand-caption">{{ t('pages.schedule.caption') }}</div>
                 </div>
               </div>
 
               <div class="mobile-header-actions">
+                <AppLanguageSwitch :dark-mode="darkMode" :accent="isCoach ? 'coach' : 'default'" />
+
                 <v-btn
                   icon
                   variant="text"
@@ -166,7 +168,7 @@
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
                   <v-text-field
                     v-model="search"
-                    placeholder="Search schedule"
+                    :placeholder="`${t('common.search')} ${t('pages.schedule.title').toLowerCase()}`"
                     variant="plain"
                     hide-details
                     density="comfortable"
@@ -176,6 +178,8 @@
               </div>
 
               <div class="topbar-tools">
+                <AppLanguageSwitch :dark-mode="darkMode" :accent="isCoach ? 'coach' : 'default'" />
+
                 <div class="icon-badge-wrap">
                   <v-btn
                     icon
@@ -219,8 +223,8 @@
             <div class="schedule-card">
               <div class="schedule-header">
                 <div>
-                  <h1 class="schedule-title">Schedule</h1>
-                  <div class="schedule-subtitle">Here you can view the training schedule for the upcoming month</div>
+                  <h1 class="schedule-title">{{ t('pages.schedule.title') }}</h1>
+                  <div class="schedule-subtitle">{{ t('pages.schedule.subtitle') }}</div>
                 </div>
               </div>
 
@@ -261,23 +265,23 @@
                   <div class="schedule-grid">
                     <div class="schedule-meta-grid">
                       <div class="slot-block">
-                        <div class="meta-label">Date</div>
+                        <div class="meta-label">{{ t('pages.schedule.dateLabel') }}</div>
                         <div class="slot-value">{{ formatCardDate(training.date) }}</div>
                       </div>
 
                       <div class="slot-block">
-                        <div class="meta-label">From</div>
+                        <div class="meta-label">{{ t('pages.schedule.fromLabel') }}</div>
                         <div class="slot-value">{{ training.start }}</div>
                       </div>
 
                       <div class="slot-block">
-                        <div class="meta-label">To</div>
+                        <div class="meta-label">{{ t('pages.schedule.toLabel') }}</div>
                         <div class="slot-value">{{ training.end }}</div>
                       </div>
                     </div>
 
                     <div class="course-block">
-                      <div class="meta-label">Training</div>
+                      <div class="meta-label">{{ t('pages.schedule.trainingLabel') }}</div>
                       <div class="course-header-row">
                         <div class="course-title">{{ training.title }}</div>
                         <v-chip
@@ -285,7 +289,7 @@
                           size="small"
                           class="status-chip status-chip-cancelled"
                         >
-                          Cancelled
+                          {{ t('pages.schedule.cancelled') }}
                         </v-chip>
                       </div>
                     </div>
@@ -295,27 +299,27 @@
                       class="schedule-detail-row"
                     >
                       <div class="schedule-detail-item">
-                        <div class="meta-label">Day</div>
+                        <div class="meta-label">{{ t('pages.schedule.dayLabel') }}</div>
                         <div class="slot-value">{{ formatWeekday(training.date) }}</div>
                       </div>
 
                       <div class="schedule-detail-item">
-                        <div class="meta-label">Duration</div>
+                        <div class="meta-label">{{ t('pages.schedule.durationLabel') }}</div>
                         <div class="slot-value">{{ formatDuration(training.start, training.end) }}</div>
                       </div>
 
                       <div class="schedule-detail-item">
-                        <div class="meta-label">Status</div>
+                        <div class="meta-label">{{ t('pages.schedule.statusLabel') }}</div>
                         <div class="slot-value">{{ formatTrainingStatus(training.status) }}</div>
                       </div>
 
                       <div class="schedule-detail-item">
-                        <div class="meta-label">Age</div>
+                        <div class="meta-label">{{ t('pages.schedule.ageLabel') }}</div>
                         <div class="slot-value">{{ training.description }}</div>
                       </div>
 
                       <div class="schedule-detail-item schedule-detail-item-wide">
-                        <div class="meta-label">Group</div>
+                        <div class="meta-label">{{ t('pages.schedule.groupLabel') }}</div>
                         <div class="meeting-link">{{ training.group }}</div>
                       </div>
                     </div>
@@ -329,7 +333,7 @@
                           >
                         </v-avatar>
                         <div>
-                          <div class="meta-label">{{ isCoach ? 'Students' : 'Trainer' }}</div>
+                          <div class="meta-label">{{ isCoach ? t('pages.schedule.studentsLabel') : t('pages.schedule.trainerLabel') }}</div>
                           <div class="teacher-name">{{ isCoach ? training.students.length : training.trainer }}</div>
                         </div>
                       </div>
@@ -341,14 +345,14 @@
                         class="expand-link"
                         @click="toggleExpanded(training.id)"
                       >
-                        {{ expandedId === training.id ? 'Show less' : 'Show more' }}
+                        {{ expandedId === training.id ? t('common.showLess') : t('common.showMore') }}
                       </button>
                     </div>
                   </div>
 
                   <div v-if="expandedId === training.id" class="schedule-footer">
                     <div class="students-block">
-                      <div class="meta-label">Students</div>
+                      <div class="meta-label">{{ t('pages.schedule.studentsLabel') }}</div>
                       <div class="students-row">
                         <v-avatar
                           v-for="student in training.students.slice(0, 4)"
@@ -370,7 +374,7 @@
                         class="action-btn"
                         @click="cancelTraining(training)"
                       >
-                        Cancel
+                        {{ t('pages.schedule.cancelAction') }}
                       </v-btn>
                       <v-btn
                         v-else
@@ -379,10 +383,10 @@
                         class="action-btn"
                         @click="restoreTraining(training)"
                       >
-                        Restore
+                        {{ t('pages.schedule.restoreAction') }}
                       </v-btn>
                       <v-btn color="primary" class="action-btn" :to="attendanceRouteFor(training)">
-                        Attendance
+                        {{ t('pages.schedule.attendanceAction') }}
                       </v-btn>
                     </div>
                   </div>
@@ -396,7 +400,7 @@
                   :disabled="currentPage === 1"
                   @click="currentPage = Math.max(1, currentPage - 1)"
                 >
-                  Prev
+                  {{ t('common.prev') }}
                 </v-btn>
 
                 <div class="pagination-pages">
@@ -418,7 +422,7 @@
                   :disabled="currentPage === totalPages"
                   @click="currentPage = Math.min(totalPages, currentPage + 1)"
                 >
-                  Next
+                  {{ t('common.next') }}
                 </v-btn>
               </div>
             </div>
@@ -446,14 +450,17 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import AppPageFooter from '../components/AppPageFooter.vue'
+import AppLanguageSwitch from '../components/AppLanguageSwitch.vue'
 import { useNotifications } from '../composables/useNotifications'
 import { useSelectedChild } from '../composables/useSelectedChild'
+import { useLocale } from '../i18n'
 import { sessionsApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
 import { isSameNotificationTarget, resolveNotificationTarget } from '../utils/notifications'
 
 const router = useRouter()
+const { t } = useLocale()
 const search = ref('')
 const tab = ref('upcoming')
 const notificationsDialog = ref(false)
@@ -466,10 +473,10 @@ const isCompactNav = ref(false)
 const darkModeStorageKey = 'app-dark-mode'
 const loading = ref(false)
 
-const tabs = [
-  { value: 'upcoming', label: 'Upcoming' },
-  { value: 'past', label: 'Past' }
-]
+const tabs = computed(() => [
+  { value: 'upcoming', label: t('pages.schedule.upcoming') },
+  { value: 'past', label: t('pages.schedule.past') }
+])
 
 const avatarFor = (seed, label = seed) => createAvatarDataUri(seed, label)
 const { user } = useAuth()
@@ -489,16 +496,16 @@ const profileName = computed(() => {
 const isParent = computed(() => user.value?.role === 'parent')
 const isCoach = computed(() => user.value?.role === 'coach')
 const profileAlt = computed(() => (isCoach.value ? 'Coach profile' : 'User profile'))
-const workspaceCaption = computed(() => (isCoach.value ? 'Coach workspace' : 'Sport Workspace'))
+const workspaceCaption = computed(() => (isCoach.value ? t('workspace.coach') : t('workspace.sport')))
 const pageTheme = computed(() => (isCoach.value ? (darkMode.value ? 'coachDark' : 'coachLight') : undefined))
 const canManageTrainingActions = computed(() => ['admin', 'coach'].includes(user.value?.role ?? ''))
 const navItems = computed(() => [
-  { label: 'Home', icon: 'mdi-home-outline', to: '/home' },
-  { label: 'Schedule', icon: 'mdi-calendar-month-outline', to: '/schedule' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/groups' },
-  { label: 'Attendance', icon: 'mdi-check-circle-outline', to: user.value?.role === 'coach' ? '/coach-attendance' : '/attendance' },
+  { label: t('common.home'), icon: 'mdi-home-outline', to: '/home' },
+  { label: t('common.schedule'), icon: 'mdi-calendar-month-outline', to: '/schedule' },
+  { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/groups' },
+  { label: t('common.attendance'), icon: 'mdi-check-circle-outline', to: user.value?.role === 'coach' ? '/coach-attendance' : '/attendance' },
   ...(user.value?.role === 'parent'
-    ? [{ label: 'Payments', icon: 'mdi-credit-card-outline', to: '/payments' }]
+    ? [{ label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/payments' }]
     : [])
 ])
 const profileEmail = computed(() => user.value?.email ?? 'user@sportsystem.app')
@@ -663,8 +670,8 @@ function getRelativeDayLabel(date) {
   const target = new Date(`${date}T00:00:00`)
   const diffDays = Math.round((target.getTime() - today.value.getTime()) / 86400000)
 
-  if (diffDays === 0) return 'Today'
-  if (diffDays === 1) return 'Tomorrow'
+  if (diffDays === 0) return t('pages.schedule.today')
+  if (diffDays === 1) return t('pages.schedule.tomorrow')
   return ''
 }
 
@@ -697,7 +704,9 @@ function formatDuration(start, end) {
 }
 
 function formatTrainingStatus(status) {
-  return status ? `${status.charAt(0).toUpperCase()}${status.slice(1)}` : 'Planned'
+  if (!status) return t('pages.attendance.planned')
+  if (String(status).toLowerCase() === 'cancelled') return t('pages.schedule.cancelled')
+  return `${status.charAt(0).toUpperCase()}${status.slice(1)}`
 }
 
 function isCancelledTraining(status) {

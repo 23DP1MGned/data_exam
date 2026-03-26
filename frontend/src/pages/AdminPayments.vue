@@ -19,7 +19,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Admin workspace</div>
+                <div class="brand-caption">{{ t('workspace.admin') }}</div>
               </div>
             </div>
 
@@ -57,7 +57,7 @@
               prepend-icon="mdi-logout"
               @click="handleMobileLogout"
             >
-              Log out
+              {{ t('common.logout') }}
             </v-btn>
           </div>
         </v-navigation-drawer>
@@ -70,7 +70,7 @@
               </div>
               <div class="brand-text">
                 <div class="brand-name">SportSystem</div>
-                <div class="brand-caption">Admin workspace</div>
+                <div class="brand-caption">{{ t('workspace.admin') }}</div>
               </div>
             </div>
 
@@ -104,11 +104,13 @@
                 </div>
                 <div class="mobile-brand-copy">
                   <div class="brand-name">SportSystem</div>
-                  <div class="brand-caption">Admin Payments</div>
+                  <div class="brand-caption">{{ t('pages.adminPayments.caption') }}</div>
                 </div>
               </div>
 
               <div class="mobile-header-actions">
+                <AppLanguageSwitch :dark-mode="darkMode" accent="admin" />
+
                 <v-btn
                   icon
                   variant="text"
@@ -148,7 +150,7 @@
                   <v-icon size="20" class="search-shell-icon">mdi-magnify</v-icon>
                   <v-text-field
                     v-model="search"
-                    placeholder="Search payments"
+                    :placeholder="t('pages.adminPayments.searchPlaceholder')"
                     variant="plain"
                     hide-details
                     density="comfortable"
@@ -158,6 +160,8 @@
               </div>
 
               <div class="topbar-tools">
+                <AppLanguageSwitch :dark-mode="darkMode" accent="admin" />
+
                 <div class="icon-badge-wrap">
                   <v-btn
                     icon
@@ -201,9 +205,9 @@
             <div class="payments-card">
               <div class="payments-header">
                 <div>
-                  <h1 class="payments-title">Admin Payments</h1>
+                  <h1 class="payments-title">{{ t('pages.adminPayments.title') }}</h1>
                   <div class="payments-subtitle">
-                    System-wide overview of collected, pending and overdue payments.
+                    {{ t('pages.adminPayments.subtitle') }}
                   </div>
                 </div>
               </div>
@@ -217,27 +221,27 @@
 
               <div class="finder-card">
                 <div>
-                  <div class="list-title">Person Ledger</div>
-                  <div class="payments-subtitle">Open a dedicated search window to review debts, receipts and payment history for one person.</div>
+                  <div class="list-title">{{ t('pages.adminPayments.personLedger') }}</div>
+                  <div class="payments-subtitle">{{ t('pages.adminPayments.personLedgerSubtitle') }}</div>
                 </div>
 
                 <v-btn color="primary" class="person-ledger-btn" prepend-icon="mdi-account-search-outline" @click="personLedgerDialog = true">
-                  Find person
+                  {{ t('common.findPerson') }}
                 </v-btn>
               </div>
 
               <div v-if="loading" class="state-wrap loading-state">
                 <v-progress-circular indeterminate color="primary" size="28" />
-                <span>Loading payments...</span>
+                <span>{{ t('pages.adminPayments.loadingPayments') }}</span>
               </div>
 
               <template v-else>
                 <div class="lists-grid">
                   <section class="list-card">
                     <div class="list-header">
-                      <div class="list-title">Upcoming Payments To Collect</div>
+                      <div class="list-title">{{ t('pages.adminPayments.upcomingPaymentsToCollect') }}</div>
                       <button type="button" class="show-all-btn" @click="dueDialog = true">
-                        Show all
+                        {{ t('common.showAll') }}
                       </button>
                     </div>
 
@@ -251,7 +255,7 @@
                           <div class="payment-name">{{ formatDueItemTitle(item) }}</div>
                           <div class="payment-meta">{{ formatDueItemMeta(item) }}</div>
                           <div class="payment-secondary">{{ item.child_name }}</div>
-                          <div v-if="item.parent_name" class="payment-secondary">Parent: {{ item.parent_name }}</div>
+                          <div v-if="item.parent_name" class="payment-secondary">{{ t('pages.adminPayments.parentPrefix') }}: {{ item.parent_name }}</div>
                           <div class="payment-secondary">{{ formatDueItemSecondary(item) }}</div>
                           <div class="payment-deadline">{{ formatDueItemDeadlineLabel(item) }}: {{ item.deadline }}</div>
                         </div>
@@ -264,14 +268,14 @@
                         </div>
                       </article>
                     </div>
-                    <div v-else class="empty-state">No upcoming unpaid payments.</div>
+                    <div v-else class="empty-state">{{ t('pages.adminPayments.noUpcomingUnpaidPayments') }}</div>
                   </section>
 
                   <section class="list-card">
                     <div class="list-header">
-                      <div class="list-title">Overdue Debtors</div>
+                      <div class="list-title">{{ t('pages.adminPayments.overdueDebtors') }}</div>
                       <button type="button" class="show-all-btn" @click="breakdownDialog = true">
-                        Show all
+                        {{ t('common.showAll') }}
                       </button>
                     </div>
 
@@ -283,30 +287,30 @@
                       >
                         <div class="payment-main">
                           <div class="payment-name">{{ item.child_name }}</div>
-                          <div v-if="item.parent_name" class="payment-meta">Parent: {{ item.parent_name }}</div>
-                          <div class="payment-secondary">{{ item.overdue_count }} overdue trainings</div>
-                          <div class="payment-secondary">Since {{ formatSinceDate(item.oldest_deadline_at) }}</div>
-                          <div class="payment-deadline">Oldest debt: {{ formatOverdueAge(item.max_overdue_days) }}</div>
+                          <div v-if="item.parent_name" class="payment-meta">{{ t('pages.adminPayments.parentPrefix') }}: {{ item.parent_name }}</div>
+                          <div class="payment-secondary">{{ item.overdue_count }} {{ t('pages.adminPayments.overdueTrainings') }}</div>
+                          <div class="payment-secondary">{{ t('pages.adminPayments.since') }} {{ formatSinceDate(item.oldest_deadline_at) }}</div>
+                          <div class="payment-deadline">{{ t('pages.adminPayments.oldestDebt') }}: {{ formatOverdueAge(item.max_overdue_days) }}</div>
                         </div>
 
                         <div class="payment-side">
                           <div class="payment-amount">{{ formatCurrency(item.total_amount) }}</div>
                           <v-chip size="small" color="red" class="payment-chip" dark>
-                            Overdue
+                            {{ t('pages.adminPayments.overdue') }}
                           </v-chip>
                         </div>
                       </article>
                     </div>
-                    <div v-else class="empty-state">No overdue debtors right now.</div>
+                    <div v-else class="empty-state">{{ t('pages.adminPayments.noOverdueDebtors') }}</div>
                   </section>
                 </div>
 
                 <div class="lists-grid">
                   <section class="list-card">
                     <div class="list-header">
-                      <div class="list-title">Payment Records</div>
+                      <div class="list-title">{{ t('pages.adminPayments.paymentRecordsTitle') }}</div>
                       <button type="button" class="show-all-btn" @click="recordsDialog = true">
-                        Show all
+                        {{ t('common.showAll') }}
                       </button>
                     </div>
 
@@ -317,9 +321,9 @@
                         class="payment-item"
                       >
                         <div class="payment-main">
-                          <div class="payment-name">{{ item.child_name || `Child #${item.child_id}` }}</div>
+                          <div class="payment-name">{{ item.child_name || `${t('pages.adminPayments.child')} #${item.child_id}` }}</div>
                           <div class="payment-meta">
-                            Parent: {{ item.parent_name || `User #${item.parent_id}` }}
+                            {{ t('pages.adminPayments.parentPrefix') }}: {{ item.parent_name || `User #${item.parent_id}` }}
                           </div>
                           <div class="payment-secondary">
                             {{ item.method }}<span v-if="item.created_at"> · {{ formatDateTime(item.created_at) }}</span>
@@ -333,7 +337,7 @@
                           </v-chip>
                           <div class="payment-actions payment-actions-record">
                             <v-btn variant="text" class="record-action-btn receipt-action-btn" @click="openReceipt(item)">
-                              View receipt
+                              {{ t('common.viewReceipt') }}
                             </v-btn>
                             <v-btn
                               v-if="item.status === 'paid'"
@@ -343,20 +347,20 @@
                               :loading="refundLoadingId === item.id"
                               @click="refundPayment(item)"
                             >
-                              Refund
+                              {{ t('common.refund') }}
                             </v-btn>
                           </div>
                         </div>
                       </article>
                     </div>
-                    <div v-else class="empty-state">No payment records found.</div>
+                    <div v-else class="empty-state">{{ t('pages.adminPayments.noPaymentRecordsFound') }}</div>
                   </section>
 
                   <section class="list-card">
                     <div class="list-header">
-                      <div class="list-title">Recent Activity</div>
+                      <div class="list-title">{{ t('pages.adminPayments.recentActivityTitle') }}</div>
                       <button type="button" class="show-all-btn" @click="activityDialog = true">
-                        Show all
+                        {{ t('common.showAll') }}
                       </button>
                     </div>
 
@@ -383,7 +387,7 @@
                         </div>
                       </article>
                     </div>
-                    <div v-else class="empty-state">No recent activity found.</div>
+                    <div v-else class="empty-state">{{ t('pages.adminPayments.noRecentActivityFound') }}</div>
                   </section>
                 </div>
               </template>
@@ -395,8 +399,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Recent Activity</div>
-                <div class="list-dialog-subtitle">Unified timeline of trainings and payment actions.</div>
+                <div class="list-dialog-title">{{ t('pages.adminPayments.allRecentActivity') }}</div>
+                <div class="list-dialog-subtitle">{{ t('pages.adminPayments.allRecentActivitySubtitle') }}</div>
               </div>
               <v-btn icon variant="text" @click="activityDialog = false">
                 <v-icon>mdi-close</v-icon>
@@ -429,8 +433,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Upcoming Payments To Collect</div>
-                <div class="list-dialog-subtitle">Pending individual and monthly payments across the system.</div>
+                <div class="list-dialog-title">{{ t('pages.adminPayments.allUpcomingPaymentsToCollect') }}</div>
+                <div class="list-dialog-subtitle">{{ t('pages.adminPayments.allUpcomingPaymentsSubtitle') }}</div>
               </div>
               <v-btn icon variant="text" @click="dueDialog = false">
                 <v-icon>mdi-close</v-icon>
@@ -443,7 +447,7 @@
                   <div class="payment-name">{{ formatDueItemTitle(item) }}</div>
                   <div class="payment-meta">{{ formatDueItemMeta(item) }}</div>
                   <div class="payment-secondary">{{ item.child_name }}</div>
-                  <div v-if="item.parent_name" class="payment-secondary">Parent: {{ item.parent_name }}</div>
+                  <div v-if="item.parent_name" class="payment-secondary">{{ t('pages.adminPayments.parentPrefix') }}: {{ item.parent_name }}</div>
                   <div class="payment-secondary">{{ formatDueItemSecondary(item) }}</div>
                   <div class="payment-deadline">{{ formatDueItemDeadlineLabel(item) }}: {{ item.deadline }}</div>
                 </div>
@@ -463,8 +467,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Payment Records</div>
-                <div class="list-dialog-subtitle">Processed payment entries with parent and child references.</div>
+                <div class="list-dialog-title">{{ t('pages.adminPayments.allPaymentRecords') }}</div>
+                <div class="list-dialog-subtitle">{{ t('pages.adminPayments.allPaymentRecordsSubtitle') }}</div>
               </div>
               <v-btn icon variant="text" @click="recordsDialog = false">
                 <v-icon>mdi-close</v-icon>
@@ -474,8 +478,8 @@
             <div class="dialog-list-wrap">
               <article v-for="item in filteredPaymentRecords" :key="`dialog-payment-${item.id}`" class="payment-item">
                 <div class="payment-main">
-                  <div class="payment-name">{{ item.child_name || `Child #${item.child_id}` }}</div>
-                  <div class="payment-meta">Parent: {{ item.parent_name || `User #${item.parent_id}` }}</div>
+                  <div class="payment-name">{{ item.child_name || `${t('pages.adminPayments.child')} #${item.child_id}` }}</div>
+                  <div class="payment-meta">{{ t('pages.adminPayments.parentPrefix') }}: {{ item.parent_name || `User #${item.parent_id}` }}</div>
                   <div class="payment-secondary">
                     {{ item.method }}<span v-if="item.created_at"> · {{ formatDateTime(item.created_at) }}</span>
                   </div>
@@ -488,7 +492,7 @@
                   </v-chip>
                   <div class="payment-actions payment-actions-record">
                     <v-btn variant="text" class="record-action-btn receipt-action-btn" @click="openReceipt(item)">
-                      View receipt
+                      {{ t('common.viewReceipt') }}
                     </v-btn>
                     <v-btn
                       v-if="item.status === 'paid'"
@@ -498,7 +502,7 @@
                       :loading="refundLoadingId === item.id"
                       @click="refundPayment(item)"
                     >
-                      Refund
+                      {{ t('common.refund') }}
                     </v-btn>
                   </div>
                 </div>
@@ -511,9 +515,9 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Debts</div>
+                <div class="list-dialog-title">{{ t('pages.adminPayments.allDebts') }}</div>
                 <div class="list-dialog-subtitle">
-                  {{ selectedPersonOption ? `Overdue debts for ${selectedPersonOption.label}.` : 'Overdue debts for the selected person.' }}
+                  {{ personDueDialogSubtitle }}
                 </div>
               </div>
               <v-btn icon variant="text" @click="personDueDialog = false">
@@ -527,7 +531,7 @@
                   <div class="payment-name">{{ formatDueItemTitle(item) }}</div>
                   <div class="payment-meta">{{ formatDueItemMeta(item) }}</div>
                   <div class="payment-secondary">{{ item.child_name }}</div>
-                  <div v-if="item.parent_name" class="payment-secondary">Parent: {{ item.parent_name }}</div>
+                  <div v-if="item.parent_name" class="payment-secondary">{{ t('pages.adminPayments.parentPrefix') }}: {{ item.parent_name }}</div>
                   <div class="payment-secondary">{{ formatDueItemSecondary(item) }}</div>
                   <div class="payment-deadline">{{ formatDueItemDeadlineLabel(item) }}: {{ item.deadline }}</div>
                 </div>
@@ -547,9 +551,9 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Transactions</div>
+                <div class="list-dialog-title">{{ t('pages.adminPayments.allTransactions') }}</div>
                 <div class="list-dialog-subtitle">
-                  {{ selectedPersonOption ? `Transaction history for ${selectedPersonOption.label}.` : 'Transactions for the selected person.' }}
+                  {{ personTransactionsDialogSubtitle }}
                 </div>
               </div>
               <v-btn icon variant="text" @click="personTransactionsDialog = false">
@@ -560,8 +564,8 @@
             <div class="dialog-list-wrap">
               <article v-for="item in personPaymentRecords" :key="`person-payment-dialog-${item.id}`" class="payment-item">
                 <div class="payment-main">
-                  <div class="payment-name">{{ item.child_name || `Child #${item.child_id}` }}</div>
-                  <div class="payment-meta">Parent: {{ item.parent_name || `User #${item.parent_id}` }}</div>
+                  <div class="payment-name">{{ item.child_name || `${t('pages.adminPayments.child')} #${item.child_id}` }}</div>
+                  <div class="payment-meta">{{ t('pages.adminPayments.parentPrefix') }}: {{ item.parent_name || `User #${item.parent_id}` }}</div>
                   <div class="payment-secondary">
                     {{ item.method }}<span v-if="item.created_at"> · {{ formatDateTime(item.created_at) }}</span>
                   </div>
@@ -574,7 +578,7 @@
                   </v-chip>
                   <div class="payment-actions">
                     <v-btn variant="text" class="record-action-btn receipt-action-btn" @click="openReceipt(item)">
-                      View receipt
+                      {{ t('common.viewReceipt') }}
                     </v-btn>
                     <v-btn
                       v-if="item.status === 'paid'"
@@ -584,7 +588,7 @@
                       :loading="refundLoadingId === item.id"
                       @click="refundPayment(item)"
                     >
-                      Refund
+                      {{ t('common.refund') }}
                     </v-btn>
                   </div>
                 </div>
@@ -597,8 +601,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">Find Person Payments</div>
-                <div class="list-dialog-subtitle">Search a parent or child to review debts, transactions and receipts.</div>
+                <div class="list-dialog-title">{{ t('pages.adminPayments.findPersonPayments') }}</div>
+                <div class="list-dialog-subtitle">{{ t('pages.adminPayments.findPersonPaymentsSubtitle') }}</div>
               </div>
               <v-btn icon variant="text" @click="personLedgerDialog = false">
                 <v-icon>mdi-close</v-icon>
@@ -611,10 +615,10 @@
                 :items="personOptions"
                 item-title="label"
                 item-value="value"
-                label="Parent or child"
+                :label="t('pages.adminPayments.parentOrChild')"
                 variant="outlined"
                 class="person-field"
-                placeholder="Search by name"
+                :placeholder="t('pages.adminPayments.searchByName')"
                 :menu-props="selectMenuProps"
                 clearable
               />
@@ -629,14 +633,14 @@
               <div class="person-ledger-grid">
                 <section class="list-card">
                   <div class="list-header">
-                    <div class="list-title">Debts</div>
+                    <div class="list-title">{{ t('pages.adminPayments.debtsTitle') }}</div>
                     <button
                       v-if="selectedPersonFilter && personDueItems.length"
                       type="button"
                       class="show-all-btn"
                       @click="personDueDialog = true"
                     >
-                      View all
+                      {{ t('common.viewAll') }}
                     </button>
                   </div>
 
@@ -650,7 +654,7 @@
                         <div class="payment-name">{{ formatDueItemTitle(item) }}</div>
                         <div class="payment-meta">{{ formatDueItemMeta(item) }}</div>
                         <div class="payment-secondary">{{ item.child_name }}</div>
-                        <div v-if="item.parent_name" class="payment-secondary">Parent: {{ item.parent_name }}</div>
+                        <div v-if="item.parent_name" class="payment-secondary">{{ t('pages.adminPayments.parentPrefix') }}: {{ item.parent_name }}</div>
                         <div class="payment-secondary">{{ formatDueItemSecondary(item) }}</div>
                         <div class="payment-deadline">{{ formatDueItemDeadlineLabel(item) }}: {{ item.deadline }}</div>
                       </div>
@@ -664,20 +668,20 @@
                     </article>
                   </div>
                   <div v-else class="empty-state person-empty-state">
-                    {{ selectedPersonFilter ? 'No debts for this person.' : 'Select a person to view debts.' }}
+                    {{ selectedPersonFilter ? t('pages.adminPayments.noDebtsForPerson') : t('pages.adminPayments.selectPersonToViewDebts') }}
                   </div>
                 </section>
 
                 <section class="list-card">
                   <div class="list-header">
-                    <div class="list-title">Transactions</div>
+                    <div class="list-title">{{ t('pages.adminPayments.transactionsTitle') }}</div>
                     <button
                       v-if="selectedPersonFilter && personPaymentRecords.length"
                       type="button"
                       class="show-all-btn"
                       @click="personTransactionsDialog = true"
                     >
-                      View all
+                      {{ t('common.viewAll') }}
                     </button>
                   </div>
 
@@ -688,8 +692,8 @@
                       class="payment-item"
                     >
                       <div class="payment-main">
-                        <div class="payment-name">{{ item.child_name || `Child #${item.child_id}` }}</div>
-                        <div class="payment-meta">Parent: {{ item.parent_name || `User #${item.parent_id}` }}</div>
+                        <div class="payment-name">{{ item.child_name || `${t('pages.adminPayments.child')} #${item.child_id}` }}</div>
+                        <div class="payment-meta">{{ t('pages.adminPayments.parentPrefix') }}: {{ item.parent_name || `User #${item.parent_id}` }}</div>
                         <div class="payment-secondary">
                           {{ item.method }}<span v-if="item.created_at"> · {{ formatDateTime(item.created_at) }}</span>
                         </div>
@@ -702,7 +706,7 @@
                         </v-chip>
                         <div class="payment-actions payment-actions-record">
                           <v-btn variant="text" class="record-action-btn receipt-action-btn" @click="openReceipt(item)">
-                            View receipt
+                            {{ t('common.viewReceipt') }}
                           </v-btn>
                           <v-btn
                             v-if="item.status === 'paid'"
@@ -712,14 +716,14 @@
                             :loading="refundLoadingId === item.id"
                             @click="refundPayment(item)"
                           >
-                            Refund
+                            {{ t('common.refund') }}
                           </v-btn>
                         </div>
                       </div>
                     </article>
                   </div>
                   <div v-else class="empty-state person-empty-state">
-                    {{ selectedPersonFilter ? 'No transactions for this person.' : 'Select a person to view transactions.' }}
+                    {{ selectedPersonFilter ? t('pages.adminPayments.noTransactionsForPerson') : t('pages.adminPayments.selectPersonToViewTransactions') }}
                   </div>
                 </section>
               </div>
@@ -731,8 +735,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">All Overdue Debtors</div>
-                <div class="list-dialog-subtitle">People with overdue unpaid trainings and how long the debt has been outstanding.</div>
+                <div class="list-dialog-title">{{ t('pages.adminPayments.allOverdueDebtors') }}</div>
+                <div class="list-dialog-subtitle">{{ t('pages.adminPayments.allOverdueDebtorsSubtitle') }}</div>
               </div>
               <v-btn icon variant="text" @click="breakdownDialog = false">
                 <v-icon>mdi-close</v-icon>
@@ -747,16 +751,16 @@
               >
                 <div class="payment-main">
                   <div class="payment-name">{{ item.child_name }}</div>
-                  <div v-if="item.parent_name" class="payment-meta">Parent: {{ item.parent_name }}</div>
-                  <div class="payment-secondary">{{ item.overdue_count }} overdue trainings</div>
-                  <div class="payment-secondary">Since {{ formatSinceDate(item.oldest_deadline_at) }}</div>
-                  <div class="payment-deadline">Oldest debt: {{ formatOverdueAge(item.max_overdue_days) }}</div>
+                  <div v-if="item.parent_name" class="payment-meta">{{ t('pages.adminPayments.parentPrefix') }}: {{ item.parent_name }}</div>
+                  <div class="payment-secondary">{{ item.overdue_count }} {{ t('pages.adminPayments.overdueTrainings') }}</div>
+                  <div class="payment-secondary">{{ t('pages.adminPayments.since') }} {{ formatSinceDate(item.oldest_deadline_at) }}</div>
+                  <div class="payment-deadline">{{ t('pages.adminPayments.oldestDebt') }}: {{ formatOverdueAge(item.max_overdue_days) }}</div>
                 </div>
 
                 <div class="payment-side">
                   <div class="payment-amount">{{ formatCurrency(item.total_amount) }}</div>
                   <v-chip size="small" color="red" class="payment-chip" dark>
-                    Overdue
+                    {{ t('pages.adminPayments.overdue') }}
                   </v-chip>
                 </div>
               </article>
@@ -768,8 +772,8 @@
           <v-card class="dialog-card list-dialog-card" :class="{ 'list-dialog-card-dark': darkMode }">
             <div class="list-dialog-header">
               <div>
-                <div class="list-dialog-title">Payment Receipt</div>
-                <div class="list-dialog-subtitle">Receipt details for the selected payment.</div>
+                <div class="list-dialog-title">{{ t('pages.adminPayments.paymentReceipt') }}</div>
+                <div class="list-dialog-subtitle">{{ t('pages.adminPayments.receiptSubtitle') }}</div>
               </div>
               <v-btn icon variant="text" @click="receiptDialog = false">
                 <v-icon>mdi-close</v-icon>
@@ -790,8 +794,8 @@
               <div class="receipt-summary-card">
                 <div class="receipt-top-row">
                   <div>
-                    <div class="payment-name">{{ selectedPaymentRecord.child_name || `Child #${selectedPaymentRecord.child_id}` }}</div>
-                    <div class="payment-meta">Parent: {{ selectedPaymentRecord.parent_name || `User #${selectedPaymentRecord.parent_id}` }}</div>
+                    <div class="payment-name">{{ selectedPaymentRecord.child_name || `${t('pages.adminPayments.child')} #${selectedPaymentRecord.child_id}` }}</div>
+                    <div class="payment-meta">{{ t('pages.adminPayments.parentPrefix') }}: {{ selectedPaymentRecord.parent_name || `User #${selectedPaymentRecord.parent_id}` }}</div>
                   </div>
                   <v-chip size="small" :color="getStatusColor(capitalize(selectedPaymentRecord.status))" class="payment-chip" dark>
                     {{ capitalize(selectedPaymentRecord.status) }}
@@ -800,25 +804,25 @@
 
                 <div class="receipt-grid">
                   <div class="info-item">
-                    <span class="info-label">Amount</span>
+                    <span class="info-label">{{ t('pages.adminPayments.amount') }}</span>
                     <span class="info-value">{{ formatCurrency(selectedPaymentRecord.amount) }}</span>
                   </div>
                   <div class="info-item">
-                    <span class="info-label">Method</span>
-                    <span class="info-value">{{ selectedPaymentRecord.method || 'Not set' }}</span>
+                    <span class="info-label">{{ t('pages.adminPayments.method') }}</span>
+                    <span class="info-value">{{ selectedPaymentRecord.method || t('pages.adminPayments.notSet') }}</span>
                   </div>
                   <div class="info-item">
-                    <span class="info-label">Transaction ID</span>
-                    <span class="info-value">{{ selectedPaymentRecord.transaction_id || 'Not set' }}</span>
+                    <span class="info-label">{{ t('pages.adminPayments.transactionId') }}</span>
+                    <span class="info-value">{{ selectedPaymentRecord.transaction_id || t('pages.adminPayments.notSet') }}</span>
                   </div>
                   <div class="info-item">
-                    <span class="info-label">Created</span>
-                    <span class="info-value">{{ selectedPaymentRecord.created_at ? formatDateTime(selectedPaymentRecord.created_at) : 'Not set' }}</span>
+                    <span class="info-label">{{ t('pages.adminPayments.created') }}</span>
+                    <span class="info-value">{{ selectedPaymentRecord.created_at ? formatDateTime(selectedPaymentRecord.created_at) : t('pages.adminPayments.notSet') }}</span>
                   </div>
                 </div>
               </div>
 
-              <div class="list-title receipt-items-title">Receipt items</div>
+              <div class="list-title receipt-items-title">{{ t('pages.adminPayments.receiptItems') }}</div>
               <div class="dialog-list-wrap receipt-items-wrap">
                 <article
                   v-for="item in selectedPaymentRecord.items || []"
@@ -843,7 +847,7 @@
                   prepend-icon="mdi-download-outline"
                   @click="downloadReceipt(selectedPaymentRecord)"
                 >
-                  Download receipt
+                  {{ t('pages.payments.downloadReceipt') }}
                 </v-btn>
               </div>
             </div>
@@ -871,7 +875,9 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppNotificationsDialog from '../components/AppNotificationsDialog.vue'
 import AppPageFooter from '../components/AppPageFooter.vue'
+import AppLanguageSwitch from '../components/AppLanguageSwitch.vue'
 import { useNotifications } from '../composables/useNotifications'
+import { useLocale } from '../i18n'
 import { paymentsApi } from '../services/api'
 import { logout, useAuth } from '../services/auth'
 import { createAvatarDataUri } from '../utils/avatar'
@@ -897,18 +903,19 @@ const selectedPersonFilter = ref(null)
 const refundLoadingId = ref(null)
 const paymentActionError = ref('')
 const darkModeStorageKey = 'app-dark-mode'
+const { t, currentLocale } = useLocale()
 const selectMenuProps = computed(() => ({
   contentClass: darkMode.value ? 'admin-select-menu admin-select-menu-dark' : 'admin-select-menu',
   theme: darkMode.value ? 'dark' : 'light'
 }))
 
-const navItems = [
-  { label: 'Admin Panel', icon: 'mdi-shield-crown-outline', to: '/admin' },
-  { label: 'Users', icon: 'mdi-account-multiple-outline', to: '/admin-users' },
-  { label: 'Groups', icon: 'mdi-account-group-outline', to: '/manage-groups' },
-  { label: 'Sessions', icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
-  { label: 'Payments', icon: 'mdi-credit-card-outline', to: '/admin-payments' }
-]
+const navItems = computed(() => [
+  { label: t('pages.adminHome.caption'), icon: 'mdi-shield-crown-outline', to: '/admin' },
+  { label: t('common.users'), icon: 'mdi-account-multiple-outline', to: '/admin-users' },
+  { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/manage-groups' },
+  { label: t('common.sessions'), icon: 'mdi-calendar-clock-outline', to: '/manage-sessions' },
+  { label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/admin-payments' }
+])
 
 const paymentsData = ref({
   summary: {
@@ -951,6 +958,18 @@ const paymentRecords = computed(() =>
 )
 const selectedPaymentRecord = computed(() => paymentRecords.value.find((item) => item.id === selectedPaymentId.value) ?? null)
 const selectedPersonOption = computed(() => personOptions.value.find((item) => item.value === selectedPersonFilter.value) ?? null)
+const personDueDialogSubtitle = computed(() => {
+  if (!selectedPersonOption.value) return t('pages.adminPayments.overdueDebtsForSelectedPerson')
+  return currentLocale.value === 'lv'
+    ? `Kavētie parādi personai ${selectedPersonOption.value.label}.`
+    : `Overdue debts for ${selectedPersonOption.value.label}.`
+})
+const personTransactionsDialogSubtitle = computed(() => {
+  if (!selectedPersonOption.value) return t('pages.adminPayments.transactionsForSelectedPerson')
+  return currentLocale.value === 'lv'
+    ? `Darījumu vēsture personai ${selectedPersonOption.value.label}.`
+    : `Transaction history for ${selectedPersonOption.value.label}.`
+})
 const personOptions = computed(() => {
   const options = []
   const seen = new Set()
@@ -960,7 +979,7 @@ const personOptions = computed(() => {
       const key = `parent:${item.parent_id}`
       if (!seen.has(key)) {
         seen.add(key)
-        options.push({ label: `${item.parent_name} · Parent`, value: key })
+        options.push({ label: `${item.parent_name} · ${t('pages.adminPayments.parent')}`, value: key })
       }
     }
 
@@ -968,7 +987,7 @@ const personOptions = computed(() => {
       const key = `child:${item.child_id}`
       if (!seen.has(key)) {
         seen.add(key)
-        options.push({ label: `${item.child_name} · Child`, value: key })
+        options.push({ label: `${item.child_name} · ${t('pages.adminPayments.child')}`, value: key })
       }
     }
   })
@@ -978,7 +997,7 @@ const personOptions = computed(() => {
       const key = `parent:${item.parent_id}`
       if (!seen.has(key)) {
         seen.add(key)
-        options.push({ label: `${item.parent_name} · Parent`, value: key })
+        options.push({ label: `${item.parent_name} · ${t('pages.adminPayments.parent')}`, value: key })
       }
     }
 
@@ -986,7 +1005,7 @@ const personOptions = computed(() => {
       const key = `child:${item.child_id}`
       if (!seen.has(key)) {
         seen.add(key)
-        options.push({ label: `${item.child_name} · Child`, value: key })
+        options.push({ label: `${item.child_name} · ${t('pages.adminPayments.child')}`, value: key })
       }
     }
   })
@@ -995,10 +1014,10 @@ const personOptions = computed(() => {
 })
 
 const overviewStats = computed(() => [
-  { label: 'Total Paid', value: formatCurrency(paymentsData.value.summary?.total_paid ?? 0) },
-  { label: 'Pending', value: formatCurrency(paymentsData.value.summary?.pending ?? 0) },
-  { label: 'Overdue', value: formatCurrency(paymentsData.value.summary?.overdue ?? 0) },
-  { label: 'Payment Records', value: paymentRecords.value.length },
+  { label: t('pages.adminPayments.statTotalPaid'), value: formatCurrency(paymentsData.value.summary?.total_paid ?? 0) },
+  { label: t('pages.adminPayments.statPending'), value: formatCurrency(paymentsData.value.summary?.pending ?? 0) },
+  { label: t('pages.adminPayments.statOverdue'), value: formatCurrency(paymentsData.value.summary?.overdue ?? 0) },
+  { label: t('pages.adminPayments.statPaymentRecords'), value: paymentRecords.value.length },
 ])
 
 const filteredRecentActivity = computed(() => {
@@ -1057,7 +1076,7 @@ const overdueDebtors = computed(() => {
           parent_id: item.parent_id ?? null,
           parent_name: item.parent_name ?? null,
           child_id: item.child_id ?? null,
-          child_name: item.child_name ?? `Child #${item.child_id}`,
+          child_name: item.child_name ?? `${t('pages.adminPayments.child')} #${item.child_id}`,
           overdue_count: 0,
           total_amount: 0,
           max_overdue_days: 0,
@@ -1147,10 +1166,10 @@ function formatCurrency(amount) {
 function formatOverdueAge(days) {
   const numericDays = Math.floor(Number(days ?? 0))
 
-  if (numericDays <= 0) return 'Due today'
-  if (numericDays === 1) return '1 day overdue'
+  if (numericDays <= 0) return t('pages.adminPayments.dueToday')
+  if (numericDays === 1) return t('pages.adminPayments.dayOverdue')
 
-  return `${numericDays} days overdue`
+  return t('pages.adminPayments.daysOverdue', { count: numericDays })
 }
 
 function formatDateTime(value) {
@@ -1162,7 +1181,7 @@ function formatDateTime(value) {
 }
 
 function formatSinceDate(value) {
-  if (!value) return 'unknown date'
+  if (!value) return t('pages.adminPayments.unknownDate')
 
   return new Date(value).toLocaleDateString('en-US', {
     month: 'short',
@@ -1187,12 +1206,12 @@ function formatDueItemMeta(item) {
 
 function formatDueItemSecondary(item) {
   return item.type === 'month'
-    ? `${item.covered_sessions_count} trainings included`
-    : `Coach: ${item.trainer}`
+    ? `${item.covered_sessions_count} ${t('pages.payments.trainingsIncluded')}`
+    : `${t('pages.payments.coachPrefix')}: ${item.trainer}`
 }
 
 function formatDueItemDeadlineLabel(item) {
-  return item.type === 'month' ? 'Monthly deadline' : 'Deadline'
+  return item.type === 'month' ? t('pages.payments.monthlyDeadline') : t('pages.payments.paymentDeadline')
 }
 
 function matchesPersonFilter(item) {
@@ -1215,18 +1234,18 @@ function openReceipt(item) {
 
 function formatReceiptItemName(item) {
   if (item.type === 'month') {
-    return 'Monthly payment'
+    return t('pages.adminPayments.monthlyPayment')
   }
 
-  return item.session_name || 'Training payment'
+  return item.session_name || t('pages.adminPayments.trainingPayment')
 }
 
 function formatReceiptItemMeta(item) {
   if (item.type === 'month') {
-    return item.month ? `Month: ${item.month}` : 'Monthly charge'
+    return item.month ? `${t('pages.adminPayments.monthLabel')}: ${item.month}` : t('pages.adminPayments.monthlyCharge')
   }
 
-  return item.session_name ? `Session: ${item.session_name}` : 'Session payment'
+  return item.session_name ? `${t('pages.adminPayments.sessionLabelMeta')}: ${item.session_name}` : t('pages.adminPayments.sessionPayment')
 }
 
 function escapeHtml(value) {
@@ -1241,9 +1260,9 @@ function escapeHtml(value) {
 function downloadReceipt(payment) {
   if (!payment) return
 
-  const childName = payment.child_name || `Child #${payment.child_id}`
+  const childName = payment.child_name || `${t('pages.adminPayments.child')} #${payment.child_id}`
   const parentName = payment.parent_name || `User #${payment.parent_id}`
-  const createdAt = payment.created_at ? formatDateTime(payment.created_at) : 'Not set'
+  const createdAt = payment.created_at ? formatDateTime(payment.created_at) : t('pages.adminPayments.notSet')
   const itemsMarkup = (payment.items || [])
     .map((item) => `
       <tr>
@@ -1258,7 +1277,7 @@ function downloadReceipt(payment) {
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Receipt ${escapeHtml(payment.transaction_id || `payment-${payment.id}`)}</title>
+  <title>${escapeHtml(t('pages.adminPayments.paymentReceipt'))} ${escapeHtml(payment.transaction_id || `payment-${payment.id}`)}</title>
   <style>
     body { font-family: Arial, sans-serif; background: #f5f7fb; color: #172033; margin: 0; padding: 32px; }
     .receipt { max-width: 760px; margin: 0 auto; background: #ffffff; border-radius: 24px; padding: 32px; box-shadow: 0 16px 40px rgba(23,32,51,0.08); }
@@ -1280,35 +1299,35 @@ function downloadReceipt(payment) {
   <div class="receipt">
     <div class="top">
       <div>
-        <h1 class="title">Payment Receipt</h1>
-        <div class="subtitle">SportSystem receipt for recorded payment</div>
+        <h1 class="title">${escapeHtml(t('pages.adminPayments.paymentReceipt'))}</h1>
+        <div class="subtitle">${escapeHtml(t('pages.adminPayments.receiptDocumentSubtitle'))}</div>
       </div>
       <div class="status">${escapeHtml(capitalize(payment.status))}</div>
     </div>
 
     <div class="grid">
       <div class="card">
-        <div class="label">Child</div>
+        <div class="label">${escapeHtml(t('pages.adminPayments.child'))}</div>
         <div class="value">${escapeHtml(childName)}</div>
       </div>
       <div class="card">
-        <div class="label">Parent</div>
+        <div class="label">${escapeHtml(t('pages.adminPayments.parent'))}</div>
         <div class="value">${escapeHtml(parentName)}</div>
       </div>
       <div class="card">
-        <div class="label">Method</div>
-        <div class="value">${escapeHtml(payment.method || 'Not set')}</div>
+        <div class="label">${escapeHtml(t('pages.adminPayments.method'))}</div>
+        <div class="value">${escapeHtml(payment.method || t('pages.adminPayments.notSet'))}</div>
       </div>
       <div class="card">
-        <div class="label">Created</div>
+        <div class="label">${escapeHtml(t('pages.adminPayments.created'))}</div>
         <div class="value">${escapeHtml(createdAt)}</div>
       </div>
       <div class="card">
-        <div class="label">Transaction ID</div>
-        <div class="value">${escapeHtml(payment.transaction_id || 'Not set')}</div>
+        <div class="label">${escapeHtml(t('pages.adminPayments.transactionId'))}</div>
+        <div class="value">${escapeHtml(payment.transaction_id || t('pages.adminPayments.notSet'))}</div>
       </div>
       <div class="card">
-        <div class="label">Total Amount</div>
+        <div class="label">${escapeHtml(t('pages.adminPayments.totalAmount'))}</div>
         <div class="value">${escapeHtml(formatCurrency(payment.amount))}</div>
       </div>
     </div>
@@ -1316,9 +1335,9 @@ function downloadReceipt(payment) {
     <table>
       <thead>
         <tr>
-          <th>Item</th>
-          <th>Details</th>
-          <th style="text-align:right;">Amount</th>
+          <th>${escapeHtml(t('pages.adminPayments.item'))}</th>
+          <th>${escapeHtml(t('pages.adminPayments.details'))}</th>
+          <th style="text-align:right;">${escapeHtml(t('pages.adminPayments.amount'))}</th>
         </tr>
       </thead>
       <tbody>${itemsMarkup}</tbody>
@@ -1353,7 +1372,7 @@ async function loadPayments() {
 }
 
 async function refundPayment(item) {
-  const confirmed = window.confirm(`Refund payment ${formatCurrency(item.amount)} for ${item.child_name || `Child #${item.child_id}`}?`)
+  const confirmed = window.confirm(t('pages.adminPayments.paymentRefundConfirm', { amount: formatCurrency(item.amount), name: item.child_name || `${t('pages.adminPayments.child')} #${item.child_id}` }))
   if (!confirmed) return
 
   refundLoadingId.value = item.id
@@ -1365,7 +1384,7 @@ async function refundPayment(item) {
     selectedPaymentId.value = item.id
   } catch (error) {
     const errors = error?.response?.data?.errors ?? {}
-    paymentActionError.value = errors.status?.[0] || error?.response?.data?.message || 'Refund failed.'
+    paymentActionError.value = errors.status?.[0] || error?.response?.data?.message || t('pages.adminPayments.refundFailed')
   } finally {
     refundLoadingId.value = null
   }
