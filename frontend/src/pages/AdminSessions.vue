@@ -265,20 +265,24 @@
                 <span>Loading sessions...</span>
               </div>
 
-              <div v-else-if="!filteredSessions.length" class="state-wrap empty-state">
+              <div v-else-if="activeView === 'plans' && !filteredWeeklyTrainings.length" class="state-wrap empty-state">
+                No weekly trainings found for the current search.
+              </div>
+
+              <div v-else-if="activeView === 'dates' && !filteredSessionDates.length" class="state-wrap empty-state">
                 No sessions found for the current search.
               </div>
 
               <div v-else-if="activeView === 'plans'" class="sessions-grid">
                 <article
-                  v-for="session in filteredSessions"
-                  :key="session.id"
+                  v-for="session in filteredWeeklyTrainings"
+                  :key="`plan-${session.template_id}`"
                   class="session-card"
                 >
                   <div class="session-card-top">
                     <div class="session-card-main">
                       <v-avatar size="56" class="session-avatar">
-                        <img :src="avatarFor(`session-${session.id}-${session.title}`, session.title)" :alt="session.title">
+                        <img :src="avatarFor(`session-${session.template_id}-${session.title}`, session.title)" :alt="session.title">
                       </v-avatar>
 
                       <div class="session-copy">
@@ -296,7 +300,7 @@
 
                     <div class="info-item">
                       <span class="info-label">Nearest date</span>
-                      <span class="info-value">{{ formatNearestDate(session.date) }}</span>
+                      <span class="info-value">{{ formatNearestDate(session.nearest_date) }}</span>
                     </div>
 
                     <div class="info-item">
@@ -918,7 +922,7 @@ const resolvedDateHint = computed(() => {
   return `Will create recurring trainings every week on ${formatWeekdayLabels(selectedWeekdays)}`
 })
 
-const filteredSessions = computed(() => {
+const searchableSessions = computed(() => {
   const query = search.value.trim().toLowerCase()
 
   return sessions.value.filter((session) => {
@@ -936,13 +940,63 @@ const filteredSessions = computed(() => {
   })
 })
 
+const filteredWeeklyTrainings = computed(() => {
+  const grouped = new Map()
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  searchableSessions.value
+    .filter((session) => session.template_id && session.template_active)
+    .forEach((session) => {
+      const existing = grouped.get(session.template_id)
+
+      if (!existing) {
+        grouped.set(session.template_id, {
+          ...session,
+          series_session_id: session.id,
+          nearest_date: session.date,
+          weekdays: sortWeekdays(session.weekdays || []),
+        })
+        return
+      }
+
+      const mergedWeekdays = sortWeekdays([
+        ...(existing.weekdays || []),
+        ...(session.weekdays || []),
+      ])
+      const candidateDates = [existing.nearest_date, session.date]
+      const datedCandidates = candidateDates
+        .map((date) => ({
+          value: date,
+          date: new Date(`${date}T00:00:00`)
+        }))
+        .sort((left, right) => left.date - right.date)
+      const upcomingCandidate = datedCandidates.find((item) => item.date >= today)
+      const nearestDate = (upcomingCandidate ?? datedCandidates[0]).value
+
+      grouped.set(session.template_id, {
+        ...existing,
+        weekdays: mergedWeekdays,
+        nearest_date: nearestDate,
+      })
+    })
+
+  return Array.from(grouped.values()).sort((left, right) => {
+    const dateDiff = new Date(`${left.nearest_date}T00:00:00`) - new Date(`${right.nearest_date}T00:00:00`)
+
+    if (dateDiff !== 0) return dateDiff
+
+    return left.title.localeCompare(right.title)
+  })
+})
+
 const filteredSessionDates = computed(() => {
   const from = sessionDateFrom.value ? new Date(sessionDateFrom.value) : null
   const to = sessionDateTo.value ? new Date(sessionDateTo.value) : null
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const filtered = filteredSessions.value.filter((session) => {
+  const filtered = searchableSessions.value.filter((session) => {
     const sessionDate = new Date(session.date)
     sessionDate.setHours(0, 0, 0, 0)
 
@@ -994,7 +1048,8 @@ const availableSessionChildOptions = computed(() => {
 })
 
 const overviewStats = computed(() => [
-  { label: 'Total sessions', value: sessions.value.length },
+  { label: 'Weekly trainings', value: filteredWeeklyTrainings.value.length },
+  { label: 'Session dates', value: sessions.value.length },
   { label: 'Planned', value: sessions.value.filter((item) => item.status === 'planned').length },
   { label: 'Completed', value: sessions.value.filter((item) => item.status === 'completed').length },
   { label: 'Cancelled', value: sessions.value.filter((item) => item.status === 'cancelled').length }
@@ -1277,14 +1332,25 @@ async function saveSession() {
 }
 
 async function deleteSession(session) {
-  const confirmed = window.confirm(`Delete session for ${session.group} on ${formatDate(session.date)}?`)
+  const isWeeklyTraining = activeView.value === 'plans' && session.template_id
+  const message = isWeeklyTraining
+    ? `Delete recurring training "${session.title}" for ${session.group}? This will stop future session dates from being generated.`
+    : `Delete session for ${session.group} on ${formatDate(session.date)}?`
+  const confirmed = window.confirm(message)
   if (!confirmed) return
 
   try {
-    await sessionsApi.remove(session.id)
+    if (isWeeklyTraining) {
+      await sessionsApi.removeSeries(session.series_session_id || session.id)
+    } else {
+      await sessionsApi.remove(session.id)
+    }
     await initializePage()
   } catch (error) {
-    errorMessage.value = extractErrorMessage(error, 'Failed to delete session.')
+    errorMessage.value = extractErrorMessage(
+      error,
+      isWeeklyTraining ? 'Failed to delete recurring training.' : 'Failed to delete session.'
+    )
   }
 }
 

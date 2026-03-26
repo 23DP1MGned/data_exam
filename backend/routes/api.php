@@ -22,6 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('groups', GroupController::class);
     Route::patch('/sessions/{session}/status', [SessionController::class, 'updateStatus'])->middleware('role:admin,coach');
+    Route::delete('/sessions/{session}/series', [SessionController::class, 'destroySeries'])->middleware('role:admin,coach');
     Route::post('/sessions/{session}/children', [SessionController::class, 'attachChild'])->middleware('role:admin,coach');
     Route::delete('/sessions/{session}/children/{child}', [SessionController::class, 'detachChild'])->middleware('role:admin,coach');
     Route::apiResource('sessions', SessionController::class);
@@ -36,5 +37,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])->middleware('role:admin');
 
     Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::patch('/notifications/mark-all', [NotificationController::class, 'markAllRead']);
     Route::patch('/notifications/{notification}', [NotificationController::class, 'update']);
 });

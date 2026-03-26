@@ -7,10 +7,16 @@ use App\Http\Requests\Groups\StoreGroupRequest;
 use App\Http\Requests\Groups\UpdateGroupRequest;
 use App\Models\Group;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class GroupController extends Controller
 {
+    public function __construct(
+        private readonly NotificationService $notificationService
+    ) {
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -50,6 +56,15 @@ class GroupController extends Controller
 
         $group->children()->sync($request->validated('child_ids', []));
 
+        if ($request->user()->role === User::ROLE_ADMIN) {
+            $this->notificationService->notifyCoachGroupAssigned($group->fresh()->load('coach'));
+        }
+
+        $group->load('children');
+        foreach ($group->children as $child) {
+            $this->notificationService->notifyCoachChildAddedToGroup($group, $child);
+        }
+
         return $this->success($this->formatGroup($group->load(['coach', 'children', 'sessions.attendanceRecords']), $request->user()), 'Group created.', 201);
     }
 
@@ -69,6 +84,10 @@ class GroupController extends Controller
         }
 
         $payload = $request->validated();
+        $previousCoachId = $group->coach_id;
+        $previousChildIds = $group->children()->pluck('users.id')->map(fn ($id) => (int) $id)->all();
+        $before = $group->only(['name', 'schedule_days', 'default_time']);
+
         if ($request->user()->role === User::ROLE_COACH) {
             unset($payload['coach_id']);
         }
@@ -85,6 +104,36 @@ class GroupController extends Controller
 
         if (array_key_exists('child_ids', $payload)) {
             $group->children()->sync($payload['child_ids'] ?? []);
+        }
+
+        $group->load(['coach', 'children']);
+
+        if ($request->user()->role === User::ROLE_ADMIN && $group->coach_id && $group->coach_id !== $previousCoachId) {
+            $this->notificationService->notifyCoachGroupAssigned($group);
+        }
+
+        if ($this->groupScheduleChanged($before, $group)) {
+            $this->notificationService->notifyCoachGroupScheduleChanged($group);
+        }
+
+        if (array_key_exists('child_ids', $payload)) {
+            $addedChildIds = collect($group->children->pluck('id')->all())
+                ->diff($previousChildIds)
+                ->values();
+            $removedChildIds = collect($previousChildIds)
+                ->diff($group->children->pluck('id')->all())
+                ->values();
+
+            foreach ($group->children->whereIn('id', $addedChildIds) as $child) {
+                $this->notificationService->notifyCoachChildAddedToGroup($group, $child);
+            }
+
+            if ($removedChildIds->isNotEmpty()) {
+                User::query()
+                    ->whereIn('id', $removedChildIds)
+                    ->get()
+                    ->each(fn (User $child) => $this->notificationService->notifyCoachChildRemovedFromGroup($group, $child));
+            }
         }
 
         return $this->success($this->formatGroup($group->load(['coach', 'children', 'sessions.attendanceRecords']), $request->user()), 'Group updated.');
@@ -122,6 +171,13 @@ class GroupController extends Controller
     private function nextGroupNumber(): int
     {
         return ((int) Group::query()->max('group_number')) + 1;
+    }
+
+    private function groupScheduleChanged(array $before, Group $group): bool
+    {
+        return ($before['name'] ?? null) !== $group->name
+            || ($before['schedule_days'] ?? null) !== $group->schedule_days
+            || ($before['default_time'] ?? null) !== $group->default_time;
     }
 
     private function formatGroup(Group $group, User $viewer): array

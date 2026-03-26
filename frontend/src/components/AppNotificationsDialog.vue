@@ -14,9 +14,21 @@
           <div class="notifications-dialog-subtitle">Recent updates about trainings, attendance and payments.</div>
         </div>
 
-        <v-btn icon variant="text" @click="emit('update:modelValue', false)">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
+        <div class="notifications-dialog-actions">
+          <v-btn
+            class="notifications-mark-all-btn"
+            variant="text"
+            :disabled="!hasUnreadNotifications || markAllLoading"
+            :loading="markAllLoading"
+            @click="handleMarkAllRead"
+          >
+            Mark all as read
+          </v-btn>
+
+          <v-btn icon variant="text" @click="emit('update:modelValue', false)">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </div>
       </div>
 
       <div class="notifications-list">
@@ -49,7 +61,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useNotifications } from '../composables/useNotifications'
 
 const props = defineProps({
   modelValue: {
@@ -76,10 +89,25 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'notification-click'])
 
+const { markAllNotificationsRead } = useNotifications()
+const markAllLoading = ref(false)
 const normalizedNotifications = computed(() => props.notifications ?? [])
+const hasUnreadNotifications = computed(() => normalizedNotifications.value.some((item) => item.unread))
 
 function handleNotificationClick(item) {
   emit('notification-click', item)
+}
+
+async function handleMarkAllRead() {
+  if (markAllLoading.value || !hasUnreadNotifications.value) return
+
+  markAllLoading.value = true
+
+  try {
+    await markAllNotificationsRead()
+  } finally {
+    markAllLoading.value = false
+  }
 }
 </script>
 
@@ -104,6 +132,18 @@ function handleNotificationClick(item) {
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 18px;
+}
+
+.notifications-dialog-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notifications-mark-all-btn {
+  border-radius: 999px;
+  text-transform: none;
+  font-weight: 600;
 }
 
 .notifications-dialog-title {
@@ -252,6 +292,10 @@ function handleNotificationClick(item) {
   .notifications-dialog-header {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .notifications-dialog-actions {
+    justify-content: space-between;
   }
 }
 </style>

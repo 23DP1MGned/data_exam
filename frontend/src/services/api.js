@@ -54,6 +54,9 @@ export const sessionsApi = {
   updateStatus(id, payload) {
     return unwrap(apiClient.patch(`/sessions/${id}/status`, payload))
   },
+  removeSeries(id) {
+    return unwrap(apiClient.delete(`/sessions/${id}/series`))
+  },
   addChild(id, payload) {
     return unwrap(apiClient.post(`/sessions/${id}/children`, payload))
   },
@@ -98,6 +101,9 @@ export const paymentsApi = {
 export const notificationsApi = {
   list() {
     return unwrap(apiClient.get('/notifications'))
+  },
+  markAllRead() {
+    return unwrap(apiClient.patch('/notifications/mark-all'))
   },
   update(id, payload) {
     return unwrap(apiClient.patch(`/notifications/${id}`, payload))

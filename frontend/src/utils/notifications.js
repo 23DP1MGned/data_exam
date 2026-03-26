@@ -9,12 +9,17 @@ export function resolveNotificationTarget(notification, role) {
 
   switch (role) {
     case 'admin':
-      return notification?.type === 'payment' ? '/admin-payments' : '/manage-sessions'
+      if (notification?.type === 'payment') return '/admin-payments'
+      if (notification?.type === 'group') return '/manage-groups'
+      return '/manage-sessions'
     case 'coach':
-      return notification?.type === 'attendance' ? '/coach-attendance' : '/schedule'
+      if (notification?.type === 'attendance') return '/coach-attendance'
+      if (notification?.type === 'group') return '/groups'
+      return '/schedule'
     case 'parent':
       if (notification?.type === 'payment') return '/payments'
       if (notification?.type === 'attendance') return '/attendance'
+      if (notification?.type === 'group') return '/groups'
       return '/schedule'
     case 'child':
       return notification?.type === 'attendance' ? '/attendance' : '/schedule'

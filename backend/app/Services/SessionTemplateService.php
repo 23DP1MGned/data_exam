@@ -7,6 +7,7 @@ use App\Models\TrainingSession;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SessionTemplateService
 {
@@ -52,6 +53,11 @@ class SessionTemplateService
     public function createRecurring(array $validated): EloquentCollection
     {
         return DB::transaction(function () use ($validated) {
+            $this->ensureNoDuplicateTemplate(
+                (int) $validated['group_id'],
+                (string) $validated['title']
+            );
+
             $template = SessionTemplate::create([
                 'group_id' => $validated['group_id'],
                 'title' => $validated['title'],
@@ -72,11 +78,15 @@ class SessionTemplateService
     {
         return DB::transaction(function () use ($session, $validated) {
             $template = $session->sessionTemplate;
+            $groupId = (int) $validated['group_id'];
+            $title = (string) $validated['title'];
 
             if (! $template) {
+                $this->ensureNoDuplicateTemplate($groupId, $title);
+
                 $template = SessionTemplate::create([
-                    'group_id' => $validated['group_id'],
-                    'title' => $validated['title'],
+                    'group_id' => $groupId,
+                    'title' => $title,
                     'weekdays' => $this->normalizeWeekdays($validated['weekdays'] ?? []),
                     'excluded_dates' => [],
                     'starts_on' => now()->toDateString(),
@@ -90,9 +100,11 @@ class SessionTemplateService
                     $session->delete();
                 }
             } else {
+                $this->ensureNoDuplicateTemplate($groupId, $title, $template->id);
+
                 $template->update([
-                    'group_id' => $validated['group_id'],
-                    'title' => $validated['title'],
+                    'group_id' => $groupId,
+                    'title' => $title,
                     'weekdays' => $this->normalizeWeekdays($validated['weekdays'] ?? $template->weekdays ?? []),
                     'start_time' => $validated['start_time'],
                     'end_time' => $validated['end_time'],
@@ -123,6 +135,29 @@ class SessionTemplateService
                 ->orderBy('date')
                 ->orderBy('start_time')
                 ->get();
+        });
+    }
+
+    public function deleteRecurringSeries(TrainingSession $session): void
+    {
+        DB::transaction(function () use ($session) {
+            $session->loadMissing('sessionTemplate.sessions');
+
+            if (! $session->sessionTemplate) {
+                $this->deleteSession($session);
+                return;
+            }
+
+            $template = $session->sessionTemplate->load('sessions');
+
+            $template->update([
+                'is_active' => false,
+            ]);
+
+            $template->sessions
+                ->filter(fn (TrainingSession $item) => $this->canRegenerateSession($item))
+                ->each
+                ->delete();
         });
     }
 
@@ -279,6 +314,30 @@ class SessionTemplateService
             ->sortBy(fn ($weekday) => array_search($weekday, $order, true))
             ->values()
             ->all();
+    }
+
+    private function ensureNoDuplicateTemplate(int $groupId, string $title, ?int $ignoreTemplateId = null): void
+    {
+        $normalizedTitle = mb_strtolower(trim($title));
+
+        if ($normalizedTitle === '') {
+            return;
+        }
+
+        $query = SessionTemplate::query()
+            ->where('group_id', $groupId)
+            ->where('is_active', true)
+            ->whereRaw('LOWER(title) = ?', [$normalizedTitle]);
+
+        if ($ignoreTemplateId) {
+            $query->where('id', '!=', $ignoreTemplateId);
+        }
+
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'title' => ['A weekly training with this title already exists for the selected group. Edit the existing training instead of creating a duplicate.'],
+            ]);
+        }
     }
 
     private function canRegenerateSession(TrainingSession $session): bool

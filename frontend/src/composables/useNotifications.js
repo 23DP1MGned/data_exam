@@ -5,6 +5,12 @@ const items = ref([])
 const loading = ref(false)
 const loadedOnce = ref(false)
 
+export const resetNotifications = () => {
+  items.value = []
+  loading.value = false
+  loadedOnce.value = false
+}
+
 export const useNotifications = () => {
   const loadNotifications = async (force = false) => {
     if (loading.value || (loadedOnce.value && !force)) return items.value
@@ -29,11 +35,24 @@ export const useNotifications = () => {
     target.unread = false
   }
 
+  const markAllNotificationsRead = async () => {
+    if (!items.value.some((item) => item.unread)) return
+
+    await notificationsApi.markAllRead()
+
+    items.value = items.value.map((item) => ({
+      ...item,
+      is_read: true,
+      unread: false
+    }))
+  }
+
   return {
     items,
     loading,
     unreadCount: computed(() => items.value.filter((item) => item.unread).length),
     loadNotifications,
-    markNotificationRead
+    markNotificationRead,
+    markAllNotificationsRead
   }
 }

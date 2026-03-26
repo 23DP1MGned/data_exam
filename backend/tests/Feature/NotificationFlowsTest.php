@@ -147,6 +147,18 @@ class NotificationFlowsTest extends TestCase
             'title' => 'Child training restored',
             'type' => 'session',
         ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $coach->id,
+            'title' => 'Session cancelled',
+            'type' => 'session',
+        ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $coach->id,
+            'title' => 'Session restored',
+            'type' => 'session',
+        ]);
     }
 
     public function test_child_and_parent_receive_notifications_when_added_to_one_time_session(): void
@@ -209,6 +221,12 @@ class NotificationFlowsTest extends TestCase
         $this->assertDatabaseHas('notifications', [
             'user_id' => $parent->id,
             'title' => 'Child added to extra training',
+            'type' => 'session',
+        ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $coach->id,
+            'title' => 'Child added to session',
             'type' => 'session',
         ]);
     }
@@ -382,6 +400,12 @@ class NotificationFlowsTest extends TestCase
             'title' => 'Child training schedule updated',
             'type' => 'session',
         ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $group->coach_id,
+            'title' => 'Schedule updated',
+            'type' => 'session',
+        ]);
     }
 
     public function test_child_and_parent_receive_notifications_when_recurring_schedule_is_updated(): void
@@ -428,6 +452,155 @@ class NotificationFlowsTest extends TestCase
             'user_id' => $parent->id,
             'title' => 'Child training schedule updated',
             'type' => 'session',
+        ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $group->coach_id,
+            'title' => 'Recurring schedule updated',
+            'type' => 'session',
+        ]);
+    }
+
+    public function test_coach_receives_notification_when_child_is_removed_from_one_time_session(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-26 12:00:00'));
+
+        [$admin, $coach, $parent, , $group] = $this->createAdminCoachFamilyGroup();
+
+        $extraChild = User::factory()->create([
+            'role' => User::ROLE_CHILD,
+        ]);
+
+        $parent->children()->attach($extraChild->id);
+
+        $session = TrainingSession::query()->create([
+            'group_id' => $group->id,
+            'title' => 'Extra Removal Session',
+            'date' => '2026-03-30',
+            'start_time' => '17:00',
+            'end_time' => '18:00',
+            'price' => 25,
+            'status' => 'planned',
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson("/api/sessions/{$session->id}/children", [
+            'child_id' => $extraChild->id,
+        ])->assertOk();
+
+        $this->deleteJson("/api/sessions/{$session->id}/children/{$extraChild->id}")
+            ->assertOk();
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $coach->id,
+            'title' => 'Child removed from session',
+            'type' => 'session',
+        ]);
+    }
+
+    public function test_coach_receives_notifications_when_group_is_assigned_and_child_is_added_to_group(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-26 12:00:00'));
+
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+        ]);
+
+        $coach = User::factory()->create([
+            'role' => User::ROLE_COACH,
+        ]);
+
+        $parent = User::factory()->create([
+            'role' => User::ROLE_PARENT,
+        ]);
+
+        ParentProfile::query()->create([
+            'user_id' => $parent->id,
+            'account_balance' => 100,
+        ]);
+
+        $child = User::factory()->create([
+            'role' => User::ROLE_CHILD,
+        ]);
+
+        $parent->children()->attach($child->id);
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson('/api/groups', [
+            'name' => 'Assigned Group',
+            'group_number' => 42,
+            'age_category' => '9-11',
+            'schedule_days' => 'Mon, Wed',
+            'default_time' => '18:00',
+            'price' => 60,
+            'coach_id' => $coach->id,
+            'child_ids' => [$child->id],
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $coach->id,
+            'title' => 'New group assigned',
+            'type' => 'group',
+        ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $coach->id,
+            'title' => 'Child moved to your group',
+            'type' => 'group',
+        ]);
+    }
+
+    public function test_coach_receives_notification_when_group_schedule_is_updated(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-26 12:00:00'));
+
+        [$admin, $coach, , , $group] = $this->createAdminCoachFamilyGroup();
+
+        Sanctum::actingAs($admin);
+
+        $this->putJson("/api/groups/{$group->id}", [
+            'name' => $group->name,
+            'group_number' => $group->group_number,
+            'age_category' => $group->age_category,
+            'schedule_days' => 'Tue / Thu',
+            'default_time' => '19:45',
+            'price' => $group->price,
+            'coach_id' => $group->coach_id,
+            'child_ids' => $group->children()->pluck('users.id')->all(),
+        ])->assertOk();
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $coach->id,
+            'title' => 'Recurring schedule updated',
+            'type' => 'group',
+        ]);
+    }
+
+    public function test_coach_receives_notification_when_child_is_removed_from_group(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-26 12:00:00'));
+
+        [$admin, $coach, , $child, $group] = $this->createAdminCoachFamilyGroup();
+
+        Sanctum::actingAs($admin);
+
+        $this->putJson("/api/groups/{$group->id}", [
+            'name' => $group->name,
+            'group_number' => $group->group_number,
+            'age_category' => $group->age_category,
+            'schedule_days' => $group->schedule_days,
+            'default_time' => $group->default_time,
+            'price' => $group->price,
+            'coach_id' => $group->coach_id,
+            'child_ids' => [],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $coach->id,
+            'title' => 'Child removed from your group',
+            'type' => 'group',
         ]);
     }
 
@@ -584,6 +757,88 @@ class NotificationFlowsTest extends TestCase
 
         $this->assertDatabaseHas('notifications', [
             'id' => $notification->id,
+            'is_read' => true,
+        ]);
+    }
+
+    public function test_parent_can_mark_all_own_notifications_as_read_without_affecting_others(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-28 12:00:00'));
+
+        [, $parent, $child] = $this->createCoachFamilyGroup();
+
+        $parentNotification = Notification::query()->create([
+            'user_id' => $parent->id,
+            'title' => 'Parent notification',
+            'message' => 'Parent event',
+            'type' => 'payment',
+            'is_read' => false,
+        ]);
+
+        $childNotification = Notification::query()->create([
+            'user_id' => $child->id,
+            'title' => 'Child notification',
+            'message' => 'Child event',
+            'type' => 'attendance',
+            'is_read' => false,
+        ]);
+
+        Sanctum::actingAs($parent);
+
+        $this->patchJson('/api/notifications/mark-all')
+            ->assertOk()
+            ->assertJsonPath('data.updated_count', 1);
+
+        $this->assertDatabaseHas('notifications', [
+            'id' => $parentNotification->id,
+            'is_read' => true,
+        ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'id' => $childNotification->id,
+            'is_read' => false,
+        ]);
+    }
+
+    public function test_admin_can_mark_all_notifications_as_read(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-03-28 12:00:00'));
+
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+        ]);
+
+        [, $parent, $child] = $this->createCoachFamilyGroup();
+
+        $parentNotification = Notification::query()->create([
+            'user_id' => $parent->id,
+            'title' => 'Parent notification',
+            'message' => 'Parent event',
+            'type' => 'payment',
+            'is_read' => false,
+        ]);
+
+        $childNotification = Notification::query()->create([
+            'user_id' => $child->id,
+            'title' => 'Child notification',
+            'message' => 'Child event',
+            'type' => 'attendance',
+            'is_read' => false,
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $this->patchJson('/api/notifications/mark-all')
+            ->assertOk()
+            ->assertJsonPath('data.updated_count', 2);
+
+        $this->assertDatabaseHas('notifications', [
+            'id' => $parentNotification->id,
+            'is_read' => true,
+        ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'id' => $childNotification->id,
             'is_read' => true,
         ]);
     }

@@ -106,6 +106,7 @@ class SessionController extends Controller
         if (! empty($validated['weekdays']) || $session->session_template_id) {
             $sessions = $this->sessionTemplateService->updateRecurring($session->load('sessionTemplate'), $validated);
             $this->notificationService->notifyRecurringScheduleChanged($sessions);
+            $this->notificationService->notifyCoachRecurringScheduleChanged($sessions);
 
             return $this->success([
                 'updated_count' => $sessions->count(),
@@ -119,6 +120,7 @@ class SessionController extends Controller
 
         if ($this->sessionScheduleChanged($before, $freshSession)) {
             $this->notificationService->notifySessionScheduleChanged($freshSession);
+            $this->notificationService->notifyCoachSessionScheduleChanged($freshSession);
         }
 
         return $this->success($this->formatSession($freshSession), 'Session updated.');
@@ -133,6 +135,17 @@ class SessionController extends Controller
         $this->sessionTemplateService->deleteSession($session->load('sessionTemplate'));
 
         return $this->success([], 'Session deleted.');
+    }
+
+    public function destroySeries(Request $request, TrainingSession $session)
+    {
+        if (! $this->canManageSessionGroup($request->user(), $session->group)) {
+            return $this->error('Forbidden.', [], 403);
+        }
+
+        $this->sessionTemplateService->deleteRecurringSeries($session->load('sessionTemplate'));
+
+        return $this->success([], 'Recurring training deleted.');
     }
 
     public function updateStatus(Request $request, TrainingSession $session)
@@ -174,6 +187,10 @@ class SessionController extends Controller
                 $freshSession->load(['group.children.parents', 'extraChildren.parents']),
                 $validated['status'] === 'cancelled' ? 'cancelled' : 'restored'
             );
+            $this->notificationService->notifyCoachSessionStatusChanged(
+                $freshSession,
+                $validated['status'] === 'cancelled' ? 'cancelled' : 'restored'
+            );
         }
 
         return $this->success(
@@ -211,6 +228,10 @@ class SessionController extends Controller
             $session->fresh()->load(['group.coach', 'group.children.parents', 'extraChildren.parents']),
             $child->loadMissing('parents')
         );
+        $this->notificationService->notifyCoachChildAddedToSession(
+            $session->fresh()->load(['group.coach']),
+            $child
+        );
 
         return $this->success(
             $this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate'])),
@@ -238,6 +259,10 @@ class SessionController extends Controller
         }
 
         $session->extraChildren()->detach($child->id);
+        $this->notificationService->notifyCoachChildRemovedFromSession(
+            $session->fresh()->load(['group.coach']),
+            $child
+        );
 
         return $this->success(
             $this->formatSession($session->fresh()->load(['group.coach', 'group.children', 'extraChildren', 'sessionTemplate'])),
@@ -286,6 +311,7 @@ class SessionController extends Controller
             'id' => $session->id,
             'group_id' => $session->group_id,
             'template_id' => $session->session_template_id,
+            'template_active' => (bool) ($session->sessionTemplate?->is_active ?? false),
             'title' => $session->title ?: $session->group->name,
             'weekdays' => $session->sessionTemplate?->weekdays ?? [$session->date->format('D')],
             'group_code' => $session->group->group_code,

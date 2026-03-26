@@ -187,6 +187,65 @@ class SessionLifecycleTest extends TestCase
         ]);
     }
 
+    public function test_admin_cannot_create_duplicate_weekly_training_for_same_group_and_title(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $group = $this->createManagedGroup();
+
+        Sanctum::actingAs($admin);
+
+        $payload = [
+            'group_id' => $group->id,
+            'title' => 'Sprint Mechanics',
+            'weekdays' => [now()->format('D')],
+            'start_time' => '18:00',
+            'end_time' => '19:30',
+            'price' => 42,
+        ];
+
+        $this->postJson('/api/sessions', $payload)->assertCreated();
+
+        $this->postJson('/api/sessions', $payload)
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.title.0', 'A weekly training with this title already exists for the selected group. Edit the existing training instead of creating a duplicate.');
+    }
+
+    public function test_admin_can_delete_entire_recurring_training_series_from_weekly_view_flow(): void
+    {
+        $admin = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $group = $this->createManagedGroup();
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson('/api/sessions', [
+            'group_id' => $group->id,
+            'title' => 'Sprint Mechanics',
+            'weekdays' => [now()->format('D')],
+            'start_time' => '18:00',
+            'end_time' => '19:30',
+            'price' => 42,
+        ])->assertCreated();
+
+        $template = SessionTemplate::query()->firstWhere('title', 'Sprint Mechanics');
+        $session = TrainingSession::query()
+            ->where('session_template_id', $template->id)
+            ->orderBy('date')
+            ->firstOrFail();
+
+        $this->deleteJson("/api/sessions/{$session->id}/series")
+            ->assertOk();
+
+        $this->assertFalse((bool) $template->fresh()->is_active);
+        $this->assertSame(
+            0,
+            TrainingSession::query()->where('session_template_id', $template->id)->count()
+        );
+    }
+
     private function createManagedGroup(bool $withChildren = false): Group
     {
         $coach = User::factory()->create([

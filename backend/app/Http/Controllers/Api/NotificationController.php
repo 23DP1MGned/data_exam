@@ -58,4 +58,23 @@ class NotificationController extends Controller
             'is_read' => $notification->is_read,
         ], 'Notification updated.');
     }
+
+    public function markAllRead(Request $request)
+    {
+        $user = $request->user();
+
+        $query = $user->role === User::ROLE_ADMIN
+            ? Notification::query()
+            : $user->notifications();
+
+        $updatedCount = $query
+            ->where('is_read', false)
+            ->update([
+                'is_read' => true,
+            ]);
+
+        return $this->success([
+            'updated_count' => $updatedCount,
+        ], 'All notifications marked as read.');
+    }
 }

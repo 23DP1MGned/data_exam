@@ -1,5 +1,6 @@
 import { computed, reactive } from 'vue'
 import { authApi } from './api'
+import { resetNotifications } from '../composables/useNotifications'
 
 const TOKEN_KEY = 'app-auth-token'
 const USER_KEY = 'app-auth-user'
@@ -45,6 +46,7 @@ export const setAuth = ({ token, user }) => {
   state.user = user
   localStorage.removeItem(SELECTED_CHILD_KEY)
   localStorage.removeItem(SELECTED_COACH_GROUP_KEY)
+  resetNotifications()
   persistAuth()
 }
 
@@ -53,6 +55,7 @@ export const clearAuth = () => {
   state.user = null
   localStorage.removeItem(SELECTED_CHILD_KEY)
   localStorage.removeItem(SELECTED_COACH_GROUP_KEY)
+  resetNotifications()
   persistAuth()
 }
 
@@ -68,6 +71,7 @@ export const bootstrapAuth = async () => {
     try {
       const user = await authApi.me()
       state.user = user
+      resetNotifications()
       persistAuth()
       state.ready = true
       return user

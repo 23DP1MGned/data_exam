@@ -170,6 +170,33 @@ class NotificationService
         }
     }
 
+    public function notifyCoachSessionStatusChanged(TrainingSession $session, string $status): void
+    {
+        $session->loadMissing(['group.coach']);
+
+        if (! $session->group?->coach_id || $session->group?->coach?->role !== User::ROLE_COACH) {
+            return;
+        }
+
+        [$title, $message] = match ($status) {
+            'cancelled' => [
+                'Session cancelled',
+                "{$this->sessionSummary($session)} has been cancelled.",
+            ],
+            default => [
+                'Session restored',
+                "{$this->sessionSummary($session)} is active again.",
+            ],
+        };
+
+        $this->send(
+            $session->group->coach_id,
+            $title,
+            $message,
+            'session'
+        );
+    }
+
     public function notifySessionScheduleChanged(TrainingSession $session): void
     {
         $session->loadMissing(['group.coach', 'group.children.parents', 'extraChildren.parents']);
@@ -192,6 +219,22 @@ class NotificationService
                 );
             }
         }
+    }
+
+    public function notifyCoachSessionScheduleChanged(TrainingSession $session): void
+    {
+        $session->loadMissing(['group.coach']);
+
+        if (! $session->group?->coach_id || $session->group?->coach?->role !== User::ROLE_COACH) {
+            return;
+        }
+
+        $this->send(
+            $session->group->coach_id,
+            'Schedule updated',
+            "{$this->sessionSummary($session)} has updated date or time details.",
+            'session'
+        );
     }
 
     public function notifyRecurringScheduleChanged(Collection $sessions): void
@@ -238,6 +281,32 @@ class NotificationService
         }
     }
 
+    public function notifyCoachRecurringScheduleChanged(Collection $sessions): void
+    {
+        $sessions = $sessions
+            ->loadMissing(['group.coach'])
+            ->filter()
+            ->values();
+
+        if ($sessions->isEmpty()) {
+            return;
+        }
+
+        $firstSession = $sessions->first();
+        $coachId = $firstSession?->group?->coach_id;
+
+        if (! $coachId || $firstSession?->group?->coach?->role !== User::ROLE_COACH) {
+            return;
+        }
+
+        $this->send(
+            $coachId,
+            'Recurring schedule updated',
+            "The weekly schedule for {$firstSession->group->display_name} has been updated.",
+            'session'
+        );
+    }
+
     public function notifyChildAddedToSession(TrainingSession $session, User $child): void
     {
         $session->loadMissing(['group.coach', 'extraChildren.parents', 'group.children.parents']);
@@ -258,6 +327,102 @@ class NotificationService
                 'session'
             );
         }
+    }
+
+    public function notifyCoachChildAddedToSession(TrainingSession $session, User $child): void
+    {
+        $session->loadMissing(['group.coach']);
+
+        if (! $session->group?->coach_id || $session->group?->coach?->role !== User::ROLE_COACH) {
+            return;
+        }
+
+        $this->send(
+            $session->group->coach_id,
+            'Child added to session',
+            "{$this->userDisplayName($child)} was added to {$this->sessionSummary($session)}.",
+            'session'
+        );
+    }
+
+    public function notifyCoachChildRemovedFromSession(TrainingSession $session, User $child): void
+    {
+        $session->loadMissing(['group.coach']);
+
+        if (! $session->group?->coach_id || $session->group?->coach?->role !== User::ROLE_COACH) {
+            return;
+        }
+
+        $this->send(
+            $session->group->coach_id,
+            'Child removed from session',
+            "{$this->userDisplayName($child)} was removed from {$this->sessionSummary($session)}.",
+            'session'
+        );
+    }
+
+    public function notifyCoachGroupAssigned(\App\Models\Group $group): void
+    {
+        $group->loadMissing('coach');
+
+        if (! $group->coach_id || $group->coach?->role !== User::ROLE_COACH) {
+            return;
+        }
+
+        $this->send(
+            $group->coach_id,
+            'New group assigned',
+            "You were assigned to {$group->display_name}.",
+            'group'
+        );
+    }
+
+    public function notifyCoachChildAddedToGroup(\App\Models\Group $group, User $child): void
+    {
+        $group->loadMissing('coach');
+
+        if (! $group->coach_id || $group->coach?->role !== User::ROLE_COACH) {
+            return;
+        }
+
+        $this->send(
+            $group->coach_id,
+            'Child moved to your group',
+            "{$this->userDisplayName($child)} was added to {$group->display_name}.",
+            'group'
+        );
+    }
+
+    public function notifyCoachChildRemovedFromGroup(\App\Models\Group $group, User $child): void
+    {
+        $group->loadMissing('coach');
+
+        if (! $group->coach_id || $group->coach?->role !== User::ROLE_COACH) {
+            return;
+        }
+
+        $this->send(
+            $group->coach_id,
+            'Child removed from your group',
+            "{$this->userDisplayName($child)} was removed from {$group->display_name}.",
+            'group'
+        );
+    }
+
+    public function notifyCoachGroupScheduleChanged(\App\Models\Group $group): void
+    {
+        $group->loadMissing('coach');
+
+        if (! $group->coach_id || $group->coach?->role !== User::ROLE_COACH) {
+            return;
+        }
+
+        $this->send(
+            $group->coach_id,
+            'Recurring schedule updated',
+            "The weekly schedule for {$group->display_name} has been updated.",
+            'group'
+        );
     }
 
     public function notifyAttendanceUpdated(Attendance $attendance, bool $autoMarked = false): void
