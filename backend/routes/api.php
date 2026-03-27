@@ -32,7 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/attendance/{attendance}', [AttendanceController::class, 'update'])->middleware('role:admin,coach');
 
     Route::get('/payments', [PaymentController::class, 'index']);
-    Route::post('/payments', [PaymentController::class, 'store'])->middleware('role:parent');
+    Route::post('/payments', [PaymentController::class, 'store'])->middleware('role:parent,adult');
     Route::get('/payments/{payment}', [PaymentController::class, 'show']);
     Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])->middleware('role:admin');
 

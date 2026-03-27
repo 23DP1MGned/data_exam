@@ -21,6 +21,7 @@ class User extends Authenticatable
     public const ROLE_COACH = 'coach';
     public const ROLE_PARENT = 'parent';
     public const ROLE_CHILD = 'child';
+    public const ROLE_ADULT = 'adult';
 
     /**
      * The attributes that are mass assignable.
@@ -71,6 +72,11 @@ class User extends Authenticatable
     public function coachProfile(): HasOne
     {
         return $this->hasOne(CoachProfile::class);
+    }
+
+    public function adultProfile(): HasOne
+    {
+        return $this->hasOne(AdultProfile::class);
     }
 
     public function coachedGroups(): HasMany
@@ -126,5 +132,10 @@ class User extends Authenticatable
     public function hasRole(string|array $roles): bool
     {
         return in_array($this->role, (array) $roles, true);
+    }
+
+    public function isParticipant(): bool
+    {
+        return $this->hasRole([self::ROLE_CHILD, self::ROLE_ADULT]);
     }
 }

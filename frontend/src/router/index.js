@@ -117,7 +117,7 @@ router.beforeEach(async (to) => {
     return '/home'
   }
 
-  if (to.meta?.parentOnly && user.value?.role !== 'parent') {
+  if (to.meta?.parentOnly && !['parent', 'adult'].includes(user.value?.role ?? '')) {
     return '/home'
   }
 

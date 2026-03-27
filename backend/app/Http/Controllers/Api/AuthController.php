@@ -30,7 +30,7 @@ class AuthController extends Controller
 
         return $this->success([
             'token' => $token,
-            'user' => $this->formatUser($user->fresh()->load('parentProfile', 'childProfile', 'coachProfile')),
+            'user' => $this->formatUser($user->fresh()->load('parentProfile', 'childProfile', 'coachProfile', 'adultProfile')),
         ], 'Login successful.');
     }
 
@@ -42,14 +42,14 @@ class AuthController extends Controller
 
         return $this->success([
             'token' => $token,
-            'user' => $this->formatUser($user->fresh()->load('parentProfile', 'childProfile', 'coachProfile')),
+            'user' => $this->formatUser($user->fresh()->load('parentProfile', 'childProfile', 'coachProfile', 'adultProfile')),
         ], 'Registration successful.', 201);
     }
 
     public function me(Request $request)
     {
         return $this->success($this->formatUser(
-            $request->user()->load('parentProfile', 'childProfile', 'coachProfile', 'children')
+            $request->user()->load('parentProfile', 'childProfile', 'coachProfile', 'adultProfile', 'children')
         ));
     }
 
@@ -69,11 +69,13 @@ class AuthController extends Controller
             'email' => $user->email,
             'role' => $user->role,
             'profile' => [
-                'phone' => $user->parentProfile?->phone ?? $user->coachProfile?->phone,
-                'birth_date' => $user->parentProfile?->birth_date?->toDateString() ?? $user->childProfile?->birth_date?->toDateString(),
+                'phone' => $user->parentProfile?->phone ?? $user->coachProfile?->phone ?? $user->adultProfile?->phone,
+                'birth_date' => $user->parentProfile?->birth_date?->toDateString()
+                    ?? $user->childProfile?->birth_date?->toDateString()
+                    ?? $user->adultProfile?->birth_date?->toDateString(),
                 'specialization' => $user->coachProfile?->specialization,
                 'personal_code' => $user->childProfile?->personal_code,
-                'account_balance' => (float) ($user->parentProfile?->account_balance ?? 0),
+                'account_balance' => (float) ($user->parentProfile?->account_balance ?? $user->adultProfile?->account_balance ?? 0),
             ],
             'children' => $user->children->map(fn (User $child) => [
                 'id' => $child->id,

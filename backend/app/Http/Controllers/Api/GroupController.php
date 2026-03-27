@@ -27,7 +27,7 @@ class GroupController extends Controller
         } elseif ($user->role === User::ROLE_PARENT) {
             $childIds = $user->children()->pluck('users.id');
             $query->whereHas('children', fn ($builder) => $builder->whereIn('users.id', $childIds));
-        } elseif ($user->role === User::ROLE_CHILD) {
+        } elseif (in_array($user->role, [User::ROLE_CHILD, User::ROLE_ADULT], true)) {
             $query->whereHas('children', fn ($builder) => $builder->where('users.id', $user->id));
         }
 
@@ -154,7 +154,7 @@ class GroupController extends Controller
     {
         if ($user->role === User::ROLE_ADMIN) return true;
         if ($user->role === User::ROLE_COACH) return $group->coach_id === $user->id;
-        if ($user->role === User::ROLE_CHILD) return $group->children()->where('users.id', $user->id)->exists();
+        if (in_array($user->role, [User::ROLE_CHILD, User::ROLE_ADULT], true)) return $group->children()->where('users.id', $user->id)->exists();
         if ($user->role === User::ROLE_PARENT) {
             return $group->children()->whereIn('users.id', $user->children()->pluck('users.id'))->exists();
         }
@@ -196,7 +196,7 @@ class GroupController extends Controller
 
                 return [$child->id => $rate];
             });
-        $attendanceRate = $viewer->role === User::ROLE_CHILD
+        $attendanceRate = in_array($viewer->role, [User::ROLE_CHILD, User::ROLE_ADULT], true)
             ? $childAttendanceRates->get($viewer->id, 0)
             : $groupAttendanceRate;
 

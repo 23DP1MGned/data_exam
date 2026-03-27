@@ -504,7 +504,7 @@ const navItems = computed(() => [
   { label: t('common.schedule'), icon: 'mdi-calendar-month-outline', to: '/schedule' },
   { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/groups' },
   { label: t('common.attendance'), icon: 'mdi-check-circle-outline', to: user.value?.role === 'coach' ? '/coach-attendance' : '/attendance' },
-  ...(user.value?.role === 'parent'
+  ...(['parent', 'adult'].includes(user.value?.role ?? '')
     ? [{ label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/payments' }]
     : [])
 ])

@@ -46,7 +46,7 @@ class SessionController extends Controller
                     ->whereHas('group.children', fn ($relation) => $relation->whereIn('users.id', $childIds))
                     ->orWhereHas('extraChildren', fn ($relation) => $relation->whereIn('users.id', $childIds));
             });
-        } elseif ($user->role === User::ROLE_CHILD) {
+        } elseif (in_array($user->role, [User::ROLE_CHILD, User::ROLE_ADULT], true)) {
             $query->where(function ($builder) use ($user) {
                 $builder
                     ->whereHas('group.children', fn ($relation) => $relation->where('users.id', $user->id))
@@ -211,8 +211,8 @@ class SessionController extends Controller
 
         $child = User::query()->findOrFail($validated['child_id']);
 
-        if ($child->role !== User::ROLE_CHILD) {
-            return $this->error('Only child accounts can be assigned to a session.', [], 422);
+        if (! in_array($child->role, [User::ROLE_CHILD, User::ROLE_ADULT], true)) {
+            return $this->error('Only child and adult accounts can be assigned to a session.', [], 422);
         }
 
         if ($session->group->children()->where('users.id', $child->id)->exists()) {
@@ -280,7 +280,7 @@ class SessionController extends Controller
     {
         if ($user->role === User::ROLE_ADMIN) return true;
         if ($user->role === User::ROLE_COACH) return $session->group->coach_id === $user->id;
-        if ($user->role === User::ROLE_CHILD) {
+        if (in_array($user->role, [User::ROLE_CHILD, User::ROLE_ADULT], true)) {
             return $session->group->children()->where('users.id', $user->id)->exists()
                 || $session->extraChildren()->where('users.id', $user->id)->exists();
         }

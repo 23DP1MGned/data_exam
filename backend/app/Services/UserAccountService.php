@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AdultProfile;
 use App\Models\ChildProfile;
 use App\Models\CoachProfile;
 use App\Models\ParentProfile;
@@ -23,7 +24,7 @@ class UserAccountService
 
             $this->syncRoleProfiles($user, $validated);
 
-            return $user->fresh()->load('parentProfile', 'childProfile', 'coachProfile', 'children');
+            return $user->fresh()->load('parentProfile', 'childProfile', 'coachProfile', 'adultProfile', 'children');
         });
     }
 
@@ -44,7 +45,7 @@ class UserAccountService
             $user->update($payload);
             $this->syncRoleProfiles($user, $validated);
 
-            return $user->fresh()->load('parentProfile', 'childProfile', 'coachProfile', 'children');
+            return $user->fresh()->load('parentProfile', 'childProfile', 'coachProfile', 'adultProfile', 'children');
         });
     }
 
@@ -62,10 +63,11 @@ class UserAccountService
 
             $user->childProfile()?->delete();
             $user->coachProfile()?->delete();
+            $user->adultProfile()?->delete();
 
             if (! empty($validated['child_identifier'])) {
                 $child = User::query()
-                    ->where('role', User::ROLE_CHILD)
+                    ->whereIn('role', [User::ROLE_CHILD, User::ROLE_ADULT])
                     ->where(function ($query) use ($validated) {
                         $query->where('email', $validated['child_identifier'])
                             ->orWhereHas('childProfile', fn ($profile) => $profile->where('personal_code', $validated['child_identifier']));
@@ -92,6 +94,7 @@ class UserAccountService
             );
 
             $user->coachProfile()?->delete();
+            $user->adultProfile()?->delete();
             return;
         }
 
@@ -107,9 +110,27 @@ class UserAccountService
                 ]
             );
 
+            $user->adultProfile()?->delete();
             return;
         }
 
         $user->coachProfile()?->delete();
+
+        if ($user->role === User::ROLE_ADULT) {
+            AdultProfile::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'phone' => $validated['phone'] ?? null,
+                    'birth_date' => $validated['birth_date'] ?? null,
+                    'account_balance' => $validated['account_balance'] ?? $user->adultProfile?->account_balance ?? 0,
+                ]
+            );
+
+            $user->children()->detach();
+            $user->parents()->detach();
+            return;
+        }
+
+        $user->adultProfile()?->delete();
     }
 }

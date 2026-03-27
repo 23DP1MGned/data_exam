@@ -22,6 +22,8 @@ class NotificationController extends Controller
 
         if ($user->role === User::ROLE_PARENT) {
             $this->notificationService->syncParentPaymentNotifications($user);
+        } elseif ($user->role === User::ROLE_ADULT) {
+            $this->notificationService->syncAdultPaymentNotifications($user);
         }
 
         $notifications = $user->role === User::ROLE_ADMIN

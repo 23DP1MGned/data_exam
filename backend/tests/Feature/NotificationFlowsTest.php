@@ -226,7 +226,7 @@ class NotificationFlowsTest extends TestCase
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $coach->id,
-            'title' => 'Child added to session',
+            'title' => 'Participant added to session',
             'type' => 'session',
         ]);
     }
@@ -494,7 +494,7 @@ class NotificationFlowsTest extends TestCase
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $coach->id,
-            'title' => 'Child removed from session',
+            'title' => 'Participant removed from session',
             'type' => 'session',
         ]);
     }
@@ -547,7 +547,7 @@ class NotificationFlowsTest extends TestCase
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $coach->id,
-            'title' => 'Child moved to your group',
+            'title' => 'Participant moved to your group',
             'type' => 'group',
         ]);
     }
@@ -599,7 +599,7 @@ class NotificationFlowsTest extends TestCase
 
         $this->assertDatabaseHas('notifications', [
             'user_id' => $coach->id,
-            'title' => 'Child removed from your group',
+            'title' => 'Participant removed from your group',
             'type' => 'group',
         ]);
     }

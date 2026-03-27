@@ -117,7 +117,7 @@ class DashboardController extends Controller
             $childIds = $linkedChildren->pluck('id');
             $sessions = $sessions->filter(fn ($session) => $session->effectiveChildren()->whereIn('id', $childIds)->isNotEmpty())->values();
             $attendanceQuery->whereIn('user_id', $childIds);
-        } elseif ($user->role === User::ROLE_CHILD) {
+        } elseif (in_array($user->role, [User::ROLE_CHILD, User::ROLE_ADULT], true)) {
             $childIds = collect([$user->id]);
             $sessions = $sessions->filter(fn ($session) => $session->effectiveChildren()->contains('id', $user->id))->values();
             $attendanceQuery->where('user_id', $user->id);
@@ -167,6 +167,7 @@ class DashboardController extends Controller
                 'value' => $formatDuration($threeDaySessions->sum(fn (TrainingSession $session) => $sessionDurationMinutes($session))),
             ],
             User::ROLE_CHILD => ['label' => 'My groups', 'value' => $user->childGroups()->count()],
+            User::ROLE_ADULT => ['label' => 'Pending payments', 'value' => Payment::query()->where('parent_id', $user->id)->where('status', 'pending')->count()],
             default => ['label' => 'Pending payments', 'value' => Payment::query()->where('status', 'pending')->count()],
         };
 

@@ -28,6 +28,7 @@ class UpdateUserRequest extends FormRequest
                 User::ROLE_COACH,
                 User::ROLE_PARENT,
                 User::ROLE_CHILD,
+                User::ROLE_ADULT,
             ])],
             'phone' => ['nullable', 'string', 'max:30'],
             'birth_date' => ['nullable', 'date'],

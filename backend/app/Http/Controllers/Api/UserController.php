@@ -20,7 +20,7 @@ class UserController extends Controller
         $search = strtolower(trim((string) $request->query('search', '')));
 
         $users = User::query()
-            ->with(['parentProfile', 'childProfile', 'coachProfile', 'children', 'parents'])
+            ->with(['parentProfile', 'childProfile', 'coachProfile', 'adultProfile', 'children', 'parents'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($builder) use ($search) {
                     $builder
@@ -46,7 +46,7 @@ class UserController extends Controller
     public function show(User $user)
     {
         return $this->success($this->formatUser(
-            $user->load('parentProfile', 'childProfile', 'coachProfile', 'children', 'parents')
+            $user->load('parentProfile', 'childProfile', 'coachProfile', 'adultProfile', 'children', 'parents')
         ));
     }
 
@@ -73,13 +73,14 @@ class UserController extends Controller
             'full_name' => trim($user->name.' '.$user->surname),
             'email' => $user->email,
             'role' => $user->role,
-            'phone' => $user->parentProfile?->phone ?? $user->coachProfile?->phone,
+            'phone' => $user->parentProfile?->phone ?? $user->coachProfile?->phone ?? $user->adultProfile?->phone,
             'birth_date' => $user->parentProfile?->birth_date?->toDateString()
                 ?? $user->childProfile?->birth_date?->toDateString()
-                ?? $user->coachProfile?->birth_date?->toDateString(),
+                ?? $user->coachProfile?->birth_date?->toDateString()
+                ?? $user->adultProfile?->birth_date?->toDateString(),
             'specialization' => $user->coachProfile?->specialization,
             'personal_code' => $user->childProfile?->personal_code,
-            'account_balance' => (float) ($user->parentProfile?->account_balance ?? 0),
+            'account_balance' => (float) ($user->parentProfile?->account_balance ?? $user->adultProfile?->account_balance ?? 0),
             'children' => $user->children->map(fn (User $child) => [
                 'id' => $child->id,
                 'name' => trim($child->name.' '.$child->surname),

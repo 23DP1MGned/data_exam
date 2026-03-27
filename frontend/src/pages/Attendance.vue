@@ -486,7 +486,7 @@ const navItems = computed(() => [
   { label: t('common.schedule'), icon: 'mdi-calendar-month-outline', to: '/schedule' },
   { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/groups' },
   { label: t('common.attendance'), icon: 'mdi-check-circle-outline', to: '/attendance' },
-  ...(user.value?.role === 'parent'
+  ...(['parent', 'adult'].includes(user.value?.role ?? '')
     ? [{ label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/payments' }]
     : [])
 ])
@@ -558,7 +558,7 @@ const canManageAttendance = computed(() => ['admin', 'coach'].includes(user.valu
 const memberGroups = computed(() => [...new Set(records.value.map((item) => item.training))])
 const scopedCalendarSessions = computed(() =>
   calendarSessions.value.filter((session) => {
-    if (user.value?.role === 'child') {
+    if (['child', 'adult'].includes(user.value?.role ?? '')) {
       return session.students?.some((student) => student.id === user.value?.id)
     }
 

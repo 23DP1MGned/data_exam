@@ -22,15 +22,15 @@ class PaymentService
     ) {
     }
 
-    public function create(array $validated, int $parentId): Payment
+    public function create(array $validated, int $payerId): Payment
     {
-        return DB::transaction(function () use ($validated, $parentId) {
-            $normalizedItems = $this->normalizeItems($validated, $parentId);
+        return DB::transaction(function () use ($validated, $payerId) {
+            $normalizedItems = $this->normalizeItems($validated, $payerId);
             $amount = collect($normalizedItems)->sum('price');
             $status = $validated['status'] ?? 'paid';
 
             $payment = Payment::create([
-                'parent_id' => $parentId,
+                'parent_id' => $payerId,
                 'child_id' => $validated['child_id'],
                 'amount' => $amount,
                 'status' => $status,
@@ -59,15 +59,16 @@ class PaymentService
             }
 
             if ($payment->status === 'paid' && strtolower($payment->method) === 'account balance') {
-                $parent = User::query()->with('parentProfile')->findOrFail($parentId);
+                $payer = User::query()->with(['parentProfile', 'adultProfile'])->findOrFail($payerId);
+                $balanceProfile = $this->resolveBalanceProfile($payer);
 
-                if (! $parent->parentProfile || (float) $parent->parentProfile->account_balance < $amount) {
+                if (! $balanceProfile || (float) $balanceProfile->account_balance < $amount) {
                     throw ValidationException::withMessages([
                         'method' => ['Insufficient account balance.'],
                     ]);
                 }
 
-                $parent->parentProfile->decrement('account_balance', $amount);
+                $balanceProfile->decrement('account_balance', $amount);
             }
 
             if ($payment->status === 'paid') {
@@ -91,10 +92,11 @@ class PaymentService
                 'status' => 'refunded',
             ]);
 
-            $parent = User::query()->with('parentProfile')->findOrFail($payment->parent_id);
+            $payer = User::query()->with(['parentProfile', 'adultProfile'])->findOrFail($payment->parent_id);
+            $balanceProfile = $this->resolveBalanceProfile($payer);
 
-            if ($parent->parentProfile) {
-                $parent->parentProfile->increment('account_balance', $payment->amount);
+            if ($balanceProfile) {
+                $balanceProfile->increment('account_balance', $payment->amount);
             }
 
             $this->notificationService->notifyPaymentRefunded($payment);
@@ -137,8 +139,8 @@ class PaymentService
                 if ($singlePaymentItem?->payment?->parent) {
                     $this->createCancellationCredit(
                         session: $session,
-                        parent: $singlePaymentItem->payment->parent,
-                        child: $child,
+                        payer: $singlePaymentItem->payment->parent,
+                        participant: $child,
                         amount: (float) $singlePaymentItem->price,
                         sourceType: 'session',
                         payment: $singlePaymentItem->payment,
@@ -183,8 +185,8 @@ class PaymentService
 
                 $this->createCancellationCredit(
                     session: $session,
-                    parent: $coverage->payment->parent,
-                    child: $child,
+                    payer: $coverage->payment->parent,
+                    participant: $child,
                     amount: $amount,
                     sourceType: 'month',
                     payment: $coverage->payment,
@@ -199,43 +201,45 @@ class PaymentService
     {
         DB::transaction(function () use ($session) {
             $credits = SessionCancellationCredit::query()
-                ->with('parent.parentProfile')
+                ->with(['parent.parentProfile', 'parent.adultProfile'])
                 ->where('session_id', $session->id)
                 ->whereNull('reversed_at')
                 ->orderBy('id')
                 ->get();
 
             foreach ($credits as $credit) {
-                $parent = $credit->parent;
-                $balance = (float) ($parent?->parentProfile?->account_balance ?? 0);
+                $payer = $credit->parent;
+                $balanceProfile = $payer ? $this->resolveBalanceProfile($payer) : null;
+                $balance = (float) ($balanceProfile?->account_balance ?? 0);
 
-                if (! $parent?->parentProfile || $balance < (float) $credit->amount) {
+                if (! $balanceProfile || $balance < (float) $credit->amount) {
                     throw ValidationException::withMessages([
-                        'status' => ['This session cannot be restored because the cancellation credit has already been used from the parent balance.'],
+                        'status' => ['This session cannot be restored because the cancellation credit has already been used from the payer balance.'],
                     ]);
                 }
             }
 
             foreach ($credits as $credit) {
-                $parent = $credit->parent;
-                $child = $credit->child;
+                $payer = $credit->parent;
+                $participant = $credit->child;
+                $balanceProfile = $payer ? $this->resolveBalanceProfile($payer) : null;
 
-                $parent?->parentProfile?->decrement('account_balance', (float) $credit->amount);
+                $balanceProfile?->decrement('account_balance', (float) $credit->amount);
                 $credit->update([
                     'reversed_at' => now(),
                 ]);
 
                 $this->notificationService->notifyCancellationCreditReversed(
                     $session,
-                    $parent,
-                    $child,
+                    $payer,
+                    $participant,
                     (float) $credit->amount
                 );
             }
         });
     }
 
-    private function normalizeItems(array $validated, int $parentId): array
+    private function normalizeItems(array $validated, int $payerId): array
     {
         $items = collect($validated['items'] ?? []);
         $types = $items->pluck('type')->filter()->unique()->values();
@@ -246,13 +250,8 @@ class PaymentService
             ]);
         }
 
-        $parent = User::query()->findOrFail($parentId);
-
-        if (! $parent->children()->where('users.id', $validated['child_id'])->exists()) {
-            throw ValidationException::withMessages([
-                'child_id' => ['You can only pay for linked children.'],
-            ]);
-        }
+        $payer = User::query()->findOrFail($payerId);
+        $this->ensurePayerCanPayForParticipant($payer, (int) $validated['child_id']);
 
         return match ($types->first()) {
             'month' => $this->normalizeMonthItems($items, (int) $validated['child_id']),
@@ -460,8 +459,8 @@ class PaymentService
 
     private function createCancellationCredit(
         TrainingSession $session,
-        User $parent,
-        User $child,
+        User $payer,
+        User $participant,
         float $amount,
         string $sourceType,
         Payment $payment,
@@ -474,12 +473,12 @@ class PaymentService
 
         $credit = SessionCancellationCredit::query()
             ->where('session_id', $session->id)
-            ->where('child_id', $child->id)
+            ->where('child_id', $participant->id)
             ->first();
 
         if ($credit) {
             $credit->update([
-                'parent_id' => $parent->id,
+                'parent_id' => $payer->id,
                 'payment_id' => $payment->id,
                 'payment_item_id' => $paymentItem?->id,
                 'payment_month_coverage_id' => $monthCoverage?->id,
@@ -491,8 +490,8 @@ class PaymentService
         } else {
             SessionCancellationCredit::query()->create([
                 'session_id' => $session->id,
-                'parent_id' => $parent->id,
-                'child_id' => $child->id,
+                'parent_id' => $payer->id,
+                'child_id' => $participant->id,
                 'payment_id' => $payment->id,
                 'payment_item_id' => $paymentItem?->id,
                 'payment_month_coverage_id' => $monthCoverage?->id,
@@ -502,11 +501,38 @@ class PaymentService
             ]);
         }
 
-        $parent->loadMissing('parentProfile');
-        if ($parent->parentProfile) {
-            $parent->parentProfile->increment('account_balance', $amount);
+        $payer->loadMissing(['parentProfile', 'adultProfile']);
+        $balanceProfile = $this->resolveBalanceProfile($payer);
+        if ($balanceProfile) {
+            $balanceProfile->increment('account_balance', $amount);
         }
 
-        $this->notificationService->notifyCancellationCreditIssued($session, $parent, $child, $amount);
+        $this->notificationService->notifyCancellationCreditIssued($session, $payer, $participant, $amount);
+    }
+
+    private function ensurePayerCanPayForParticipant(User $payer, int $participantId): void
+    {
+        if ($payer->role === User::ROLE_PARENT) {
+            if (! $payer->children()->where('users.id', $participantId)->exists()) {
+                throw ValidationException::withMessages([
+                    'child_id' => ['You can only pay for linked children.'],
+                ]);
+            }
+
+            return;
+        }
+
+        if ($payer->role === User::ROLE_ADULT && $payer->id === $participantId) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'child_id' => ['You can only pay for your own adult account or linked children.'],
+        ]);
+    }
+
+    private function resolveBalanceProfile(User $payer): mixed
+    {
+        return $payer->parentProfile ?? $payer->adultProfile;
     }
 }

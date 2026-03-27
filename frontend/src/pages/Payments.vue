@@ -42,7 +42,7 @@
 
             <div class="mobile-drawer-profile">
               <v-avatar size="44">
-                <img :src="avatarFor(profileSeed, profileName)" alt="Parent profile">
+                <img :src="avatarFor(profileSeed, profileName)" alt="Payments profile">
               </v-avatar>
               <div>
                 <div class="profile-name">{{ profileName }}</div>
@@ -133,7 +133,7 @@
               <div class="mobile-profile-row">
                 <div class="profile-pill mobile-profile-pill">
                   <v-avatar size="42">
-                    <img :src="avatarFor(profileSeed, profileName)" alt="Parent profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Payments profile">
                   </v-avatar>
                   <div>
                     <div class="profile-name">{{ profileName }}</div>
@@ -191,7 +191,7 @@
 
                 <div class="profile-pill">
                   <v-avatar size="48">
-                    <img :src="avatarFor(profileSeed, profileName)" alt="Parent profile">
+                    <img :src="avatarFor(profileSeed, profileName)" alt="Payments profile">
                   </v-avatar>
                   <div>
                     <div class="profile-name">{{ profileName }}</div>
@@ -1020,7 +1020,7 @@ const navItems = computed(() => [
   { label: t('common.schedule'), icon: 'mdi-calendar-month-outline', to: '/schedule' },
   { label: t('common.groups'), icon: 'mdi-account-group-outline', to: '/groups' },
   { label: t('common.attendance'), icon: 'mdi-check-circle-outline', to: '/attendance' },
-  ...(user.value?.role === 'parent'
+  ...(['parent', 'adult'].includes(user.value?.role ?? '')
     ? [{ label: t('common.payments'), icon: 'mdi-credit-card-outline', to: '/payments' }]
     : [])
 ])

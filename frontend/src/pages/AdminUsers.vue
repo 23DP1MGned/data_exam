@@ -309,15 +309,15 @@
                         <span class="meta-value">{{ item.specialization || t('pages.adminUsers.notSet') }}</span>
                       </div>
 
-                      <div v-if="item.role !== 'admin'" class="meta-row">
+                      <div v-if="item.role === 'child'" class="meta-row">
                         <span class="meta-label">{{ t('pages.adminUsers.personalCode') }}</span>
                         <span class="meta-value">{{ item.personal_code || t('pages.adminUsers.notSet') }}</span>
                       </div>
 
-                      <div v-if="item.role !== 'admin' && item.role !== 'child'" class="meta-row">
+                      <div v-if="item.role === 'parent' || item.role === 'adult'" class="meta-row">
                         <span class="meta-label">{{ t('pages.adminUsers.balance') }}</span>
                         <span class="meta-value">
-                          {{ item.role === 'parent' ? formatCurrency(item.account_balance) : t('pages.adminUsers.notSet') }}
+                          {{ formatCurrency(item.account_balance) }}
                         </span>
                       </div>
 
@@ -458,6 +458,19 @@
                   />
                 </template>
 
+                <template v-if="form.role === 'adult'">
+                  <v-text-field v-model="form.phone" :label="t('pages.adminUsers.phone')" variant="outlined" class="create-field" />
+                  <v-text-field v-model="form.birth_date" :label="t('pages.adminUsers.birthDate')" type="date" variant="outlined" class="create-field" />
+                  <v-text-field
+                    v-model="form.account_balance"
+                    :label="t('pages.adminUsers.accountBalance')"
+                    type="number"
+                    min="0"
+                    variant="outlined"
+                    class="create-field"
+                  />
+                </template>
+
                 <template v-if="form.role === 'child'">
                   <v-text-field v-model="form.birth_date" :label="t('pages.adminUsers.birthDate')" type="date" variant="outlined" class="create-field" />
                   <v-text-field v-model="form.personal_code" :label="t('pages.adminUsers.personalCode')" variant="outlined" class="create-field" />
@@ -534,14 +547,16 @@ const roleFilters = computed(() => [
   { label: getRoleFilterLabel('admin'), value: 'admin' },
   { label: getRoleFilterLabel('coach'), value: 'coach' },
   { label: getRoleFilterLabel('parent'), value: 'parent' },
-  { label: getRoleFilterLabel('child'), value: 'child' }
+  { label: getRoleFilterLabel('child'), value: 'child' },
+  { label: getRoleFilterLabel('adult'), value: 'adult' }
 ])
 
 const roleOptions = computed(() => [
   { label: t('pages.adminUsers.adminRole'), value: 'admin' },
   { label: t('pages.adminUsers.coachRole'), value: 'coach' },
   { label: t('pages.adminUsers.parentRole'), value: 'parent' },
-  { label: t('pages.adminUsers.childRole'), value: 'child' }
+  { label: t('pages.adminUsers.childRole'), value: 'child' },
+  { label: t('pages.adminUsers.adultRole'), value: 'adult' }
 ])
 
 const roleMenuProps = computed(() => ({
@@ -599,14 +614,16 @@ const overviewStats = computed(() => {
     admin: users.value.filter((item) => item.role === 'admin').length,
     coach: users.value.filter((item) => item.role === 'coach').length,
     parent: users.value.filter((item) => item.role === 'parent').length,
-    child: users.value.filter((item) => item.role === 'child').length
+    child: users.value.filter((item) => item.role === 'child').length,
+    adult: users.value.filter((item) => item.role === 'adult').length
   }
 
   return [
     { label: t('pages.adminUsers.statTotalUsers'), value: totals.total },
     { label: t('pages.adminUsers.statAdminsAndCoaches'), value: totals.admin + totals.coach },
     { label: t('pages.adminUsers.statParents'), value: totals.parent },
-    { label: t('pages.adminUsers.statChildren'), value: totals.child }
+    { label: t('pages.adminUsers.statChildren'), value: totals.child },
+    { label: t('pages.adminUsers.statAdults'), value: totals.adult }
   ]
 })
 
@@ -665,6 +682,7 @@ function formatRole(role) {
   if (role === 'coach') return t('pages.adminUsers.coachRole')
   if (role === 'parent') return t('pages.adminUsers.parentRole')
   if (role === 'child') return t('pages.adminUsers.childRole')
+  if (role === 'adult') return t('pages.adminUsers.adultRole')
   return role.charAt(0).toUpperCase() + role.slice(1)
 }
 
@@ -673,6 +691,7 @@ function getRoleFilterLabel(role) {
   if (role === 'coach') return currentLocaleLabel('Coaches', 'Treneri')
   if (role === 'parent') return currentLocaleLabel('Parents', 'Vecāki')
   if (role === 'child') return currentLocaleLabel('Children', 'Bērni')
+  if (role === 'adult') return currentLocaleLabel('Adults', 'Pieaugušie')
   return role
 }
 
@@ -744,8 +763,11 @@ function buildPayload() {
     payload.password = form.value.password.trim()
   }
 
-  if (payload.role !== 'parent') {
+  if (!['parent', 'adult'].includes(payload.role)) {
     payload.account_balance = null
+  }
+
+  if (payload.role !== 'parent') {
     payload.child_identifier = null
   }
 
@@ -753,7 +775,7 @@ function buildPayload() {
     payload.specialization = null
   }
 
-  if (payload.role !== 'coach' && payload.role !== 'parent') {
+  if (!['coach', 'parent', 'adult'].includes(payload.role)) {
     payload.phone = null
   }
 
@@ -761,7 +783,7 @@ function buildPayload() {
     payload.personal_code = null
   }
 
-  if (!['child', 'parent', 'coach'].includes(payload.role)) {
+  if (!['child', 'parent', 'coach', 'adult'].includes(payload.role)) {
     payload.birth_date = null
   }
 
@@ -1338,7 +1360,7 @@ async function handleMobileLogout() {
 
 .overview-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 22px;
 }
@@ -1517,6 +1539,11 @@ async function handleMobileLogout() {
 .role-chip-child {
   background: rgba(240, 221, 252, 0.55);
   color: #7a36b0;
+}
+
+.role-chip-adult {
+  background: rgba(255, 222, 191, 0.56);
+  color: #b25e16;
 }
 
 .user-card-body {

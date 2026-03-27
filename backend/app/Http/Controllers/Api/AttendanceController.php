@@ -37,7 +37,7 @@ class AttendanceController extends Controller
             $query->whereHas('session.group', fn ($builder) => $builder->where('coach_id', $user->id));
         } elseif ($user->role === User::ROLE_PARENT) {
             $query->whereIn('user_id', $user->children()->pluck('users.id'));
-        } elseif ($user->role === User::ROLE_CHILD) {
+        } elseif (in_array($user->role, [User::ROLE_CHILD, User::ROLE_ADULT], true)) {
             $query->where('user_id', $user->id);
         }
 

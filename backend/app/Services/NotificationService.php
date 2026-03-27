@@ -56,6 +56,18 @@ class NotificationService
 
         $itemSummary = $this->paymentItemSummary($payment);
         $childName = $this->userDisplayName($payment->child);
+        $isAdultSelfPayment = $this->isAdultSelfPayment($payment);
+
+        if ($isAdultSelfPayment) {
+            $this->send(
+                $payment->parent_id,
+                'Payment successful',
+                "Payment received for {$itemSummary}.",
+                'payment'
+            );
+
+            return;
+        }
 
         $this->send(
             $payment->parent_id,
@@ -86,6 +98,18 @@ class NotificationService
         $payment->loadMissing(['child', 'parent', 'items.session.group', 'items.monthCoverage.group']);
 
         $itemSummary = $this->paymentItemSummary($payment);
+        $isAdultSelfPayment = $this->isAdultSelfPayment($payment);
+
+        if ($isAdultSelfPayment) {
+            $this->send(
+                $payment->parent_id,
+                'Payment refunded',
+                "A refund was issued for {$itemSummary} and returned to your balance.",
+                'payment'
+            );
+
+            return;
+        }
 
         $this->send(
             $payment->parent_id,
@@ -105,6 +129,18 @@ class NotificationService
     public function notifyCancellationCreditIssued(TrainingSession $session, User $parent, User $child, float $amount): void
     {
         $summary = $this->sessionSummary($session);
+        $isAdultSelfPayment = $parent->id === $child->id && $child->role === User::ROLE_ADULT;
+
+        if ($isAdultSelfPayment) {
+            $this->send(
+                $parent->id,
+                'Cancelled training credit added',
+                "EUR ".number_format($amount, 2)." was returned to your balance for {$summary}.",
+                'payment'
+            );
+
+            return;
+        }
 
         $this->send(
             $parent->id,
@@ -124,6 +160,18 @@ class NotificationService
     public function notifyCancellationCreditReversed(TrainingSession $session, User $parent, User $child, float $amount): void
     {
         $summary = $this->sessionSummary($session);
+        $isAdultSelfPayment = $parent->id === $child->id && $child->role === User::ROLE_ADULT;
+
+        if ($isAdultSelfPayment) {
+            $this->send(
+                $parent->id,
+                'Cancelled training credit reversed',
+                "EUR ".number_format($amount, 2)." was removed from your balance because {$summary} was restored.",
+                'payment'
+            );
+
+            return;
+        }
 
         $this->send(
             $parent->id,
@@ -339,7 +387,7 @@ class NotificationService
 
         $this->send(
             $session->group->coach_id,
-            'Child added to session',
+            'Participant added to session',
             "{$this->userDisplayName($child)} was added to {$this->sessionSummary($session)}.",
             'session'
         );
@@ -355,7 +403,7 @@ class NotificationService
 
         $this->send(
             $session->group->coach_id,
-            'Child removed from session',
+            'Participant removed from session',
             "{$this->userDisplayName($child)} was removed from {$this->sessionSummary($session)}.",
             'session'
         );
@@ -387,7 +435,7 @@ class NotificationService
 
         $this->send(
             $group->coach_id,
-            'Child moved to your group',
+            'Participant moved to your group',
             "{$this->userDisplayName($child)} was added to {$group->display_name}.",
             'group'
         );
@@ -403,7 +451,7 @@ class NotificationService
 
         $this->send(
             $group->coach_id,
-            'Child removed from your group',
+            'Participant removed from your group',
             "{$this->userDisplayName($child)} was removed from {$group->display_name}.",
             'group'
         );
@@ -595,6 +643,136 @@ class NotificationService
         }
     }
 
+    public function syncAdultPaymentNotifications(?User $adult = null): void
+    {
+        $adults = $adult
+            ? collect([$adult])
+            : User::query()->where('role', User::ROLE_ADULT)->get();
+
+        foreach ($adults as $currentAdult) {
+            $participantId = $currentAdult->id;
+
+            $paidSessionKeys = PaymentItem::query()
+                ->where('type', 'session')
+                ->whereHas('payment', function ($builder) use ($participantId) {
+                    $builder
+                        ->where('status', 'paid')
+                        ->where('parent_id', $participantId)
+                        ->where('child_id', $participantId);
+                })
+                ->get()
+                ->map(fn (PaymentItem $item) => $item->session_id.'-'.$participantId)
+                ->values()
+                ->all();
+
+            $paidMonthlyCoverageKeys = PaymentMonthCoverage::query()
+                ->where('child_id', $participantId)
+                ->whereHas('payment', function ($builder) use ($participantId) {
+                    $builder
+                        ->where('status', 'paid')
+                        ->where('parent_id', $participantId)
+                        ->where('child_id', $participantId);
+                })
+                ->get()
+                ->map(fn (PaymentMonthCoverage $coverage) => $coverage->child_id.'-'.$coverage->group_id.'-'.$coverage->month)
+                ->unique()
+                ->values()
+                ->all();
+
+            $paidSessionMonthKeys = PaymentItem::query()
+                ->with('session')
+                ->where('type', 'session')
+                ->whereHas('payment', function ($builder) use ($participantId) {
+                    $builder
+                        ->where('status', 'paid')
+                        ->where('parent_id', $participantId)
+                        ->where('child_id', $participantId);
+                })
+                ->get()
+                ->filter(fn (PaymentItem $item) => $item->session)
+                ->map(fn (PaymentItem $item) => $participantId.'-'.$item->session->group_id.'-'.$item->session->date->format('Y-m'))
+                ->unique()
+                ->values()
+                ->all();
+
+            $sessionDueItems = TrainingSession::query()
+                ->with(['group.coach', 'group.children', 'extraChildren'])
+                ->whereIn('status', ['planned', 'completed'])
+                ->where(function ($builder) use ($participantId) {
+                    $builder
+                        ->whereHas('group.children', fn ($relation) => $relation->where('users.id', $participantId))
+                        ->orWhereHas('extraChildren', fn ($relation) => $relation->where('users.id', $participantId));
+                })
+                ->get()
+                ->filter(function (TrainingSession $session) use ($participantId, $paidSessionKeys, $paidMonthlyCoverageKeys) {
+                    if (now()->lt($this->resolvePendingVisibleFrom($session))) {
+                        return false;
+                    }
+
+                    return $session->effectiveChildren()->contains('id', $participantId)
+                        && ! in_array($session->id.'-'.$participantId, $paidSessionKeys, true)
+                        && ! in_array($participantId.'-'.$session->group_id.'-'.$session->date->format('Y-m'), $paidMonthlyCoverageKeys, true);
+                })
+                ->map(function (TrainingSession $session) use ($participantId) {
+                    $deadline = $this->resolvePaymentDeadline($session);
+                    $status = now()->greaterThan($deadline) ? 'overdue' : 'pending';
+
+                    return [
+                        'key' => "{$status}-session-{$session->id}-{$participantId}",
+                        'title' => $status === 'overdue' ? 'Payment overdue' : 'Payment due soon',
+                        'message' => $status === 'overdue'
+                            ? "Payment for {$this->sessionSummary($session)} is overdue."
+                            : "Payment for {$this->sessionSummary($session)} is now available.",
+                    ];
+                });
+
+            foreach ($sessionDueItems as $item) {
+                $this->send($currentAdult->id, $item['title'], $item['message'], 'payment', $item['key']);
+            }
+
+            $monthlyDueItems = TrainingSession::query()
+                ->with(['group.coach', 'group.children'])
+                ->whereIn('status', ['planned', 'completed'])
+                ->whereHas('group.children', fn ($builder) => $builder->where('users.id', $participantId))
+                ->get()
+                ->map(fn (TrainingSession $session) => [
+                    'session' => $session,
+                    'month' => $session->date->format('Y-m'),
+                ])
+                ->groupBy(fn (array $item) => $participantId.'-'.$item['session']->group_id.'-'.$item['month'])
+                ->map(function (Collection $items, string $coverageKey) use ($paidMonthlyCoverageKeys, $paidSessionMonthKeys) {
+                    if (in_array($coverageKey, $paidMonthlyCoverageKeys, true) || in_array($coverageKey, $paidSessionMonthKeys, true)) {
+                        return null;
+                    }
+
+                    /** @var TrainingSession $session */
+                    $session = $items->first()['session'];
+                    $monthStart = Carbon::createFromFormat('Y-m', $items->first()['month'])->startOfMonth();
+                    $visibleFrom = $this->resolveMonthlyPaymentVisibleFrom($monthStart);
+
+                    if (now()->lt($visibleFrom)) {
+                        return null;
+                    }
+
+                    $deadline = $this->resolveMonthlyPaymentDeadline($monthStart);
+                    $status = now()->greaterThan($deadline) ? 'overdue' : 'pending';
+
+                    return [
+                        'key' => "{$status}-month-{$coverageKey}",
+                        'title' => $status === 'overdue' ? 'Monthly payment overdue' : 'Monthly payment due soon',
+                        'message' => $status === 'overdue'
+                            ? "Monthly payment for {$session->group->display_name} ({$monthStart->format('F Y')}) is overdue."
+                            : "Monthly payment for {$session->group->display_name} ({$monthStart->format('F Y')}) is now available.",
+                    ];
+                })
+                ->filter();
+
+            foreach ($monthlyDueItems as $item) {
+                $this->send($currentAdult->id, $item['title'], $item['message'], 'payment', $item['key']);
+            }
+        }
+    }
+
     private function paymentItemSummary(Payment $payment): string
     {
         $firstItem = $payment->items->first();
@@ -645,5 +823,14 @@ class NotificationService
     private function resolveMonthlyPaymentVisibleFrom(Carbon $monthStart): Carbon
     {
         return $monthStart->copy()->subDays(7)->startOfDay();
+    }
+
+    private function isAdultSelfPayment(Payment $payment): bool
+    {
+        $payment->loadMissing(['child', 'parent']);
+
+        return $payment->parent_id === $payment->child_id
+            && $payment->parent?->role === User::ROLE_ADULT
+            && $payment->child?->role === User::ROLE_ADULT;
     }
 }

@@ -911,7 +911,7 @@ const groupOptions = computed(() =>
 
 const childOptions = computed(() =>
   users.value
-    .filter((item) => item.role === 'child')
+    .filter((item) => ['child', 'adult'].includes(item.role))
     .map((item) => ({
       label: item.full_name ?? `${item.name} ${item.surname}`.trim(),
       value: item.id

@@ -522,7 +522,7 @@ const coachOptions = computed(() =>
 
 const childOptions = computed(() =>
   users.value
-    .filter((item) => item.role === 'child')
+    .filter((item) => ['child', 'adult'].includes(item.role))
     .map((item) => ({
       label: item.full_name,
       value: item.id

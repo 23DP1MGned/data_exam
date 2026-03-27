@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Attendance;
+use App\Models\AdultProfile;
 use App\Models\ChildProfile;
 use App\Models\CoachProfile;
 use App\Models\Group;
@@ -169,6 +170,25 @@ class DatabaseSeeder extends Seeder
             ]),
         ];
 
+        $adults = [
+            'alex' => $this->createAdult([
+                'name' => 'Alex',
+                'surname' => 'Morris',
+                'email' => 'alex.adult@example.com',
+                'phone' => '+37120000031',
+                'birth_date' => '1999-03-05',
+                'account_balance' => 85,
+            ]),
+            'nora' => $this->createAdult([
+                'name' => 'Nora',
+                'surname' => 'Silina',
+                'email' => 'nora.adult@example.com',
+                'phone' => '+37120000032',
+                'birth_date' => '1997-10-18',
+                'account_balance' => 40,
+            ]),
+        ];
+
         $parents['sarah']->children()->attach([
             $children['ethan']->id,
             $children['oliver']->id,
@@ -216,7 +236,7 @@ class DatabaseSeeder extends Seeder
                 'default_time' => '18:10',
                 'price' => 64,
                 'coach_id' => $coaches['athletics']->id,
-            ], [$children['noah'], $children['ava']]),
+            ], [$children['noah'], $children['ava'], $adults['alex']]),
             'dance' => $this->createGroup([
                 'name' => 'Dance Flow',
                 'group_number' => 4,
@@ -282,6 +302,8 @@ class DatabaseSeeder extends Seeder
             'dance_future' => $this->createSession($groups['dance'], 'Stage Presence Workshop', $now->copy()->addDays(6), '16:45', '17:45', 'planned', 44),
             'dance_cancelled' => $this->createSession($groups['dance'], 'Duet Rehearsal', $now->copy()->addDays(12), '16:45', '17:45', 'cancelled', 41),
         ];
+
+        $sessions['dance_future']->children()->attach($adults['nora']->id);
 
         $this->seedAttendance($sessions, $groups);
 
@@ -412,6 +434,7 @@ class DatabaseSeeder extends Seeder
         $allUsers = collect([$admin])
             ->merge(collect($coaches)->values())
             ->merge(collect($parents)->values())
+            ->merge(collect($adults)->values())
             ->merge(collect($children)->values());
 
         foreach ($allUsers as $user) {
@@ -434,9 +457,9 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        foreach ([$children['mia'], $children['oliver'], $children['ava']] as $child) {
+        foreach ([$children['mia'], $children['oliver'], $children['ava'], $adults['alex'], $adults['nora']] as $participant) {
             Notification::create([
-                'user_id' => $child->id,
+                'user_id' => $participant->id,
                 'title' => 'Training reminder',
                 'message' => 'Check your schedule and outstanding payments for upcoming sessions.',
                 'type' => 'schedule',
@@ -507,6 +530,26 @@ class DatabaseSeeder extends Seeder
             'user_id' => $user->id,
             'birth_date' => $data['birth_date'],
             'personal_code' => $data['personal_code'],
+        ]);
+
+        return $user;
+    }
+
+    private function createAdult(array $data): User
+    {
+        $user = User::factory()->create([
+            'name' => $data['name'],
+            'surname' => $data['surname'],
+            'email' => $data['email'],
+            'password' => 'password',
+            'role' => User::ROLE_ADULT,
+        ]);
+
+        AdultProfile::create([
+            'user_id' => $user->id,
+            'phone' => $data['phone'],
+            'birth_date' => $data['birth_date'],
+            'account_balance' => $data['account_balance'],
         ]);
 
         return $user;
