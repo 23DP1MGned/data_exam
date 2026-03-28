@@ -34,6 +34,10 @@
       </section>
 
       <section class="login-panel">
+        <div class="login-toolbar">
+          <AppLanguageSwitch />
+        </div>
+
         <div class="login-panel-head">
           <div class="login-eyebrow">{{ t('login.welcome') }}</div>
           <h2 class="login-title">{{ t('login.loginTitle') }}</h2>
@@ -111,6 +115,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AppLanguageSwitch from '../components/AppLanguageSwitch.vue'
 import { login } from '../services/auth'
 import { useLocale } from '../i18n'
 
@@ -311,6 +316,12 @@ async function submit() {
   padding: 40px 36px;
 }
 
+.login-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 18px;
+}
+
 .login-panel-head {
   margin-bottom: 22px;
 }
@@ -485,6 +496,10 @@ async function submit() {
     max-width: none;
   }
 
+  .login-toolbar {
+    margin-bottom: 14px;
+  }
+
   .showcase-title {
     font-size: 2.2rem;
   }
@@ -531,6 +546,10 @@ async function submit() {
   .login-panel {
     padding: 18px 14px;
     border-radius: 22px;
+  }
+
+  .login-toolbar {
+    margin-bottom: 12px;
   }
 
   .showcase-badge {
