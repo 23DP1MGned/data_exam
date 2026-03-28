@@ -290,9 +290,237 @@ body {
   flex: 1;
 }
 
+.mobile-brand-inline,
+.brand-block,
+.brand-text,
+.mobile-brand-copy {
+  min-width: 0;
+}
+
+.mobile-brand-inline,
+.brand-block,
+.brand-text,
+.mobile-brand-copy {
+  overflow: hidden;
+}
+
+.mobile-brand-inline {
+  flex: 1 1 0;
+  width: 0;
+}
+
+.brand-text,
+.mobile-brand-copy {
+  flex: 1 1 auto;
+  width: 0;
+}
+
+.brand-name,
+.brand-caption,
+.mobile-brand-copy .brand-name,
+.mobile-brand-copy .brand-caption {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .dashboard-page,
+  .schedule-page,
+  .groups-page,
+  .attendance-page,
+  .payments-page,
+  .coach-attendance-page,
+  .admin-home-page,
+  .users-page,
+  .admin-groups-page,
+  .admin-sessions-page,
+  .admin-payments-page {
+    padding: 10px !important;
+  }
+
+  .dashboard-shell,
+  .schedule-shell,
+  .groups-shell,
+  .attendance-shell,
+  .payments-shell,
+  .coach-attendance-shell,
+  .admin-home-shell,
+  .users-shell,
+  .admin-groups-shell,
+  .admin-sessions-shell,
+  .admin-payments-shell {
+    border-radius: 24px !important;
+  }
+
+  .dashboard-panel,
+  .schedule-panel,
+  .groups-panel,
+  .attendance-panel,
+  .payments-panel,
+  .coach-attendance-panel,
+  .admin-home-panel,
+  .users-panel,
+  .admin-groups-panel,
+  .admin-sessions-panel,
+  .admin-payments-panel {
+    gap: 12px !important;
+    padding: 10px !important;
+  }
+
+  .topbar-card,
+  .overview-shell-card,
+  .overview-card,
+  .users-card,
+  .groups-card,
+  .sessions-card,
+  .payments-card,
+  .attendance-card,
+  .coach-page-card,
+  .calendar-card,
+  .workbench-card,
+  .list-card,
+  .finder-card {
+    padding: 16px !important;
+    border-radius: 22px !important;
+  }
+
+  .overview-stat-card,
+  .stat-card,
+  .coach-stat-card,
+  .group-card,
+  .session-card,
+  .payment-item,
+  .overview-item,
+  .user-card,
+  .requires-item,
+  .roster-item,
+  .day-session-pill {
+    padding: 14px !important;
+    border-radius: 18px !important;
+  }
+
+  .users-header,
+  .groups-header,
+  .sessions-header,
+  .payments-header,
+  .attendance-header,
+  .coach-page-header,
+  .toolbar-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .mobile-create-btn,
+  .session-filter-btn,
+  .toolbar-btn,
+  .create-btn {
+    width: 100% !important;
+  }
+
+  .overview-title,
+  .users-title,
+  .groups-title,
+  .sessions-title,
+  .payments-title,
+  .attendance-title,
+  .coach-page-title {
+    font-size: clamp(1.8rem, 7vw, 2.2rem) !important;
+    line-height: 1.08 !important;
+  }
+
+  .overview-subtitle,
+  .users-subtitle,
+  .groups-subtitle,
+  .sessions-subtitle,
+  .payments-subtitle,
+  .attendance-subtitle,
+  .coach-page-subtitle {
+    font-size: 0.95rem !important;
+    line-height: 1.55 !important;
+  }
+}
+
 @media (max-width: 380px) {
+  .dashboard-page,
+  .schedule-page,
+  .groups-page,
+  .attendance-page,
+  .payments-page,
+  .coach-attendance-page,
+  .admin-home-page,
+  .users-page,
+  .admin-groups-page,
+  .admin-sessions-page,
+  .admin-payments-page {
+    padding: 8px !important;
+  }
+
+  .dashboard-shell,
+  .schedule-shell,
+  .groups-shell,
+  .attendance-shell,
+  .payments-shell,
+  .coach-attendance-shell,
+  .admin-home-shell,
+  .users-shell,
+  .admin-groups-shell,
+  .admin-sessions-shell,
+  .admin-payments-shell {
+    border-radius: 20px !important;
+  }
+
+  .dashboard-panel,
+  .schedule-panel,
+  .groups-panel,
+  .attendance-panel,
+  .payments-panel,
+  .coach-attendance-panel,
+  .admin-home-panel,
+  .users-panel,
+  .admin-groups-panel,
+  .admin-sessions-panel,
+  .admin-payments-panel {
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+
   .content-shell {
     gap: 8px !important;
+  }
+
+  .topbar-card,
+  .overview-shell-card,
+  .overview-card,
+  .users-card,
+  .groups-card,
+  .sessions-card,
+  .payments-card,
+  .attendance-card,
+  .coach-page-card,
+  .calendar-card,
+  .workbench-card,
+  .list-card,
+  .finder-card {
+    padding: 14px !important;
+    border-radius: 18px !important;
+  }
+
+  .overview-stat-card,
+  .stat-card,
+  .coach-stat-card,
+  .group-card,
+  .session-card,
+  .payment-item,
+  .overview-item,
+  .user-card,
+  .requires-item,
+  .roster-item,
+  .day-session-pill {
+    padding: 12px !important;
+    border-radius: 16px !important;
   }
 
   .mobile-header-card,
@@ -356,6 +584,32 @@ body {
     font-size: 0.78rem !important;
   }
 
+  .overview-title,
+  .users-title,
+  .groups-title,
+  .sessions-title,
+  .payments-title,
+  .attendance-title,
+  .coach-page-title {
+    font-size: clamp(1.55rem, 7vw, 1.9rem) !important;
+  }
+
+  .overview-subtitle,
+  .users-subtitle,
+  .groups-subtitle,
+  .sessions-subtitle,
+  .payments-subtitle,
+  .attendance-subtitle,
+  .coach-page-subtitle {
+    font-size: 0.9rem !important;
+    line-height: 1.5 !important;
+  }
+
+  .summary-value,
+  .stat-value {
+    font-size: 1.7rem !important;
+  }
+
   .icon-badge {
     top: -1px !important;
     right: -1px !important;
@@ -367,8 +621,53 @@ body {
 }
 
 @media (max-width: 320px) {
+  .dashboard-page,
+  .schedule-page,
+  .groups-page,
+  .attendance-page,
+  .payments-page,
+  .coach-attendance-page,
+  .admin-home-page,
+  .users-page,
+  .admin-groups-page,
+  .admin-sessions-page,
+  .admin-payments-page {
+    padding: 6px !important;
+  }
+
+  .dashboard-panel,
+  .schedule-panel,
+  .groups-panel,
+  .attendance-panel,
+  .payments-panel,
+  .coach-attendance-panel,
+  .admin-home-panel,
+  .users-panel,
+  .admin-groups-panel,
+  .admin-sessions-panel,
+  .admin-payments-panel {
+    padding: 6px !important;
+  }
+
   .content-shell {
     gap: 6px !important;
+  }
+
+  .topbar-card,
+  .overview-shell-card,
+  .overview-card,
+  .users-card,
+  .groups-card,
+  .sessions-card,
+  .payments-card,
+  .attendance-card,
+  .coach-page-card,
+  .calendar-card,
+  .workbench-card,
+  .list-card,
+  .finder-card {
+    padding: 12px !important;
+    border-radius: 16px !important;
   }
 
   .mobile-header-card,
@@ -387,6 +686,21 @@ body {
 
   .mobile-brand-copy .brand-caption {
     font-size: 0.64rem !important;
+  }
+
+  .overview-title,
+  .users-title,
+  .groups-title,
+  .sessions-title,
+  .payments-title,
+  .attendance-title,
+  .coach-page-title {
+    font-size: 1.42rem !important;
+  }
+
+  .summary-value,
+  .stat-value {
+    font-size: 1.55rem !important;
   }
 
   .mobile-header-actions {

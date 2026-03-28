@@ -805,4 +805,83 @@ function handleSupportSubmit() {
     align-items: stretch;
   }
 }
+
+@media (max-width: 380px) {
+  .app-page-footer {
+    margin: 0 8px 8px;
+    border-radius: 18px;
+  }
+
+  .app-page-footer-content {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .app-page-footer-meta {
+    font-size: 0.76rem;
+  }
+
+  .app-page-footer-nav {
+    gap: 8px;
+  }
+
+  .app-page-footer-side {
+    gap: 10px;
+  }
+
+  .app-page-footer-link {
+    min-height: 28px;
+    padding: 0 6px;
+    font-size: 0.8rem;
+  }
+
+  .app-page-footer-link-icon {
+    width: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .footer-dialog-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .footer-dialog-title {
+    font-size: 1.16rem;
+  }
+
+  .footer-dialog-header {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 320px) {
+  .app-page-footer {
+    margin: 0 6px 6px;
+    border-radius: 16px;
+  }
+
+  .app-page-footer-content {
+    padding: 10px;
+  }
+
+  .app-page-footer-link {
+    font-size: 0.76rem;
+  }
+
+  .footer-dialog-card {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .footer-dialog-title {
+    font-size: 1.06rem;
+  }
+
+  .footer-dialog-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 14px;
+  }
+}
 </style>
