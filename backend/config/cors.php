@@ -3,7 +3,9 @@
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173')],
+    'allowed_origins' => [
+    'https://clever-embrace-production-7578.up.railway.app',
+],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
